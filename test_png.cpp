@@ -2,9 +2,21 @@
 #include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
+#include <noise/noise.h>
+#include <iostream>
+#include <algorithm>
 
-void pngError(png_structp png_ptr, png_const_charp msg) {
+void png_error(__attribute__((unused)) png_structp png_ptr, png_const_charp msg) {
     throw std::runtime_error(msg);
+}
+
+double linear_interpolate(double old_value, double old_min, double old_max, double new_min, double new_max) {
+    if (old_min == old_max) {
+        std::cerr << "Old range cannot be zero." << std::endl;
+        return 0.0;
+    }
+
+    return ((old_value - old_min) * (new_max - new_min)) / (old_max - old_min) + new_min;
 }
 
 int write_png_file(const char *filename, int width, int height) {
@@ -16,7 +28,10 @@ int write_png_file(const char *filename, int width, int height) {
 
     try {
         png_ptr = png_create_write_struct(
-                PNG_LIBPNG_VER_STRING, nullptr, pngError, nullptr);
+                PNG_LIBPNG_VER_STRING,
+                nullptr,
+                png_error,
+                nullptr);
         if (!png_ptr) return -1;
 
         info_ptr = png_create_info_struct(png_ptr);
@@ -24,26 +39,50 @@ int write_png_file(const char *filename, int width, int height) {
 
         png_init_io(png_ptr, fp);
 
-        // Set image attributes.
         png_set_IHDR(
-                png_ptr, info_ptr, width, height,
-                8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
-                PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+                png_ptr, info_ptr,
+                width, height,
+                8,
+                PNG_COLOR_TYPE_RGB,
+                PNG_INTERLACE_NONE,
+                PNG_COMPRESSION_TYPE_BASE,
+                PNG_FILTER_TYPE_BASE);
 
         png_write_info(png_ptr, info_ptr);
 
-        // Write the image data.
+        /*************************************************************/
+
+        noise::module::Perlin perlin_noise;
+
+        perlin_noise.SetSeed(0);
+        perlin_noise.SetFrequency(1.0 / width);
+        perlin_noise.SetLacunarity(2);
+        perlin_noise.SetOctaveCount(10);
+        perlin_noise.SetNoiseQuality(noise::QUALITY_BEST);
+
         auto row = (png_bytep)malloc(3 * width * sizeof(png_byte));
+
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                row[x*3] = x % 255; // Red
-                row[x*3 + 1] = y % 255; // Green
-                row[x*3 + 2] = (x * y) % 255; // Blue
+                int value = (int)linear_interpolate(
+                        perlin_noise.GetValue(x, y, 0),
+                        -1,
+                        1,
+                        0,
+                        255);
+
+                std::cout << value << std::endl;
+
+                row[x*3] = value;
+                row[x*3 + 1] = value;
+                row[x*3 + 2] = value;
             }
+
             png_write_row(png_ptr, row);
         }
 
-        // Finish writing.
+        /*************************************************************/
+
         png_write_end(png_ptr, nullptr);
 
         // Cleanup.
@@ -52,7 +91,6 @@ int write_png_file(const char *filename, int width, int height) {
         png_destroy_write_struct(&png_ptr, &info_ptr);
         if (row != nullptr) free(row);
     } catch (const std::runtime_error& e) {
-        // If an error occurs, clean up and return an error code.
         fclose(fp);
         if (png_ptr) png_destroy_write_struct(&png_ptr, &info_ptr); // Ensure png resources are freed on error
         return -1;
