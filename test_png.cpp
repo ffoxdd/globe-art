@@ -4,19 +4,16 @@
 #include <stdexcept>
 #include <noise/noise.h>
 #include <iostream>
-#include <algorithm>
 
-void png_error(__attribute__((unused)) png_structp png_ptr, png_const_charp msg) {
-    throw std::runtime_error(msg);
-}
 
-double linear_interpolate(double old_value, double old_min, double old_max, double new_min, double new_max) {
-    if (old_min == old_max) {
-        std::cerr << "Old range cannot be zero." << std::endl;
-        return 0.0;
-    }
+int write_png_file(const char *filename, int width, int height);
+void png_error(__attribute__((unused)) png_structp png_ptr, png_const_charp msg);
+double linear_interpolate(double old_value, double old_min, double old_max, double new_min, double new_max);
 
-    return ((old_value - old_min) * (new_max - new_min)) / (old_max - old_min) + new_min;
+
+int main() {
+    write_png_file("output.png", 256, 256);
+    return 0;
 }
 
 int write_png_file(const char *filename, int width, int height) {
@@ -71,8 +68,6 @@ int write_png_file(const char *filename, int width, int height) {
                         0,
                         255);
 
-                std::cout << value << std::endl;
-
                 row[x*3] = value;
                 row[x*3 + 1] = value;
                 row[x*3 + 2] = value;
@@ -99,7 +94,15 @@ int write_png_file(const char *filename, int width, int height) {
     return 0;
 }
 
-int main() {
-    write_png_file("output.png", 256, 256);
-    return 0;
+void png_error(__attribute__((unused)) png_structp png_ptr, png_const_charp msg) {
+    throw std::runtime_error(msg);
+}
+
+double linear_interpolate(double old_value, double old_min, double old_max, double new_min, double new_max) {
+    if (old_min == old_max) {
+        std::cerr << "Old range cannot be zero." << std::endl;
+        return 0.0;
+    }
+
+    return ((old_value - old_min) * (new_max - new_min)) / (old_max - old_min) + new_min;
 }
