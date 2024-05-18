@@ -7,8 +7,17 @@
 
 struct Vec3 {
     double x, y, z;
+
     Vec3() : x(0.0), y(0.0), z(0.0) { }
     Vec3(double x, double y, double z) : x(x), y(y), z(z) { }
+
+    static Vec3 from_spherical(double radius, double theta, double phi) {
+        return {
+            radius * std::sin(phi) * std::cos(theta),
+            radius * std::cos(phi),
+            radius * std::sin(phi) * std::sin(theta)
+        };
+    }
 };
 
 struct Mesh {
@@ -17,21 +26,41 @@ struct Mesh {
     std::vector<std::array<uint32_t, 3>> indices;
 };
 
-Mesh generate_sphere(int stacks, int slices, double radius) {
-    Mesh mesh;
+class SphereGenerator {
+ public:
+    SphereGenerator(int stacks, int slices, double radius) : stacks(stacks), slices(slices), radius(radius) {}
+    void generate();
+    void save_ply(const std::string &filename) const;
 
+ private:
+    int stacks;
+    int slices;
+    double radius;
+    Mesh mesh;
+    static std::vector<uint32_t> flatten(const std::vector<std::array<uint32_t, 3>> &indices) ;
+};
+
+int main() {
+    const int stacks = 10;
+    const int slices = 20;
+    const double radius = 1.0;
+    const char* filename = "sphere.ply";
+
+    SphereGenerator generator = SphereGenerator(stacks, slices, radius);
+    generator.generate();
+    generator.save_ply(filename);
+
+    return 0;
+}
+
+void SphereGenerator::generate() {
     for (int stack = 0; stack <= stacks; ++stack) {
         double phi = static_cast<double>(stack) * M_PI / static_cast<double>(stacks);
 
         for (int slice = 0; slice <= slices; ++slice) {
             double theta = static_cast<double>(slice) * 2.0 * M_PI / static_cast<double>(slices);
 
-            Vec3 vertex{
-                radius * std::sin(phi) * std::cos(theta),
-                radius * std::cos(phi),
-                radius * std::sin(phi) * std::sin(theta)
-            };
-
+            Vec3 vertex = Vec3::from_spherical(radius, theta, phi);
             Vec3 normal = {vertex.x / radius, vertex.y / radius, vertex.z / radius};
 
             mesh.vertices.push_back(vertex);
@@ -48,11 +77,9 @@ Mesh generate_sphere(int stacks, int slices, double radius) {
             mesh.indices.push_back({second, second + 1, first + 1});
         }
     }
-
-    return mesh;
 }
 
-void save_ply(const Mesh &mesh, const std::string &filename) {
+void SphereGenerator::save_ply(const std::string &filename) const {
     tinyply::PlyFile sphere_file;
 
     sphere_file.add_properties_to_element("vertex", {"x", "y", "z"},
@@ -65,11 +92,7 @@ void save_ply(const Mesh &mesh, const std::string &filename) {
         reinterpret_cast<const uint8_t *>(mesh.normals.data()), tinyply::Type::INVALID, 0
     );
 
-    // Flatten the indices for tinyply
-    std::vector<uint32_t> flattened_indices;
-    for (const auto &face : mesh.indices) {
-        flattened_indices.insert(flattened_indices.end(), face.begin(), face.end());
-    }
+    std::vector<uint32_t> flattened_indices = flatten(mesh.indices);
 
     sphere_file.add_properties_to_element("face", {"vertex_indices"},
         tinyply::Type::UINT32, mesh.indices.size(),
@@ -86,14 +109,12 @@ void save_ply(const Mesh &mesh, const std::string &filename) {
         std::cerr << "Failed to open the output file: " << filename << std::endl;
     }
 }
+std::vector<uint32_t> SphereGenerator::flatten(const std::vector<std::array<uint32_t, 3>> &indices) {
+    std::vector<uint32_t> flattened_indices;
 
-int main() {
-    int stacks = 10;
-    int slices = 20;
-    double radius = 1.0;
+    for (const auto &face : indices) {
+        flattened_indices.insert(flattened_indices.end(), face.begin(), face.end());
+    }
 
-    Mesh mesh = generate_sphere(stacks, slices, radius);
-    save_ply(mesh, "sphere.ply");
-
-    return 0;
+    return flattened_indices;
 }
