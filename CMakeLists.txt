@@ -20,7 +20,7 @@ find_library(NOISE_LIBRARY NAMES libnoise noise)
 find_path(NOISE_INCLUDE_DIR NAMES noise/noise.h)
 find_package(tinyply REQUIRED)
 
-add_executable(surprise src/surprise.cpp)
+add_executable(surprise src/surprise.cpp src/test_cgal_sphere.cpp)
 target_include_directories(surprise PRIVATE ${QT5_INCLUDE_DIRS})
 
 target_link_libraries(surprise PRIVATE CGAL::CGAL_Qt5)
@@ -35,3 +35,6 @@ target_link_libraries(test_png PRIVATE ${PNG_LIBRARY_FULLPATH} ${NOISE_LIBRARY})
 
 add_executable(test_ply src/test_ply.cpp)
 target_link_libraries(test_ply PRIVATE tinyply)
+
+add_executable(test_cgal_sphere src/test_cgal_sphere.cpp)
+target_link_libraries(test_cgal_sphere PRIVATE CGAL::CGAL)
