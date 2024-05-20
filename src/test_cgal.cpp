@@ -5,10 +5,10 @@
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Delaunay_triangulation_on_sphere_traits_2<K> Traits;
 typedef CGAL::Delaunay_triangulation_on_sphere_2<Traits> DToS2;
-typedef Traits::Point_3 Point_3;
+typedef Traits::Point_3 Point3;
 
 int main(int, char **) {
-    std::vector<Point_3> points;
+    std::vector<Point3> points;
     points.emplace_back(2, 1, 1);
     points.emplace_back(-2, 1, 1); // not on the sphere
     points.emplace_back(0, 1, 1);
@@ -17,10 +17,10 @@ int main(int, char **) {
     points.emplace_back(1, 0, 1);
     points.emplace_back(1, 1, 2);
 
-    Traits traits(Point_3(1, 1, 1), 1); // sphere center on (1,1,1), with radius 1
+    Traits traits(Point3(1, 1, 1), 1); // sphere center on (1,1,1), with radius 1
     DToS2 dtos(traits);
 
-    for (const Point_3 &pt : points) {
+    for (const Point3 &pt : points) {
         std::cout << "Inserting (" << pt
             << ") at squared distance " << CGAL::squared_distance(pt, traits.center())
             << " from the center of the sphere; is it on there sphere? "

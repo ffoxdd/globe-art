@@ -4,34 +4,40 @@
 #include <CGAL/make_mesh_3.h>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
+#include <random>
 
 typedef CGAL::Simple_cartesian<double> Kernel;
-typedef Kernel::Point_3 Point_3;
-typedef CGAL::Surface_mesh<Point_3> Surface_mesh;
+typedef Kernel::Point_3 Point3;
+typedef CGAL::Surface_mesh<Point3> SurfaceMesh;
+typedef SurfaceMesh::Property_map<SurfaceMesh::Vertex_index, CGAL::Color> VertexColorMap;
 
 class SphereGenerator {
  public:
-    SphereGenerator(double radius, int iterations) :
-        center(Point_3(0, 0, 0)),
-        radius(radius),
-        iterations(iterations) { }
+    explicit SphereGenerator(
+        double radius = 1.0,
+        int iterations = 3,
+        Point3 center = Point3(0, 0, 0)
+    ) : center(center), radius(radius), iterations(iterations) { }
 
     void generate();
-    bool save_ply(const std::string &filename) const;
+    [[nodiscard]] bool save_ply(const std::string &filename) const;
 
  private:
-    Point_3 center;
+    Point3 center;
     double radius;
     int iterations;
-    Surface_mesh mesh;
+    SurfaceMesh mesh;
+
     void create_icosahedron();
     void subdivide();
     void project_to_sphere();
+    void calculate_colors();
 };
 
 int main() {
     const double radius = 1.0;
-    const int iterations = 4;
+    const int iterations = 3;
     const char *filename = "cgal_sphere.ply";
 
     SphereGenerator generator = SphereGenerator(radius, iterations);
@@ -50,27 +56,7 @@ void SphereGenerator::generate() {
     create_icosahedron();
     subdivide();
     project_to_sphere();
-}
-
-void SphereGenerator::create_icosahedron() {
-    CGAL::make_icosahedron(mesh, center, radius);
-}
-
-void SphereGenerator::subdivide() {
-    CGAL::Subdivision_method_3::CatmullClark_subdivision(
-        mesh,
-        CGAL::parameters::number_of_iterations(iterations)
-    );
-}
-
-void SphereGenerator::project_to_sphere() {
-    for (auto v : mesh.vertices()) {
-        Point_3 &p = mesh.point(v);
-        Kernel::Vector_3 vector = p - CGAL::ORIGIN;
-
-        double scale = radius / std::sqrt(vector.squared_length());
-        p = CGAL::ORIGIN + (vector * scale);
-    }
+    calculate_colors();
 }
 
 bool SphereGenerator::save_ply(const std::string &filename) const {
@@ -88,4 +74,45 @@ bool SphereGenerator::save_ply(const std::string &filename) const {
     }
 
     return success;
+}
+
+void SphereGenerator::create_icosahedron() {
+    CGAL::make_icosahedron(mesh, center, radius);
+}
+
+void SphereGenerator::subdivide() {
+    CGAL::Subdivision_method_3::CatmullClark_subdivision(
+        mesh,
+        CGAL::parameters::number_of_iterations(iterations)
+    );
+}
+
+void SphereGenerator::project_to_sphere() {
+    for (auto vertex : mesh.vertices()) {
+        Point3 &point = mesh.point(vertex);
+        Kernel::Vector_3 vector = point - CGAL::ORIGIN;
+
+        double scale = radius / std::sqrt(vector.squared_length());
+        point = CGAL::ORIGIN + (vector * scale);
+    }
+}
+
+unsigned char random_value() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::uniform_int_distribution<> dist(0, 255);
+    return static_cast<unsigned char>(dist(gen));
+}
+
+CGAL::Color random_color() {
+    return {random_value(), random_value(), random_value()};
+}
+
+void SphereGenerator::calculate_colors() {
+    VertexColorMap color_map = mesh.add_property_map<SurfaceMesh::Vertex_index, CGAL::Color>("v:color").first;
+
+    for (auto vertex : mesh.vertices()) {
+        color_map[vertex] = random_color();
+    }
 }
