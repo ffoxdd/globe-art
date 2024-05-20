@@ -37,4 +37,5 @@ add_executable(test_ply src/test_ply.cpp)
 target_link_libraries(test_ply PRIVATE tinyply)
 
 add_executable(test_cgal_sphere src/test_cgal_sphere.cpp)
-target_link_libraries(test_cgal_sphere PRIVATE CGAL::CGAL)
+target_include_directories(test_cgal_sphere PRIVATE ${NOISE_INCLUDE_DIR})
+target_link_libraries(test_cgal_sphere PRIVATE CGAL::CGAL ${NOISE_LIBRARY})

@@ -4,8 +4,7 @@
 #include <CGAL/make_mesh_3.h>
 #include <fstream>
 #include <iostream>
-#include <algorithm>
-#include <random>
+#include <noise/noise.h>
 
 typedef CGAL::Simple_cartesian<double> Kernel;
 typedef Kernel::Point_3 Point3;
@@ -33,11 +32,15 @@ class SphereGenerator {
     void subdivide();
     void project_to_sphere();
     void calculate_colors();
+
+    CGAL::Color noise_color(const Point3 &point);
+    [[nodiscard]] double noise_value(const Point3 &point) const;
+    static double linear_map_value(double value, double low1, double high1, double low2, double high2);
 };
 
 int main() {
     const double radius = 1.0;
-    const int iterations = 3;
+    const int iterations = 4;
     const char *filename = "cgal_sphere.ply";
 
     SphereGenerator generator = SphereGenerator(radius, iterations);
@@ -97,22 +100,34 @@ void SphereGenerator::project_to_sphere() {
     }
 }
 
-unsigned char random_value() {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-
-    std::uniform_int_distribution<> dist(0, 255);
-    return static_cast<unsigned char>(dist(gen));
-}
-
-CGAL::Color random_color() {
-    return {random_value(), random_value(), random_value()};
-}
-
 void SphereGenerator::calculate_colors() {
     VertexColorMap color_map = mesh.add_property_map<SurfaceMesh::Vertex_index, CGAL::Color>("v:color").first;
 
     for (auto vertex : mesh.vertices()) {
-        color_map[vertex] = random_color();
+        Point3 &point = mesh.point(vertex);
+        color_map[vertex] = noise_color(point);
     }
 }
+
+CGAL::Color SphereGenerator::noise_color(const Point3 &point) {
+    double value = noise_value(point);
+    unsigned char color_value = static_cast<int>(linear_map_value(value, -1, 1, 0, 255));
+    return {color_value, color_value, color_value};
+}
+
+double SphereGenerator::noise_value(const Point3 &point) const {
+    noise::module::Perlin perlin_noise;
+
+    perlin_noise.SetSeed(1278269);
+    perlin_noise.SetFrequency((1 / (radius * 2)) * 1.95);
+    perlin_noise.SetLacunarity(1.5);
+    perlin_noise.SetOctaveCount(2);
+    perlin_noise.SetNoiseQuality(noise::QUALITY_STD);
+
+    return perlin_noise.GetValue(point.x(), point.y(), point.z());
+}
+
+double SphereGenerator::linear_map_value(double value, double low1, double high1, double low2, double high2) {
+    return low2 + (high2 - low2) * ((value - low1) / (high1 - low1));
+}
+
