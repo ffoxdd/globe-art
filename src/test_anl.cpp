@@ -9,44 +9,76 @@
 
 #include <iostream>
 #include <vector>
+#include <stdexcept>
+#include <algorithm>
+
+void saveImageToPNG(anl::CArray2Dd &image, const std::string &filename);
 
 int main() {
     const int width = 512;
     const int height = 512;
-    const int seed = 1546;
+    const double persistence = 0.5;
+    const double lacunarity = 2.0;
+    const double octaves = 2;
+    const double frequency = 1.0;
+    const std::string filename = "fractal_noise.png";
 
     anl::CKernel kernel;
-    anl::CNoiseExecutor vm(kernel);
+    auto seed = kernel.constant(1546);
 
-    auto simplexNoise = kernel.simplexBasis(kernel.seed(seed));
+    auto fractal_noise = kernel.fractal(
+        seed,
+        kernel.simplexBasis(seed),
+        kernel.constant(persistence),
+        kernel.constant(lacunarity),
+        kernel.constant(octaves),
+        kernel.constant(frequency)
+    );
 
     anl::CArray2Dd image(width, height);
 
-    anl::SMappingRanges ranges;
-    ranges.mapx0 = 0.0;
-    ranges.mapy0 = 0.0;
-    ranges.mapx1 = 1.0;
-    ranges.mapy1 = 1.0;
+    anl::map2DNoZ(
+        anl::SEAMLESS_NONE,
+        image,
+        kernel,
+        anl::SMappingRanges(),
+        fractal_noise
+    );
 
-    anl::map2DNoZ(anl::SEAMLESS_NONE, image, kernel, ranges, simplexNoise);
     image.scaleToRange(0, 127);
 
-    std::vector<unsigned char> imgData(width * height);
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            double value = image.get(x, y);
-            auto pixelValue = static_cast<unsigned char>(value);
-            imgData[y * width + x] = pixelValue;
-        }
-    }
-
-    // Save the image as a PNG file
-    if (stbi_write_png("simplex_noise.png", width, height, 1, imgData.data(), width) == 0) {
-        std::cerr << "Failed to save the image" << std::endl;
+    try {
+        saveImageToPNG(image, "fractal_noise.png");
+        std::cout << "Image saved as " << filename << std::endl;
+    } catch (const std::exception &e) {
+        std::cerr << e.what() << std::endl;
         return 1;
     }
 
-    std::cout << "Image saved as simplex_noise.png" << std::endl;
-
     return 0;
+}
+
+void saveImageToPNG(anl::CArray2Dd &image, const std::string &filename) {
+    int width = image.width();
+    int height = image.height();
+    double *data = image.getData();
+    std::vector<unsigned char> pixels(width * height);
+
+    std::transform(
+        data, data + (width * height), pixels.begin(),
+        [](double value) { return static_cast<unsigned char>(value); }
+    );
+
+    int success = stbi_write_png(
+        filename.c_str(),
+        width,
+        height,
+        1,
+        pixels.data(),
+        width
+    );
+
+    if (success == 0) {
+        throw std::runtime_error("Failed to save the image");
+    }
 }
