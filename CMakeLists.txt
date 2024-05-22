@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.1...3.23)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(GlobeArt)
+
+# Libraries
 
 find_package(PkgConfig REQUIRED)
 
@@ -21,7 +23,10 @@ find_path(NOISE_INCLUDE_DIR NAMES noise/noise.h)
 find_package(tinyply REQUIRED)
 find_package(anl REQUIRED)
 
+# Experiments
+
 add_executable(surprise src/experiments/surprise.cpp)
+
 target_include_directories(surprise PRIVATE ${QT5_INCLUDE_DIRS})
 target_link_libraries(surprise PRIVATE CGAL::CGAL_Qt5)
 target_compile_definitions(surprise PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
@@ -42,3 +47,12 @@ target_link_libraries(test_cgal_sphere PRIVATE CGAL::CGAL ${NOISE_LIBRARY})
 
 add_executable(test_anl src/experiments/test_anl.cpp)
 target_link_libraries(test_anl PRIVATE anl)
+
+# Generate Globe
+
+file(GLOB GLOBE_HEADERS src/globe/*.h)
+file(GLOB GLOBE_SOURCES src/globe/*.cpp)
+
+add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
+target_include_directories(generate_globe PRIVATE ${NOISE_INCLUDE_DIR})
+target_link_libraries(generate_globe PRIVATE CGAL::CGAL ${NOISE_LIBRARY})

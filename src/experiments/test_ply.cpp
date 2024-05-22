@@ -28,15 +28,15 @@ struct Mesh {
 
 class SphereGenerator {
  public:
-    SphereGenerator(int stacks, int slices, double radius) : stacks(stacks), slices(slices), radius(radius) {}
+    SphereGenerator(int stacks, int slices, double radius) : stacks(stacks), slices(slices), _radius(radius) {}
     void generate();
     void save_ply(const std::string &filename) const;
 
  private:
     int stacks;
     int slices;
-    double radius;
-    Mesh mesh;
+    double _radius;
+    Mesh _mesh;
     static std::vector<uint32_t> flatten(const std::vector<std::array<uint32_t, 3>> &indices) ;
 };
 
@@ -60,11 +60,11 @@ void SphereGenerator::generate() {
         for (int slice = 0; slice <= slices; ++slice) {
             double theta = static_cast<double>(slice) * 2.0 * M_PI / static_cast<double>(slices);
 
-            Vec3 vertex = Vec3::from_spherical(radius, theta, phi);
-            Vec3 normal = {vertex.x / radius, vertex.y / radius, vertex.z / radius};
+            Vec3 vertex = Vec3::from_spherical(_radius, theta, phi);
+            Vec3 normal = {vertex.x / _radius, vertex.y / _radius, vertex.z / _radius};
 
-            mesh.vertices.push_back(vertex);
-            mesh.normals.push_back(normal);
+            _mesh.vertices.push_back(vertex);
+            _mesh.normals.push_back(normal);
         }
     }
 
@@ -73,8 +73,8 @@ void SphereGenerator::generate() {
             uint32_t first = (stack * (slices + 1)) + slice;
             uint32_t second = first + slices + 1;
 
-            mesh.indices.push_back({first, second, first + 1});
-            mesh.indices.push_back({second, second + 1, first + 1});
+            _mesh.indices.push_back({first, second, first + 1});
+            _mesh.indices.push_back({second, second + 1, first + 1});
         }
     }
 }
@@ -83,19 +83,19 @@ void SphereGenerator::save_ply(const std::string &filename) const {
     tinyply::PlyFile sphere_file;
 
     sphere_file.add_properties_to_element("vertex", {"x", "y", "z"},
-        tinyply::Type::FLOAT64, mesh.vertices.size(),
-        reinterpret_cast<const uint8_t *>(mesh.vertices.data()), tinyply::Type::INVALID, 0
+        tinyply::Type::FLOAT64, _mesh.vertices.size(),
+        reinterpret_cast<const uint8_t *>(_mesh.vertices.data()), tinyply::Type::INVALID, 0
     );
 
     sphere_file.add_properties_to_element("vertex", {"nx", "ny", "nz"},
-        tinyply::Type::FLOAT64, mesh.normals.size(),
-        reinterpret_cast<const uint8_t *>(mesh.normals.data()), tinyply::Type::INVALID, 0
+        tinyply::Type::FLOAT64, _mesh.normals.size(),
+        reinterpret_cast<const uint8_t *>(_mesh.normals.data()), tinyply::Type::INVALID, 0
     );
 
-    std::vector<uint32_t> flattened_indices = flatten(mesh.indices);
+    std::vector<uint32_t> flattened_indices = flatten(_mesh.indices);
 
     sphere_file.add_properties_to_element("face", {"vertex_indices"},
-        tinyply::Type::UINT32, mesh.indices.size(),
+        tinyply::Type::UINT32, _mesh.indices.size(),
         reinterpret_cast<const uint8_t *>(flattened_indices.data()), tinyply::Type::UINT8, 3
     );
 

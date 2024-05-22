@@ -17,13 +17,13 @@ int main(int, char **) {
     points.emplace_back(1, 0, 1);
     points.emplace_back(1, 1, 2);
 
-    Traits traits(Point3(1, 1, 1), 1); // sphere center on (1,1,1), with radius 1
+    Traits traits(Point3(1, 1, 1), 1); // sphere _center on (1,1,1), with _radius 1
     DToS2 dtos(traits);
 
     for (const Point3 &pt : points) {
         std::cout << "Inserting (" << pt
-            << ") at squared distance " << CGAL::squared_distance(pt, traits.center())
-            << " from the center of the sphere; is it on there sphere? "
+            << ") at squared distance " << CGAL::squared_distance(pt, traits._center())
+            << " from the _center of the sphere; is it on there sphere? "
             << (traits.is_on_sphere(pt) ? "yes" : "no") << std::endl;
         dtos.insert(pt);
 

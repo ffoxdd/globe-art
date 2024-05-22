@@ -26,16 +26,16 @@ class SphereGenerator {
         double radius = 1.0,
         int iterations = 3,
         Point3 center = Point3(0, 0, 0)
-    ) : center(center), radius(radius), iterations(iterations) { }
+    ) : _center(center), _radius(radius), _iterations(iterations) { }
 
     void generate();
     [[nodiscard]] bool save_ply(const std::string &filename) const;
 
  private:
-    Point3 center;
-    double radius;
-    int iterations;
-    SurfaceMesh mesh;
+    Point3 _center;
+    double _radius;
+    int _iterations;
+    SurfaceMesh _mesh;
 
     void create_icosahedron();
     void subdivide();
@@ -78,7 +78,7 @@ bool SphereGenerator::save_ply(const std::string &filename) const {
         return false;
     }
 
-    bool success = CGAL::IO::write_PLY(os, mesh);
+    bool success = CGAL::IO::write_PLY(os, _mesh);
 
     if (!success) {
         std::cerr << "Error: cannot write to " << filename << "." << std::endl;
@@ -88,43 +88,43 @@ bool SphereGenerator::save_ply(const std::string &filename) const {
 }
 
 void SphereGenerator::create_icosahedron() {
-    CGAL::make_icosahedron(mesh, center, radius);
+    CGAL::make_icosahedron(_mesh, _center, _radius);
 }
 
 void SphereGenerator::subdivide() {
     CGAL::Subdivision_method_3::CatmullClark_subdivision(
-        mesh,
-        CGAL::parameters::number_of_iterations(iterations)
+        _mesh,
+        CGAL::parameters::number_of_iterations(_iterations)
     );
 }
 
 void SphereGenerator::project_to_sphere() {
-    for (auto vertex : mesh.vertices()) {
-        Point3 &point = mesh.point(vertex);
+    for (auto vertex : _mesh.vertices()) {
+        Point3 &point = _mesh.point(vertex);
         Kernel::Vector_3 vector = point - CGAL::ORIGIN;
 
-        double scale = radius / std::sqrt(vector.squared_length());
+        double scale = _radius / std::sqrt(vector.squared_length());
         point = CGAL::ORIGIN + (vector * scale);
     }
 }
 
 void SphereGenerator::calculate_colors() {
-    VertexColorMap color_map = mesh.add_property_map<SurfaceMesh::Vertex_index, CGAL::Color>("v:color").first;
+    VertexColorMap color_map = _mesh.add_property_map<SurfaceMesh::Vertex_index, CGAL::Color>("v:color").first;
 
-    std::vector<double> noise_values(mesh.num_vertices());
+    std::vector<double> noise_values(_mesh.num_vertices());
     std::unordered_map<SurfaceMesh::Vertex_index, double> noise_map;
 
     double min_value = std::numeric_limits<double>::max();
     double max_value = std::numeric_limits<double>::lowest();
 
-    for (auto vertex : mesh.vertices()) {
-        double value = noise_value(mesh.point(vertex));
+    for (auto vertex : _mesh.vertices()) {
+        double value = noise_value(_mesh.point(vertex));
         noise_map[vertex] = value;
         if (value < min_value) min_value = value;
         if (value > max_value) max_value = value;
     }
 
-    for (auto vertex : mesh.vertices()) {
+    for (auto vertex : _mesh.vertices()) {
         double value = noise_map[vertex];
         double mapped_value = linear_map_value(value, min_value, max_value, 0, 255);
         unsigned char color_value = static_cast<int>(mapped_value);
@@ -138,7 +138,7 @@ double SphereGenerator::noise_value(const Point3 &point) const {
     const double persistence = 1.0;
     const double lacunarity = 2.0;
     const double octaves = 2;
-    double frequency = (1 / (2 * radius));
+    double frequency = (1 / (2 * _radius));
 
     anl::CKernel kernel;
     auto seed = kernel.constant(1546);
