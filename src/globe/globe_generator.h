@@ -2,6 +2,7 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 
 #include "types.h"
+#include <memory>
 
 namespace globe {
 
@@ -11,8 +12,8 @@ class GlobeGenerator {
     void save_ply(const std::string &filename) const;
 
  private:
-    SurfaceMesh _mesh;
-    static const SurfaceMesh &generate_globe_sphere();
+    std::unique_ptr<SurfaceMesh> _mesh;
+    static std::unique_ptr<SurfaceMesh> generate_globe_sphere();
 };
 
 } // namespace globe

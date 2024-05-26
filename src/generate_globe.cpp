@@ -6,6 +6,7 @@ int main() {
     const char *filename = "cgal_sphere.ply";
 
     GlobeGenerator globe_generator;
+
     globe_generator.generate();
     globe_generator.save_ply(filename);
 
