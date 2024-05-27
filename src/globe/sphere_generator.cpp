@@ -4,10 +4,12 @@
 
 namespace globe {
 
-void SphereGenerator::generate() {
+SphereGenerator &SphereGenerator::generate() {
     create_icosahedron();
     subdivide();
     project_to_sphere();
+
+    return *this;
 }
 
 std::unique_ptr<SurfaceMesh> SphereGenerator::mesh() {

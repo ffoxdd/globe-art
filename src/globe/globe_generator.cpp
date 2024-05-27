@@ -4,8 +4,9 @@
 
 namespace globe {
 
-void GlobeGenerator::generate() {
+GlobeGenerator &GlobeGenerator::generate() {
     _mesh = generate_globe_sphere();
+    return *this;
 }
 
 void GlobeGenerator::save_ply(const std::string &filename) const {
@@ -23,9 +24,7 @@ void GlobeGenerator::save_ply(const std::string &filename) const {
 }
 
 std::unique_ptr<SurfaceMesh> GlobeGenerator::generate_globe_sphere() {
-    SphereGenerator sphere_generator(1.0, 7, Point3(0, 0, 0));
-    sphere_generator.generate();
-    return sphere_generator.mesh();
+    return SphereGenerator(1.0, 7, Point3(0, 0, 0)).generate().mesh();
 }
 
 } // namespace globe

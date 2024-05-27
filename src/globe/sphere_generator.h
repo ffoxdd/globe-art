@@ -16,10 +16,9 @@ class SphereGenerator {
         _center(center),
         _radius(radius),
         _iterations(iterations),
-        _mesh(std::make_unique<SurfaceMesh>())
-        { }
+        _mesh(std::make_unique<SurfaceMesh>()) { }
 
-    void generate();
+    SphereGenerator &generate();
     std::unique_ptr<SurfaceMesh> mesh();
 
  private:

@@ -8,7 +8,7 @@ namespace globe {
 
 class GlobeGenerator {
  public:
-    void generate();
+    GlobeGenerator &generate();
     void save_ply(const std::string &filename) const;
 
  private:
