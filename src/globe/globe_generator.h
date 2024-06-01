@@ -8,12 +8,17 @@ namespace globe {
 
 class GlobeGenerator {
  public:
+    explicit GlobeGenerator(double radius = 1.0) : _radius(radius) { };
     GlobeGenerator &generate();
     void save_ply(const std::string &filename) const;
 
  private:
-    std::unique_ptr<SurfaceMesh> _mesh;
-    static std::unique_ptr<SurfaceMesh> generate_globe_sphere();
+    double _radius;
+    SurfaceMesh _mesh;
+    [[nodiscard]] SurfaceMesh generate_globe_sphere() const;
+    static SurfaceMesh generate_sphere(double radius, int iterations, Point3 center);
+    void add_point(Point3 location);
+    void add_mesh(SurfaceMesh &mesh);
 };
 
 } // namespace globe

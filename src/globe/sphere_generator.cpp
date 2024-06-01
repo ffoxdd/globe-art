@@ -12,32 +12,28 @@ SphereGenerator &SphereGenerator::generate() {
     return *this;
 }
 
-std::unique_ptr<SurfaceMesh> SphereGenerator::mesh() {
-    if (!_mesh) {
-        throw std::runtime_error("Mesh has already been moved");
-    }
-
+SurfaceMesh SphereGenerator::mesh() {
     return std::move(_mesh);
 }
 
 void SphereGenerator::create_icosahedron() {
-    CGAL::make_icosahedron(*_mesh, _center, _radius);
+    CGAL::make_icosahedron(_mesh, _center, _radius);
 }
 
 void SphereGenerator::subdivide() {
-    CGAL::Subdivision_method_3::CatmullClark_subdivision(
-        *_mesh,
+    CGAL::Subdivision_method_3::Loop_subdivision(
+        _mesh,
         CGAL::parameters::number_of_iterations(_iterations)
     );
 }
 
 void SphereGenerator::project_to_sphere() {
-    for (auto vertex : _mesh->vertices()) {
-        Point3 &point = _mesh->point(vertex);
-        Kernel::Vector_3 vector = point - CGAL::ORIGIN;
+    for (auto vertex : _mesh.vertices()) {
+        Point3 &point = _mesh.point(vertex);
+        Kernel::Vector_3 vector = point - _center;
 
         double scale = _radius / std::sqrt(vector.squared_length());
-        point = CGAL::ORIGIN + (vector * scale);
+        point = _center + (vector * scale);
     }
 }
 

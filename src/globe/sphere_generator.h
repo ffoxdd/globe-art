@@ -2,7 +2,6 @@
 #define GLOBEART_SRC_GLOBE_SPHERE_GENERATOR_H_
 
 #include "types.h"
-#include <memory>
 
 namespace globe {
 
@@ -15,17 +14,16 @@ class SphereGenerator {
     ) :
         _center(center),
         _radius(radius),
-        _iterations(iterations),
-        _mesh(std::make_unique<SurfaceMesh>()) { }
+        _iterations(iterations) { }
 
     SphereGenerator &generate();
-    std::unique_ptr<SurfaceMesh> mesh();
+    SurfaceMesh mesh();
 
  private:
     Point3 _center;
     double _radius;
     int _iterations;
-    std::unique_ptr<SurfaceMesh> _mesh;
+    SurfaceMesh _mesh;
 
     void create_icosahedron();
     void subdivide();

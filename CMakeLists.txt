@@ -25,7 +25,8 @@ find_package(anl REQUIRED)
 
 # Experiments
 
-add_executable(surprise src/experiments/surprise.cpp)
+add_executable(surprise src/experiments/surprise.cpp src/experiments/test_mesh_capabilities.cpp
+        src/experiments/test_union.cpp)
 
 target_include_directories(surprise PRIVATE ${QT5_INCLUDE_DIRS})
 target_link_libraries(surprise PRIVATE CGAL::CGAL_Qt5)
@@ -47,6 +48,12 @@ target_link_libraries(test_cgal_sphere PRIVATE CGAL::CGAL ${NOISE_LIBRARY})
 
 add_executable(test_anl src/experiments/test_anl.cpp)
 target_link_libraries(test_anl PRIVATE anl)
+
+add_executable(test_mesh_capabilities src/experiments/test_mesh_capabilities.cpp)
+target_link_libraries(test_mesh_capabilities PRIVATE CGAL::CGAL)
+
+add_executable(test_union src/experiments/test_union.cpp)
+target_link_libraries(test_union PRIVATE CGAL::CGAL)
 
 # Generate Globe
 
