@@ -60,6 +60,20 @@ target_link_libraries(test_union PRIVATE CGAL::CGAL)
 file(GLOB GLOBE_HEADERS src/globe/*.h)
 file(GLOB GLOBE_SOURCES src/globe/*.cpp)
 
-add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
+add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES}
+        src/globe/sphere_generator_test.cpp)
+
 target_include_directories(generate_globe PRIVATE ${NOISE_INCLUDE_DIR})
 target_link_libraries(generate_globe PRIVATE CGAL::CGAL ${NOISE_LIBRARY})
+
+# Tests
+
+pkg_search_module(GTEST REQUIRED gtest_main)
+
+add_executable(test_project)
+target_sources(test_project PRIVATE src/globe/sphere_generator_test.cpp)
+target_link_libraries(test_project PRIVATE ${GTEST_LDFLAGS})
+target_compile_options(test_project PRIVATE ${GTEST_CFLAGS})
+
+enable_testing()
+add_test(first_and_only_test testapp)
