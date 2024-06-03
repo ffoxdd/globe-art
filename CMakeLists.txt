@@ -71,7 +71,9 @@ file(GLOB_RECURSE GLOBE_HEADERS src/globe/*.h)
 file(GLOB_RECURSE GLOBE_SOURCES src/globe/*.cpp)
 filter_files(GLOBE_SOURCES "_test.cpp$" GLOBE_SOURCES)
 
-add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
+add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES}
+        src/globe/sphere_generator/sphere_generator.cpp
+        src/globe/sphere_generator/sphere_generator.h)
 
 target_include_directories(generate_globe PRIVATE ${NOISE_INCLUDE_DIR})
 target_link_libraries(generate_globe PRIVATE CGAL::CGAL ${NOISE_LIBRARY})

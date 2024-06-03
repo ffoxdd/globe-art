@@ -1,5 +1,4 @@
 #include "globe_generator.h"
-#include "sphere_generator/sphere_mesh.h"
 #include <iostream>
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
 
@@ -33,15 +32,11 @@ void GlobeGenerator::save_ply(const std::string &filename) const {
 }
 
 SurfaceMesh GlobeGenerator::generate_globe_sphere() const {
-    return generate_sphere(_radius, 5, Point3(0, 0, 0));
-}
-
-SurfaceMesh GlobeGenerator::generate_sphere(double radius, int iterations, Point3 center) {
-    return SphereMesh(radius, iterations, center).generate().mesh();
+    return _sphere_generator->generate(_radius, 5, Point3(0, 0, 0));
 }
 
 void GlobeGenerator::add_point(Point3 location) {
-    SurfaceMesh point_mesh = generate_sphere(0.025, 1, location);
+    SurfaceMesh point_mesh = _sphere_generator->generate(0.025, 1, location);
     add_mesh(point_mesh);
 }
 
