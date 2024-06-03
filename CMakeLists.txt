@@ -57,11 +57,21 @@ target_link_libraries(test_union PRIVATE CGAL::CGAL)
 
 # Generate Globe
 
-file(GLOB GLOBE_HEADERS src/globe/*.h)
-file(GLOB GLOBE_SOURCES src/globe/*.cpp)
+function(filter_files source_list pattern dest_list) # custom function to filter out files based on a pattern
+    set(filtered_list "")
+    foreach(file ${${source_list}})
+        if(NOT file MATCHES ${pattern})
+            list(APPEND filtered_list ${file})
+        endif()
+    endforeach()
+    set(${dest_list} ${filtered_list} PARENT_SCOPE)
+endfunction()
 
-add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES}
-        src/globe/sphere_generator_test.cpp)
+file(GLOB_RECURSE GLOBE_HEADERS src/globe/*.h)
+file(GLOB_RECURSE GLOBE_SOURCES src/globe/*.cpp)
+filter_files(GLOBE_SOURCES "_test.cpp$" GLOBE_SOURCES)
+
+add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
 
 target_include_directories(generate_globe PRIVATE ${NOISE_INCLUDE_DIR})
 target_link_libraries(generate_globe PRIVATE CGAL::CGAL ${NOISE_LIBRARY})
@@ -69,9 +79,10 @@ target_link_libraries(generate_globe PRIVATE CGAL::CGAL ${NOISE_LIBRARY})
 # Tests
 
 pkg_search_module(GTEST REQUIRED gtest_main)
+file(GLOB_RECURSE TEST_SOURCES src/globe/*_test.cpp)
 
 add_executable(test_project)
-target_sources(test_project PRIVATE src/globe/sphere_generator_test.cpp)
+target_sources(test_project PRIVATE ${TEST_SOURCES})
 target_link_libraries(test_project PRIVATE ${GTEST_LDFLAGS})
 target_compile_options(test_project PRIVATE ${GTEST_CFLAGS})
 

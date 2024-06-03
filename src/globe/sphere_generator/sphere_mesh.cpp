@@ -1,10 +1,9 @@
-#include "sphere_generator.h"
-#include "types.h"
+#include "sphere_mesh.h"
 #include <CGAL/subdivision_method_3.h>
 
 namespace globe {
 
-SphereGenerator &SphereGenerator::generate() {
+SphereMesh &SphereMesh::generate() {
     create_icosahedron();
     subdivide();
     project_to_sphere();
@@ -12,22 +11,22 @@ SphereGenerator &SphereGenerator::generate() {
     return *this;
 }
 
-SurfaceMesh SphereGenerator::mesh() {
+SurfaceMesh SphereMesh::mesh() {
     return std::move(_mesh);
 }
 
-void SphereGenerator::create_icosahedron() {
+void SphereMesh::create_icosahedron() {
     CGAL::make_icosahedron(_mesh, _center, _radius);
 }
 
-void SphereGenerator::subdivide() {
+void SphereMesh::subdivide() {
     CGAL::Subdivision_method_3::Loop_subdivision(
         _mesh,
         CGAL::parameters::number_of_iterations(_iterations)
     );
 }
 
-void SphereGenerator::project_to_sphere() {
+void SphereMesh::project_to_sphere() {
     for (auto vertex : _mesh.vertices()) {
         Point3 &point = _mesh.point(vertex);
         Kernel::Vector_3 vector = point - _center;

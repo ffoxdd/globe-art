@@ -1,13 +1,13 @@
-#ifndef GLOBEART_SRC_GLOBE_SPHERE_GENERATOR_H_
-#define GLOBEART_SRC_GLOBE_SPHERE_GENERATOR_H_
+#ifndef GLOBEART_SRC_GLOBE_SPHERE_MESH_H_
+#define GLOBEART_SRC_GLOBE_SPHERE_MESH_H_
 
-#include "types.h"
+#include "../types.h"
 
 namespace globe {
 
-class SphereGenerator {
+class SphereMesh {
  public:
-    explicit SphereGenerator(
+    explicit SphereMesh(
         double radius = 1.0,
         int iterations = 3,
         Point3 center = Point3(0, 0, 0)
@@ -16,7 +16,7 @@ class SphereGenerator {
         _radius(radius),
         _iterations(iterations) { }
 
-    SphereGenerator &generate();
+    SphereMesh &generate();
     SurfaceMesh mesh();
 
  private:
@@ -32,4 +32,4 @@ class SphereGenerator {
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_SPHERE_GENERATOR_H_
+#endif //GLOBEART_SRC_GLOBE_SPHERE_MESH_H_
