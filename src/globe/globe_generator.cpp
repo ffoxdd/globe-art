@@ -34,11 +34,7 @@ SurfaceMesh GlobeGenerator::generate_globe_sphere() const {
 }
 
 void GlobeGenerator::add_random_point() {
-    add_point(random_point());
-}
-
-Point3 GlobeGenerator::random_point() {
-    return *_point_generator++;
+    add_point(_random_point_generator->generate());
 }
 
 void GlobeGenerator::add_point(Point3 location) {
