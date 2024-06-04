@@ -82,8 +82,8 @@ pkg_search_module(GTEST REQUIRED gtest_main)
 file(GLOB_RECURSE TEST_SOURCES src/globe/*_test.cpp)
 
 add_executable(test_project)
-target_sources(test_project PRIVATE ${TEST_SOURCES})
-target_link_libraries(test_project PRIVATE ${GTEST_LDFLAGS})
+target_sources(test_project PRIVATE ${GLOBE_HEADERS} ${GLOBE_SOURCES} ${TEST_SOURCES})
+target_link_libraries(test_project PRIVATE CGAL::CGAL ${GTEST_LDFLAGS})
 target_compile_options(test_project PRIVATE ${GTEST_CFLAGS})
 
 enable_testing()
