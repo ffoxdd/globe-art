@@ -1,35 +1,35 @@
-#include "sphere_generator.h"
+#include "sphere_mesh_generator.h"
 #include <CGAL/subdivision_method_3.h>
 
 namespace globe {
 
-SurfaceMesh SphereGenerator::generate(double radius, int iterations, Point3 center) {
+SurfaceMesh SphereMeshGenerator::generate(double radius, int iterations, Point3 center) {
     return SphereMesh(radius, iterations, center).generate().mesh();
 }
 
-SphereGenerator::SphereMesh &SphereGenerator::SphereMesh::generate() {
+SphereMeshGenerator::SphereMesh &SphereMeshGenerator::SphereMesh::generate() {
     create_icosahedron();
     subdivide();
     project_to_sphere();
     return *this;
 }
 
-SurfaceMesh SphereGenerator::SphereMesh::mesh() {
+SurfaceMesh SphereMeshGenerator::SphereMesh::mesh() {
     return std::move(_mesh);
 }
 
-void SphereGenerator::SphereMesh::create_icosahedron() {
+void SphereMeshGenerator::SphereMesh::create_icosahedron() {
     CGAL::make_icosahedron(_mesh, _center, _radius);
 }
 
-void SphereGenerator::SphereMesh::subdivide() {
+void SphereMeshGenerator::SphereMesh::subdivide() {
     CGAL::Subdivision_method_3::Loop_subdivision(
         _mesh,
         CGAL::parameters::number_of_iterations(_iterations)
     );
 }
 
-void SphereGenerator::SphereMesh::project_to_sphere() {
+void SphereMeshGenerator::SphereMesh::project_to_sphere() {
     for (auto vertex : _mesh.vertices()) {
         Point3 &point = _mesh.point(vertex);
         Kernel::Vector_3 vector = point - _center;

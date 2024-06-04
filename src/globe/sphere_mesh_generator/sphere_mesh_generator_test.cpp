@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "../types.h"
-#include "sphere_generator.h"
+#include "sphere_mesh_generator.h"
 #include <iostream>
 #include <cmath>
 
@@ -22,36 +22,36 @@ double compute_max_deviation(const SurfaceMesh &mesh, const Point3 &center, doub
     return std::sqrt(max_squared_deviation);
 }
 
-TEST(SphereGeneratorTest, GeneratesASphericalMesh) {
+TEST(SphereMeshGeneratorTest, GeneratesASphericalMesh) {
     double radius = 1.0;
     int iterations = 3;
     Point3 center(0, 0, 0);
 
-    SurfaceMesh mesh = globe::SphereGenerator::generate(radius, iterations, center);
+    SurfaceMesh mesh = globe::SphereMeshGenerator::generate(radius, iterations, center);
     double max_deviation = compute_max_deviation(mesh, center, radius);
 
     EXPECT_FALSE(mesh.is_empty());
     EXPECT_LT(max_deviation, MAX_ERROR_THRESHOLD) << "Maximum distance is above the threshold.";
 }
 
-TEST(SphereGeneratorTest, WorksWithAnArbitraryCenterPoint) {
+TEST(SphereMeshGeneratorTest, WorksWithAnArbitraryCenterPoint) {
     double radius = 1.0;
     int iterations = 3;
     Point3 center(1.5, 2.4, -4.7);
 
-    SurfaceMesh mesh = globe::SphereGenerator::generate(radius, iterations, center);
+    SurfaceMesh mesh = globe::SphereMeshGenerator::generate(radius, iterations, center);
     double max_deviation = compute_max_deviation(mesh, center, radius);
 
     EXPECT_FALSE(mesh.is_empty());
     EXPECT_LT(max_deviation, MAX_ERROR_THRESHOLD) << "Maximum distance is above the threshold.";
 }
 
-TEST(SphereGeneratorTest, WorksWithAnArbitraryRadius) {
+TEST(SphereMeshGeneratorTest, WorksWithAnArbitraryRadius) {
     double radius = 5.8;
     int iterations = 3;
     Point3 center(0, 0, 0);
 
-    SurfaceMesh mesh = globe::SphereGenerator::generate(radius, iterations, center);
+    SurfaceMesh mesh = globe::SphereMeshGenerator::generate(radius, iterations, center);
     double max_deviation = compute_max_deviation(mesh, center, radius);
 
     EXPECT_FALSE(mesh.is_empty());

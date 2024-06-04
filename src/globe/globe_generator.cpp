@@ -30,7 +30,7 @@ void GlobeGenerator::save_ply(const std::string &filename) const {
 }
 
 SurfaceMesh GlobeGenerator::generate_globe_sphere() const {
-    return _sphere_generator->generate(_radius, 5, Point3(0, 0, 0));
+    return _sphere_mesh_generator->generate(_radius, 5, Point3(0, 0, 0));
 }
 
 void GlobeGenerator::add_random_point() {
@@ -42,7 +42,7 @@ Point3 GlobeGenerator::random_point() {
 }
 
 void GlobeGenerator::add_point(Point3 location) {
-    SurfaceMesh point_mesh = _sphere_generator->generate(_radius / 50, 1, location);
+    SurfaceMesh point_mesh = _sphere_mesh_generator->generate(_radius / 50, 1, location);
     add_mesh(point_mesh);
 }
 
