@@ -1,14 +1,14 @@
 #include "globe_generator.h"
 #include <iostream>
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
-#include <CGAL/point_generators_3.h>
 
 namespace globe {
 
 GlobeGenerator &GlobeGenerator::generate() {
     _mesh = generate_globe_sphere();
+    const int iterations = 1000;
 
-    for(int i = 0; i < 100; i++) {
+    for (int i = 0; i < iterations; i++) {
         add_random_point();
     }
 
@@ -34,11 +34,24 @@ SurfaceMesh GlobeGenerator::generate_globe_sphere() const {
 }
 
 void GlobeGenerator::add_random_point() {
-    add_point(_random_point_generator->generate());
+    Point3 point = _random_point_generator->generate();
+
+    if (too_close(point)) {
+        return;
+    }
+
+    _points_collection->insert(point);
+    add_point_mesh(point);
 }
 
-void GlobeGenerator::add_point(Point3 location) {
-    SurfaceMesh point_mesh = _sphere_mesh_generator->generate(_radius / 50, 1, location);
+bool GlobeGenerator::too_close(const Point3 &point) const {
+    const double search_radius = _radius / 5;
+    return !_points_collection->nearby_points(point, search_radius).empty();
+}
+
+void GlobeGenerator::add_point_mesh(Point3 location) {
+    const double point_mesh_radius = _radius / 50;
+    SurfaceMesh point_mesh = _sphere_mesh_generator->generate(point_mesh_radius, 1, location);
     add_mesh(point_mesh);
 }
 
