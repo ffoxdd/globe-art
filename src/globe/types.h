@@ -9,6 +9,7 @@ namespace globe {
 using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Point3 = Kernel::Point_3;
 using SurfaceMesh = CGAL::Surface_mesh<Point3>;
+using VertexIterator = SurfaceMesh::Vertex_iterator;
 //using VertexColorMap = SurfaceMesh::Property_map<SurfaceMesh::Vertex_index, CGAL::Color>;
 
 } // namespace globe

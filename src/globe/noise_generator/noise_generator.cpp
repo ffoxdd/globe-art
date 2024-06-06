@@ -2,20 +2,14 @@
 
 namespace globe {
 
-NoiseGenerator::NoiseGenerator() {
-    _kernel = std::make_unique<anl::CKernel>();
-    _instruction_index = std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel));
+double NoiseGenerator::value(Point3 location) {
+    return Range::map(_noise_range, _output_range, noise_value(location));
 }
 
-double NoiseGenerator::value(Point3 location) {
+double NoiseGenerator::noise_value(Point3 location) {
     return anl::CNoiseExecutor(*_kernel).evaluateScalar(
         location.x(), location.y(), location.z(), *_instruction_index
     );
-}
-
-template<typename SamplePointsIterator>
-void NoiseGenerator::normalize(double min, double max, SamplePointsIterator begin, SamplePointsIterator end) {
-
 }
 
 anl::CInstructionIndex NoiseGenerator::initialize_kernel(anl::CKernel &kernel) {

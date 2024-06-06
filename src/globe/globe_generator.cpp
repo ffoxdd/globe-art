@@ -6,7 +6,7 @@ namespace globe {
 
 GlobeGenerator &GlobeGenerator::generate() {
     _mesh = generate_globe_sphere();
-    const int iterations = 1000;
+    const int iterations = 5000;
 
     for (int i = 0; i < iterations; i++) {
         add_random_point();
@@ -45,8 +45,8 @@ void GlobeGenerator::add_random_point() {
 }
 
 bool GlobeGenerator::too_close(const Point3 &point) const {
-    const double search_radius = _radius / 5;
-    return !_points_collection->nearby_points(point, search_radius).empty();
+    double separation_radius = _noise_generator->value(point);
+    return !_points_collection->nearby_points(point, separation_radius).empty();
 }
 
 void GlobeGenerator::add_point_mesh(Point3 location) {

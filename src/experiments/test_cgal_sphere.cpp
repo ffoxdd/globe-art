@@ -117,6 +117,8 @@ void SphereGenerator::calculate_colors() {
     double min_value = std::numeric_limits<double>::max();
     double max_value = std::numeric_limits<double>::lowest();
 
+    auto points = _mesh.points();
+
     for (auto vertex : _mesh.vertices()) {
         double value = noise_value(_mesh.point(vertex));
         noise_map[vertex] = value;

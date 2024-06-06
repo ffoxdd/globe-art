@@ -45,8 +45,8 @@ find_package(anl REQUIRED)
 #target_include_directories(test_cgal_sphere PRIVATE ${NOISE_INCLUDE_DIR})
 #target_link_libraries(test_cgal_sphere PRIVATE CGAL::CGAL ${NOISE_LIBRARY})
 
-add_executable(test_anl src/experiments/test_anl.cpp)
-target_link_libraries(test_anl PRIVATE anl)
+#add_executable(test_anl src/experiments/test_anl.cpp)
+#target_link_libraries(test_anl PRIVATE anl)
 
 #add_executable(test_mesh_capabilities src/experiments/test_mesh_capabilities.cpp)
 #target_link_libraries(test_mesh_capabilities PRIVATE CGAL::CGAL)
