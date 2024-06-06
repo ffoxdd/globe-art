@@ -46,6 +46,17 @@ class GlobeGenerator {
     std::unique_ptr<RandomSpherePointGenerator> _random_point_generator;
     std::unique_ptr<PointsCollection> _points_collection;
 
+    // we need a noise generator
+    // it needs to be normalized to a range
+    // the problem is that you don't know off the bad what the range is
+    // it needs to be determined over your domain
+    // you can do this by generating a lot of points and then finding the min and max
+    // then you can normalize the noise to that range
+    // using the globe sphere mesh is a good way to do it
+    // what should the noise generator interface be?
+    // how about normalize(double min, double max, std::vector<Point3> sample_points)
+
+
     double _radius;
     std::vector<Point3> _points;
     SurfaceMesh _mesh;

@@ -45,8 +45,8 @@ find_package(anl REQUIRED)
 #target_include_directories(test_cgal_sphere PRIVATE ${NOISE_INCLUDE_DIR})
 #target_link_libraries(test_cgal_sphere PRIVATE CGAL::CGAL ${NOISE_LIBRARY})
 
-#add_executable(test_anl src/experiments/test_anl.cpp)
-#target_link_libraries(test_anl PRIVATE anl)
+add_executable(test_anl src/experiments/test_anl.cpp)
+target_link_libraries(test_anl PRIVATE anl)
 
 #add_executable(test_mesh_capabilities src/experiments/test_mesh_capabilities.cpp)
 #target_link_libraries(test_mesh_capabilities PRIVATE CGAL::CGAL)
@@ -69,10 +69,10 @@ endfunction()
 file(GLOB_RECURSE GLOBE_HEADERS src/globe/*.h)
 file(GLOB_RECURSE GLOBE_SOURCES src/globe/*.cpp)
 filter_files(GLOBE_SOURCES "_test.cpp$" GLOBE_SOURCES)
+list(INSERT GLOBE_SOURCES 0 src/anl_implementation.cpp)
 
 add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
-target_include_directories(generate_globe PRIVATE ${NOISE_INCLUDE_DIR})
-target_link_libraries(generate_globe PRIVATE CGAL::CGAL ${NOISE_LIBRARY})
+target_link_libraries(generate_globe PRIVATE CGAL::CGAL anl)
 
 # Tests
 
@@ -81,7 +81,7 @@ file(GLOB_RECURSE TEST_SOURCES src/globe/*_test.cpp)
 
 add_executable(test_project)
 target_sources(test_project PRIVATE ${GLOBE_HEADERS} ${GLOBE_SOURCES} ${TEST_SOURCES})
-target_link_libraries(test_project PRIVATE CGAL::CGAL ${GTEST_LDFLAGS})
+target_link_libraries(test_project PRIVATE CGAL::CGAL anl ${GTEST_LDFLAGS})
 target_compile_options(test_project PRIVATE ${GTEST_CFLAGS})
 
 enable_testing()
