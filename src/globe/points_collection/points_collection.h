@@ -28,6 +28,10 @@ class PointsCollection {
         return std::ranges::subrange(_points.begin(), _points.end());
     };
 
+    auto faces() {
+        return std::ranges::subrange(_triangulation.finite_faces_begin(), _triangulation.finite_faces_end());
+    }
+
  private:
     std::vector<Point3> _points;
     KDTree _kd_tree;

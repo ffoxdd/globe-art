@@ -5,7 +5,7 @@
 namespace globe {
 
 GlobeGenerator &GlobeGenerator::generate() {
-    const int iterations = 5000;
+    const int iterations = 10000;
 
     for (int i = 0; i < iterations; i++) {
         add_random_point();
@@ -20,6 +20,31 @@ void GlobeGenerator::save_ply(const std::string &filename) const {
 }
 
 SurfaceMesh GlobeGenerator::render() const {
+//    return render_points();
+    return render_triangulation();
+}
+
+SurfaceMesh GlobeGenerator::render_triangulation() const {
+    SurfaceMesh mesh;
+    std::map<Point3, SurfaceMesh::Vertex_index> vertices_by_point;
+
+    for (auto const point : _points_collection->points()) {
+        SurfaceMesh::Vertex_index vertex = mesh.add_vertex(point);
+        vertices_by_point[point] = vertex;
+    }
+
+    for (auto const face : _points_collection->faces()) {
+        SurfaceMesh::Vertex_index vertex_0 = vertices_by_point[face.vertex(0)->point()];
+        SurfaceMesh::Vertex_index vertex_1 = vertices_by_point[face.vertex(1)->point()];
+        SurfaceMesh::Vertex_index vertex_2 = vertices_by_point[face.vertex(2)->point()];
+
+        mesh.add_face(vertex_0, vertex_1, vertex_2);
+    }
+
+    return std::move(mesh);
+}
+
+SurfaceMesh GlobeGenerator::render_points() const {
     SurfaceMesh mesh = generate_globe_sphere();
     return std::move(add_points_to_mesh(mesh));
 }

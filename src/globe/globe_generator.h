@@ -45,7 +45,7 @@ class GlobeGenerator {
         } else {
             SurfaceMesh mesh = generate_globe_sphere();
             SurfaceMeshPointRange points(mesh);
-            double low = radius / 10;
+            double low = radius / 20;
             double high = radius / 4;
 
             _noise_generator = std::make_unique<NoiseGenerator>(low, high, points);
@@ -63,15 +63,16 @@ class GlobeGenerator {
 
     double _radius;
     std::vector<Point3> _points;
-
-    [[nodiscard]] SurfaceMesh generate_globe_sphere() const;
     void add_random_point();
     [[nodiscard]] bool too_close(const Point3 &point) const;
-    SurfaceMesh render() const;
+    [[nodiscard]] SurfaceMesh render() const;
+    [[nodiscard]] SurfaceMesh render_points() const;
+    [[nodiscard]] SurfaceMesh render_triangulation() const;
+    [[nodiscard]] SurfaceMesh generate_globe_sphere() const;
+    SurfaceMesh add_points_to_mesh(SurfaceMesh &mesh) const;
     SurfaceMesh add_point_to_mesh(SurfaceMesh &mesh, const Point3 &point) const;
     static SurfaceMesh add_meshes(SurfaceMesh &mesh_1, SurfaceMesh &mesh_2);
     static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
-    SurfaceMesh add_points_to_mesh(SurfaceMesh &mesh) const;
 };
 
 } // namespace globe
