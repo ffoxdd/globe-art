@@ -30,17 +30,6 @@ class PointIterator {
     const SurfaceMesh &_mesh;
 };
 
-class SurfaceMeshPointRange {
- public:
-    explicit SurfaceMeshPointRange(const SurfaceMesh &mesh) : _mesh(mesh) { };
-
-    [[nodiscard]] PointIterator begin() const;
-    [[nodiscard]] PointIterator end() const;
-
- private:
-    const SurfaceMesh &_mesh;
-};
-
 } // namespace globe
 
 #endif //GLOBEART_SRC_GLOBE_NOISE_GENERATOR_POINT_ITERATOR_H_

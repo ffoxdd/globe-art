@@ -2,14 +2,6 @@
 
 namespace globe {
 
-PointIterator SurfaceMeshPointRange::begin() const {
-    return PointIterator::begin(_mesh);
-}
-
-PointIterator SurfaceMeshPointRange::end() const {
-    return PointIterator::end(_mesh);
-}
-
 PointIterator PointIterator::begin(const SurfaceMesh& mesh) {
     return {mesh.vertices_begin(), mesh};
 }

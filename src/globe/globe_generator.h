@@ -6,7 +6,7 @@
 #include "random_sphere_point_generator/random_sphere_point_generator.h"
 #include "points_collection/points_collection.h"
 #include "noise_generator/noise_generator.h"
-#include "noise_generator/point_iterator.h"
+#include "noise_generator/surface_mesh_point_range.h"
 #include <memory>
 
 namespace globe {
