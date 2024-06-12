@@ -60,7 +60,7 @@ bool GlobeGenerator::too_close(const Point3 &point) const {
 // TODO: Factor out a mesh builder class to facilitate incremental mesh building
 
 SurfaceMesh GlobeGenerator::add_points_to_mesh(SurfaceMesh &mesh) const {
-    for (const Point3 &point : *_points_collection) {
+    for (const Point3 &point : _points_collection->points()) {
         mesh = add_point_to_mesh(mesh, point);
     }
 
