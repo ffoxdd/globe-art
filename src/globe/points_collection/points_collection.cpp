@@ -22,4 +22,20 @@ std::vector<Point3> PointsCollection::nearby_points(Point3 point, double radius)
     return nearby_points;
 }
 
+PointsCollection::iterator PointsCollection::begin() {
+    return _points.begin();
+}
+
+PointsCollection::const_iterator PointsCollection::begin() const {
+    return _points.begin();
+}
+
+PointsCollection::iterator PointsCollection::end() {
+    return _points.end();
+}
+
+PointsCollection::const_iterator PointsCollection::end() const {
+    return _points.end();
+}
+
 } // namespace globe

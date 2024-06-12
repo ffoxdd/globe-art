@@ -63,13 +63,15 @@ class GlobeGenerator {
 
     double _radius;
     std::vector<Point3> _points;
-    SurfaceMesh _mesh;
 
     [[nodiscard]] SurfaceMesh generate_globe_sphere() const;
     void add_random_point();
-    void add_point_mesh(Point3 location);
-    void add_mesh(SurfaceMesh &mesh);
     [[nodiscard]] bool too_close(const Point3 &point) const;
+    SurfaceMesh render() const;
+    SurfaceMesh add_point_to_mesh(SurfaceMesh &mesh, const Point3 &point) const;
+    static SurfaceMesh add_meshes(SurfaceMesh &mesh_1, SurfaceMesh &mesh_2);
+    static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
+    SurfaceMesh add_points_to_mesh(SurfaceMesh &mesh) const;
 };
 
 } // namespace globe

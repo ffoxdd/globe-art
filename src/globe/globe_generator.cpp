@@ -5,7 +5,6 @@
 namespace globe {
 
 GlobeGenerator &GlobeGenerator::generate() {
-    _mesh = generate_globe_sphere();
     const int iterations = 5000;
 
     for (int i = 0; i < iterations; i++) {
@@ -16,13 +15,23 @@ GlobeGenerator &GlobeGenerator::generate() {
 }
 
 void GlobeGenerator::save_ply(const std::string &filename) const {
+    SurfaceMesh mesh = render();
+    save_mesh_ply(mesh, filename);
+}
+
+SurfaceMesh GlobeGenerator::render() const {
+    SurfaceMesh mesh = generate_globe_sphere();
+    return std::move(add_points_to_mesh(mesh));
+}
+
+void GlobeGenerator::save_mesh_ply(SurfaceMesh &mesh, const std::string &filename) {
     std::ofstream stream(filename);
 
     if (!stream) {
         throw std::runtime_error(std::format("Cannot open file for writing: {}", filename));
     }
 
-    bool success = CGAL::IO::write_PLY(stream, _mesh);
+    bool success = CGAL::IO::write_PLY(stream, mesh);
 
     if (!success) {
         throw std::runtime_error(std::format("Cannot write file: {}", filename));
@@ -41,7 +50,6 @@ void GlobeGenerator::add_random_point() {
     }
 
     _points_collection->insert(point);
-    add_point_mesh(point);
 }
 
 bool GlobeGenerator::too_close(const Point3 &point) const {
@@ -49,16 +57,26 @@ bool GlobeGenerator::too_close(const Point3 &point) const {
     return !_points_collection->nearby_points(point, separation_radius).empty();
 }
 
-void GlobeGenerator::add_point_mesh(Point3 location) {
-    const double point_mesh_radius = _radius / 50;
-    SurfaceMesh point_mesh = _sphere_mesh_generator->generate(point_mesh_radius, 1, location);
-    add_mesh(point_mesh);
+// TODO: Factor out a mesh builder class to facilitate incremental mesh building
+
+SurfaceMesh GlobeGenerator::add_points_to_mesh(SurfaceMesh &mesh) const {
+    for (const Point3 &point : *_points_collection) {
+        mesh = add_point_to_mesh(mesh, point);
+    }
+
+    return mesh;
 }
 
-void GlobeGenerator::add_mesh(SurfaceMesh &mesh) {
+SurfaceMesh GlobeGenerator::add_point_to_mesh(SurfaceMesh &mesh, const Point3 &point) const {
+    const double point_mesh_radius = _radius / 50;
+    SurfaceMesh point_mesh = _sphere_mesh_generator->generate(point_mesh_radius, 1, point);
+    return add_meshes(mesh, point_mesh);
+}
+
+SurfaceMesh GlobeGenerator::add_meshes(SurfaceMesh &mesh_1, SurfaceMesh &mesh_2) {
     SurfaceMesh result;
-    CGAL::Polygon_mesh_processing::corefine_and_compute_union(_mesh, mesh, result);
-    _mesh = std::move(result);
+    CGAL::Polygon_mesh_processing::corefine_and_compute_union(mesh_1, mesh_2, result);
+    return std::move(result);
 }
 
 } // namespace globe
