@@ -2,34 +2,63 @@
 #define GLOBEART_SRC_GLOBE_POINTS_COLLECTION_POINTS_COLLECTION_H_
 
 #include "../types.h"
-#include <CGAL/Search_traits_3.h>
-#include <CGAL/Kd_tree.h>
-#include <CGAL/Fuzzy_sphere.h>
-#include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>
-#include <CGAL/Delaunay_triangulation_on_sphere_2.h>
-#include <vector>
+#include "types.h"
+#include "handle_iterator.h"
 #include <ranges>
 
 namespace globe {
 
-typedef CGAL::Search_traits_3<Kernel> KDTreeTraits;
-typedef CGAL::Kd_tree<KDTreeTraits> KDTree;
+using VertexHandleValue = typename std::iterator_traits<FiniteVerticesIterator>::value_type::Vertex_handle;
+using FaceHandleValue = typename std::iterator_traits<FiniteFacesIterator>::value_type::Face_handle;
 
-typedef CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel> Traits;
-typedef CGAL::Delaunay_triangulation_on_sphere_2<Traits> Triangulation;
+using VertexHandleIterator = HandleIterator<FiniteVerticesIterator, VertexHandleValue>;
+using FaceHandleIterator = HandleIterator<FiniteFacesIterator, FaceHandleValue>;
 
 class PointsCollection {
  public:
     void insert(Point3 point);
-    bool empty();
-    std::vector<Point3> nearby_points(Point3 point, double radius);
+    bool empty() const;
+    std::vector<Point3> nearby_points(Point3 point, double radius) const;
 
     auto points() {
         return std::ranges::subrange(_points.begin(), _points.end());
     };
 
+    auto edges() {
+        return std::ranges::subrange(
+            _triangulation.finite_edges_begin(),
+            _triangulation.finite_edges_end()
+        );
+    }
+
+    auto all_edges() {
+        return std::ranges::subrange(
+            _triangulation.all_edges_begin(),
+            _triangulation.all_edges_end()
+        );
+    }
+
     auto faces() {
-        return std::ranges::subrange(_triangulation.finite_faces_begin(), _triangulation.finite_faces_end());
+        return std::ranges::subrange(
+            FaceHandleIterator(_triangulation.finite_faces_begin()),
+            FaceHandleIterator(_triangulation.finite_faces_end())
+        );
+    }
+
+    auto dual_arcs() {
+        return all_edges() | std::views::transform(
+            [this](Edge edge) {
+                return this->_triangulation.dual_on_sphere(edge);
+            }
+        );
+    }
+
+    auto segments() {
+        return edges() | std::views::transform(
+            [this](Edge edge) {
+                return this->_triangulation.segment(edge);
+            }
+        );
     }
 
  private:

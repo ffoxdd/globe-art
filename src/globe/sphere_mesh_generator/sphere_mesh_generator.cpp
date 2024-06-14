@@ -31,6 +31,7 @@ void SphereMeshGenerator::SphereMesh::subdivide() {
 
 void SphereMeshGenerator::SphereMesh::project_to_sphere() {
     for (auto vertex : _mesh.vertices()) {
+        // TODO: make a common utility function for this
         Point3 &point = _mesh.point(vertex);
         Kernel::Vector_3 vector = point - _center;
         double scale = _radius / std::sqrt(vector.squared_length());
