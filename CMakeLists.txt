@@ -4,18 +4,31 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(GlobeArt)
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE true) # remove for release
+
+
+#cmake_minimum_required(VERSION 3.1...3.15)
+#find_package(CGAL COMPONENTS Qt5)
+#add_definitions(-DCGAL_USE_BASIC_VIEWER -DQT_NO_KEYWORDS)
+
 # Libraries
+
+set(Qt5_DIR "/opt/homebrew/opt/qt@5/lib/cmake/Qt5")
+#set(ENV{PKG_CONFIG_PATH} "/opt/homebrew/opt/qt@5/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 
 find_package(PkgConfig REQUIRED)
 
-set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE true) # remove for release
-#find_package(CGAL QUIET COMPONENTS Qt5)
-find_package(CGAL QUIET)
-find_package(Boost REQUIRED)
-
-#set(ENV{PKG_CONFIG_PATH} "/opt/homebrew/opt/qt@5/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 #pkg_search_module(QT5 REQUIRED Qt5Widgets)
 
+find_package(CGAL QUIET COMPONENTS Qt5)
+add_definitions(-DCGAL_USE_BASIC_VIEWER -DQT_NO_KEYWORDS)
+include_directories(test_qt BEFORE SYSTEM /opt/homebrew/Cellar/qt@5/5.15.13_1/include)
+
+#find_package(CGAL QUIET)
+find_package(Boost REQUIRED)
+
+#pkg_search_module(QT5 REQUIRED Qt5Widgets)
 #pkg_search_module(PNG REQUIRED libpng)
 #find_library(PNG_LIBRARY_FULLPATH NAMES ${PNG_LIBRARIES} PATHS ${PNG_LIBRARY_DIRS} NO_DEFAULT_PATH)
 
@@ -26,10 +39,10 @@ find_package(anl REQUIRED)
 
 # Experiments
 
-#add_executable(surprise src/experiments/surprise.cpp)
-#target_include_directories(surprise PRIVATE ${QT5_INCLUDE_DIRS})
-#target_link_libraries(surprise PRIVATE CGAL::CGAL_Qt5)
-#target_compile_definitions(surprise PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
+#add_executable(test_qt src/experiments/test_qt.cpp)
+#include_directories(test_qt BEFORE SYSTEM /opt/homebrew/Cellar/qt@5/5.15.13_1/include)
+#target_include_directories(test_qt BEFORE PUBLIC /opt/homebrew/Cellar/qt@5/5.15.13_1/include)
+#target_link_libraries(test_qt PUBLIC CGAL::CGAL_Qt5)
 
 #add_executable(test_cgal src/experiments/test_cgal.cpp)
 #target_link_libraries(test_cgal PRIVATE CGAL::CGAL)
@@ -58,11 +71,11 @@ find_package(anl REQUIRED)
 
 function(filter_files source_list pattern dest_list) # custom function to filter out files based on a pattern
     set(filtered_list "")
-    foreach(file ${${source_list}})
-        if(NOT file MATCHES ${pattern})
+    foreach (file ${${source_list}})
+        if (NOT file MATCHES ${pattern})
             list(APPEND filtered_list ${file})
-        endif()
-    endforeach()
+        endif ()
+    endforeach ()
     set(${dest_list} ${filtered_list} PARENT_SCOPE)
 endfunction()
 
@@ -72,17 +85,20 @@ filter_files(GLOBE_SOURCES "_test.cpp$" GLOBE_SOURCES)
 list(INSERT GLOBE_SOURCES 0 src/anl_implementation.cpp)
 
 add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
-target_link_libraries(generate_globe PRIVATE CGAL::CGAL anl)
+target_include_directories(generate_globe PRIVATE ${QT5_INCLUDE_DIRS})
+target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl)
+target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
 
 # Tests
 
 pkg_search_module(GTEST REQUIRED gtest_main)
+pkg_search_module(GMOCK REQUIRED gmock)
 file(GLOB_RECURSE TEST_SOURCES src/globe/*_test.cpp)
 
 add_executable(test_project)
 target_sources(test_project PRIVATE ${GLOBE_HEADERS} ${GLOBE_SOURCES} ${TEST_SOURCES})
-target_link_libraries(test_project PRIVATE CGAL::CGAL anl ${GTEST_LDFLAGS})
-target_compile_options(test_project PRIVATE ${GTEST_CFLAGS})
+target_link_libraries(test_project PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl ${GTEST_LDFLAGS} ${GMOCK_LDFLAGS} )
+target_compile_options(test_project PRIVATE ${GTEST_CFLAGS} ${GMOCK_CFLAGS} )
 
 enable_testing()
 add_test(first_and_only_test testapp)

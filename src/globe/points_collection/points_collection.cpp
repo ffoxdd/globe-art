@@ -1,8 +1,7 @@
 #include "points_collection.h"
+#include <ranges>
 
 namespace globe {
-
-typedef CGAL::Fuzzy_sphere<KDTreeTraits> FuzzySphere;
 
 void PointsCollection::insert(Point3 point) {
     _points.push_back(point);
@@ -10,11 +9,11 @@ void PointsCollection::insert(Point3 point) {
     _triangulation.insert(point);
 }
 
-bool PointsCollection::empty() {
+bool PointsCollection::empty() const {
     return _points.empty();
 }
 
-std::vector<Point3> PointsCollection::nearby_points(Point3 point, double radius) {
+std::vector<Point3> PointsCollection::nearby_points(Point3 point, double radius) const {
     FuzzySphere search_sphere(point, radius);
 
     std::vector<Point3> nearby_points;

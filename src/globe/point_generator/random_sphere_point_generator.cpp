@@ -3,7 +3,7 @@
 namespace globe {
 
 Point3 RandomSpherePointGenerator::generate() {
-    return *_cgal_generator++;
+    return *(*_cgal_generator)++;
 }
 
 
