@@ -25,9 +25,6 @@ class GlobeGenerator {
     struct Config {
         double radius = 1.0;
 
-        std::unique_ptr<SphereMeshGenerator> sphere_mesh_generator =
-            std::make_unique<SphereMeshGenerator>(SphereMeshGenerator());
-
         std::unique_ptr<PG> point_generator =
             std::make_unique<PG>(RandomSpherePointGenerator(1.0));
 
@@ -50,8 +47,6 @@ class GlobeGenerator {
     GlobeGenerator() : GlobeGenerator(Config()) { };
 
     explicit GlobeGenerator(Config &&config) :
-        _radius(config.radius),
-        _sphere_mesh_generator(std::move(config.sphere_mesh_generator)),
         _point_generator(std::move(config.point_generator)),
         _points_collection(std::move(config.points_collection)),
         _noise_generator(std::move(config.noise_generator)) {
@@ -65,8 +60,6 @@ class GlobeGenerator {
     }
 
  private:
-    double _radius;
-    std::unique_ptr<SphereMeshGenerator> _sphere_mesh_generator;
     std::unique_ptr<PG> _point_generator;
     std::unique_ptr<PointsCollection> _points_collection;
     std::unique_ptr<NG> _noise_generator;
