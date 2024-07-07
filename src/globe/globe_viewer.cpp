@@ -1,5 +1,5 @@
-#include "globe_viewer.h"
-#include "geometry/helpers.h"
+#include "globe_viewer.hpp"
+#include "geometry/helpers.hpp"
 #include <CGAL/IO/Color.h>
 #include <CGAL/Kernel/global_functions_3.h>
 

@@ -1,4 +1,4 @@
-#include "points_collection.h"
+#include "points_collection.hpp"
 #include <ranges>
 
 namespace globe {

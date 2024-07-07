@@ -1,10 +1,10 @@
 #ifndef GLOBEART_SRC_GLOBE_NOISE_GENERATOR_ANL_NOISE_GENERATOR_H_
 #define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_ANL_NOISE_GENERATOR_H_
 
-#include "../types.h"
-#include "range.h"
-#include "../point_generator/point_generator.h"
-#include "../point_generator/random_sphere_point_generator.h"
+#include "../types.hpp"
+#include "range.hpp"
+#include "../point_generator/point_generator.hpp"
+#include "../point_generator/random_sphere_point_generator.hpp"
 #include <anl/anl.h>
 
 namespace globe {

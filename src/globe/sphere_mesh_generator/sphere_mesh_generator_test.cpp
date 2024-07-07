@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "sphere_mesh_generator.h"
+#include "sphere_mesh_generator.hpp"
 #include <cmath>
 
 using namespace globe;

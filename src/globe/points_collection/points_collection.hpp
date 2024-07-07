@@ -1,9 +1,9 @@
 #ifndef GLOBEART_SRC_GLOBE_POINTS_COLLECTION_POINTS_COLLECTION_H_
 #define GLOBEART_SRC_GLOBE_POINTS_COLLECTION_POINTS_COLLECTION_H_
 
-#include "../types.h"
-#include "types.h"
-#include "handle_iterator.h"
+#include "../types.hpp"
+#include "types.hpp"
+#include "handle_iterator.hpp"
 #include <ranges>
 
 namespace globe {

@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_GENERATOR_H_
 #define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_GENERATOR_H_
 
-#include "../types.h"
+#include "../types.hpp"
 
 namespace globe {
 

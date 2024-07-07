@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GLOBE_VIEWER_H_
 #define GLOBEART_SRC_GLOBE_GLOBE_VIEWER_H_
 
-#include "points_collection/points_collection.h"
+#include "points_collection/points_collection.hpp"
 #include <QtWidgets/QWidget>
 #include <CGAL/Qt/Basic_viewer_qt.h>
 
