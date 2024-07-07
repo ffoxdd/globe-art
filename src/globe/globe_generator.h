@@ -73,8 +73,7 @@ class GlobeGenerator {
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
-GlobeGenerator<PG, NG>
-&GlobeGenerator<PG, NG>::generate_points() {
+GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::generate_points() {
     const int iterations = RANDOM_POINT_ITERATIONS;
 
     for (int i = 0; i < iterations; i++) {

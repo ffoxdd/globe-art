@@ -25,7 +25,6 @@ class GlobeViewer : public CGAL::Basic_viewer_qt {
 
  protected:
     void add_elements();
-    void add_edges();
     void add_voronoi_edges();
 
     void add_circular_arc(
