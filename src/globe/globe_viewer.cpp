@@ -5,18 +5,12 @@
 
 namespace globe {
 
+const CGAL::IO::Color BLACK(0, 0, 0);
 const CGAL::IO::Color BLUE(0, 0, 255);
 const CGAL::IO::Color RED(255, 0, 0);
 
 void GlobeViewer::add_elements() {
-//    add_edges();
     add_voronoi_edges();
-}
-
-void GlobeViewer::add_edges() {
-    for (const auto &segment : _points_collection->segments()) {
-        add_circular_arc(segment.source(), segment.target(), BLUE);
-    }
 }
 
 void GlobeViewer::add_voronoi_edges() {
@@ -24,7 +18,7 @@ void GlobeViewer::add_voronoi_edges() {
         auto source = to_point(arc.source());
         auto target = to_point(arc.target());
 
-        add_circular_arc(source, target, RED);
+        add_circular_arc(source, target, BLACK);
     }
 }
 
