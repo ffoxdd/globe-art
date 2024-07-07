@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "noise_generator.h"
-#include "anl_noise_generator.h"
-#include "../point_generator/random_sphere_point_generator.h"
-#include "../point_generator/mock_point_generator.h"
+#include "noise_generator.hpp"
+#include "anl_noise_generator.hpp"
+#include "../point_generator/random_sphere_point_generator.hpp"
+#include "../point_generator/mock_point_generator.hpp"
 
 using namespace globe;
 

@@ -1,4 +1,4 @@
-#include "random_sphere_point_generator.h"
+#include "random_sphere_point_generator.hpp"
 
 namespace globe {
 

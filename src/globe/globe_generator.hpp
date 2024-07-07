@@ -1,13 +1,13 @@
 #ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 
-#include "types.h"
-#include "sphere_mesh_generator/sphere_mesh_generator.h"
-#include "point_generator/point_generator.h"
-#include "point_generator/random_sphere_point_generator.h"
-#include "points_collection/points_collection.h"
-#include "noise_generator/noise_generator.h"
-#include "noise_generator/anl_noise_generator.h"
+#include "types.hpp"
+#include "sphere_mesh_generator/sphere_mesh_generator.hpp"
+#include "point_generator/point_generator.hpp"
+#include "point_generator/random_sphere_point_generator.hpp"
+#include "points_collection/points_collection.hpp"
+#include "noise_generator/noise_generator.hpp"
+#include "noise_generator/anl_noise_generator.hpp"
 #include <memory>
 
 namespace globe {

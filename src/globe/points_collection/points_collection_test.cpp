@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "points_collection.h"
+#include "points_collection.hpp"
 
 using namespace globe;
 

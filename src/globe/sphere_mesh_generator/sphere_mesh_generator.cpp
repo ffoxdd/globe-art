@@ -1,4 +1,4 @@
-#include "sphere_mesh_generator.h"
+#include "sphere_mesh_generator.hpp"
 #include <CGAL/subdivision_method_3.h>
 
 namespace globe {

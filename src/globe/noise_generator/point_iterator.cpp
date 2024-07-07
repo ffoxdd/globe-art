@@ -1,4 +1,4 @@
-#include "point_iterator.h"
+#include "point_iterator.hpp"
 
 namespace globe {
 

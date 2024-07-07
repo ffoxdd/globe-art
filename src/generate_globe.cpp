@@ -2,8 +2,8 @@
 #include <QtWidgets/QOpenGLWidget>
 #include <QtGui/QOpenGLFunctions>
 #include <CGAL/Qt/init_ogl_context.h>
-#include "globe/globe_generator.h"
-#include "globe/globe_viewer.h"
+#include "globe/globe_generator.hpp"
+#include "globe/globe_viewer.hpp"
 
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QOpenGLWidget>

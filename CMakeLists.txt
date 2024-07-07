@@ -79,7 +79,7 @@ function(filter_files source_list pattern dest_list) # custom function to filter
     set(${dest_list} ${filtered_list} PARENT_SCOPE)
 endfunction()
 
-file(GLOB_RECURSE GLOBE_HEADERS src/globe/*.h)
+file(GLOB_RECURSE GLOBE_HEADERS src/globe/*.hpp)
 file(GLOB_RECURSE GLOBE_SOURCES src/globe/*.cpp)
 filter_files(GLOBE_SOURCES "_test.cpp$" GLOBE_SOURCES)
 list(INSERT GLOBE_SOURCES 0 src/anl_implementation.cpp)
