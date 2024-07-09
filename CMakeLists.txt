@@ -60,9 +60,12 @@ set(
         src/globe/noise_generator/point_iterator.cpp
 )
 
+add_library(math src/globe/math.cpp)
+target_sources(math PUBLIC FILE_SET CXX_MODULES FILES src/globe/math.ixx)
+
 # Main application
 add_executable(generate_globe ${GLOBE_HEADERS} ${GLOBE_SOURCES})
-target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl)
+target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl math)
 target_include_directories(generate_globe PRIVATE ${QT5_INCLUDE_DIRS} ${CGAL_INCLUDE_DIRS})
 target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
 
