@@ -1,7 +1,6 @@
 #ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 
-import math;
 #include "types.hpp"
 #include "sphere_mesh_generator/sphere_mesh_generator.hpp"
 #include "point_generator/point_generator.hpp"

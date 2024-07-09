@@ -12,7 +12,7 @@ set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 if (NOT ((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "11.0") OR
 (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "13.0")))
     message(FATAL_ERROR "GCC 11 or higher or Clang 13 or higher is required for C++20 modules.")
-endif ()
+endif()
 
 # Set global compile options for module support based on the compiler
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -22,7 +22,6 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL 
 endif()
 
 # Libraries
-
 find_package(PkgConfig REQUIRED)
 
 set(Qt5_DIR "/opt/homebrew/opt/qt@5/lib/cmake/Qt5")
@@ -34,7 +33,6 @@ find_package(Boost REQUIRED)
 find_package(anl REQUIRED)
 
 # Main Application
-
 set(
         GLOBE_HEADERS
         src/globe/globe_viewer.hpp
@@ -62,30 +60,19 @@ set(
         src/globe/noise_generator/point_iterator.cpp
 )
 
-set(
-        MODULE_FILES
-        src/globe/math.ixx
-)
-
-# Define the module file set in a separate object library
-add_library(globe_modules OBJECT)
-target_sources(globe_modules PRIVATE FILE_SET CXX_MODULES TYPE CXX_MODULES FILES ${MODULE_FILES})
-target_include_directories(globe_modules PRIVATE ${CGAL_INCLUDE_DIRS})
-
 # Main application
 add_executable(generate_globe ${GLOBE_HEADERS} ${GLOBE_SOURCES})
-target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl $<TARGET_OBJECTS:globe_modules>)
+target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl)
 target_include_directories(generate_globe PRIVATE ${QT5_INCLUDE_DIRS} ${CGAL_INCLUDE_DIRS})
 target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
 
-# Tests
 
+# Tests
 pkg_search_module(GTEST REQUIRED gtest_main)
 pkg_search_module(GMOCK REQUIRED gmock)
 file(GLOB_RECURSE TEST_SOURCES src/globe/*_test.cpp)
 
 add_executable(test_project ${GLOBE_HEADERS} ${GLOBE_SOURCES} ${TEST_SOURCES})
-target_sources(test_project PRIVATE FILE_SET CXX_MODULES TYPE CXX_MODULES FILES ${MODULE_FILES})
 target_include_directories(test_project PRIVATE ${QT5_INCLUDE_DIRS} ${CGAL_INCLUDE_DIRS})
 target_link_libraries(test_project PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl ${GTEST_LDFLAGS} ${GMOCK_LDFLAGS})
 target_compile_options(test_project PRIVATE ${GTEST_CFLAGS} ${GMOCK_CFLAGS})
