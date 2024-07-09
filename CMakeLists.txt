@@ -36,7 +36,6 @@ find_package(anl REQUIRED)
 set(
         GLOBE_HEADERS
         src/globe/globe_viewer.hpp
-        src/globe/globe_generator.hpp
         src/globe/point_generator/point_generator.hpp
         src/globe/point_generator/mock_point_generator.hpp
         src/globe/point_generator/random_sphere_point_generator.hpp
@@ -63,9 +62,14 @@ set(
 add_library(math src/globe/math.cpp)
 target_sources(math PUBLIC FILE_SET CXX_MODULES FILES src/globe/math.ixx)
 
+add_library(globe_generator)
+target_sources(globe_generator PUBLIC FILE_SET CXX_MODULES FILES src/globe/globe_generator.ixx)
+target_link_libraries(globe_generator PUBLIC CGAL::CGAL anl)
+target_include_directories(globe_generator PUBLIC ${CGAL_INCLUDE_DIRS})
+
 # Main application
 add_executable(generate_globe ${GLOBE_HEADERS} ${GLOBE_SOURCES})
-target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl math)
+target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl math globe_generator)
 target_include_directories(generate_globe PRIVATE ${QT5_INCLUDE_DIRS} ${CGAL_INCLUDE_DIRS})
 target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
 

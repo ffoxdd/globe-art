@@ -1,5 +1,4 @@
-#ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
-#define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
+module;
 
 #include "types.hpp"
 #include "sphere_mesh_generator/sphere_mesh_generator.hpp"
@@ -8,7 +7,11 @@
 #include "points_collection/points_collection.hpp"
 #include "noise_generator/noise_generator.hpp"
 #include "noise_generator/anl_noise_generator.hpp"
-#include <memory>
+//#include <memory>
+
+export module globe_generator;
+
+import <memory>;
 
 namespace globe {
 
@@ -16,7 +19,7 @@ const double LOW_DISTANCE_MULTIPLIER = 1.0 / 20.0;
 const double HIGH_DISTANCE_MULTIPLIER = 1.0 / 4.0;
 const int RANDOM_POINT_ITERATIONS = 10000;
 
-template<
+export template<
     PointGenerator PG = RandomSpherePointGenerator,
     NoiseGenerator NG = AnlNoiseGenerator<PG>
 >
@@ -145,5 +148,3 @@ bool GlobeGenerator<PG, NG>::too_close(const Point3 &point) const {
 }
 
 } // namespace globe
-
-#endif //GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_

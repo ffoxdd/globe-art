@@ -1,9 +1,9 @@
 #include <QtWidgets/QApplication>
 #include <CGAL/Qt/init_ogl_context.h>
-#include "globe/globe_generator.hpp"
 #include "globe/globe_viewer.hpp"
 
 import math;
+import globe_generator;
 
 using namespace globe;
 
