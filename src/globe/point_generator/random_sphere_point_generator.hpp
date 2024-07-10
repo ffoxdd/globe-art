@@ -49,6 +49,10 @@ class RandomSpherePointGenerator {
     std::unique_ptr<CGALRandomSpherePointGenerator> _cgal_generator;
 };
 
+Point3 RandomSpherePointGenerator::generate() {
+    return *(*_cgal_generator)++;
+}
+
 } // namespace globe
 
 #endif //GLOBEART_SRC_GLOBE_RANDOM_SPHERE_POINT_GENERATOR_RANDOM_SPHERE_POINT_GENERATOR_H_

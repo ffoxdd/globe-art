@@ -21,20 +21,8 @@ find_package(anl REQUIRED)
 
 # Main Executable
 
-function(filter_files source_list pattern dest_list)
-    set(filtered_list "")
-    foreach (file ${${source_list}})
-        if (NOT file MATCHES ${pattern})
-            list(APPEND filtered_list ${file})
-        endif ()
-    endforeach ()
-    set(${dest_list} ${filtered_list} PARENT_SCOPE)
-endfunction()
-
 file(GLOB_RECURSE GLOBE_HEADERS src/globe/*.hpp)
-file(GLOB_RECURSE GLOBE_SOURCES src/globe/*.cpp)
-filter_files(GLOBE_SOURCES "_test.cpp$" GLOBE_SOURCES)
-list(INSERT GLOBE_SOURCES 0 src/globe/noise_generator/anl_implementation.cpp)
+set(GLOBE_SOURCES src/globe/noise_generator/anl_implementation.cpp)
 
 add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
 target_include_directories(generate_globe PRIVATE ${QT5_INCLUDE_DIRS})
