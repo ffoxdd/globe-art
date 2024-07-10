@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
         .globe_generator = std::make_unique<GlobeGenerator<>>(std::move(globe_generator))
     });
 
+    globe_viewer.add_elements();
     globe_viewer.show();
 
     return QApplication::exec();

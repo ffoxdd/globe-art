@@ -23,17 +23,13 @@ class GlobeViewer : public CGAL::Basic_viewer_qt {
     struct Config;
 
     GlobeViewer();
-    explicit GlobeViewer(Config&& config);
+    explicit GlobeViewer(Config &&config);
+
+    void add_elements();
 
  protected:
-    void add_elements();
     void add_voronoi_edges();
-
-    void add_circular_arc(
-        const Point3 &point1,
-        const Point3 &point2,
-        const CGAL::IO::Color &color = CGAL::IO::Color(0, 0, 0)
-    );
+    void add_circular_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color = BLACK);
 
  private:
     std::unique_ptr<GlobeGenerator<PG, NG>> _globe_generator{};
@@ -46,13 +42,13 @@ struct GlobeViewer<PG, NG>::Config {
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
-GlobeViewer<PG, NG>::GlobeViewer() : GlobeViewer(Config()) { }
+GlobeViewer<PG, NG>::GlobeViewer() : GlobeViewer(Config()) {
+}
 
 template<PointGenerator PG, NoiseGenerator NG>
 GlobeViewer<PG, NG>::GlobeViewer(GlobeViewer::Config &&config) :
     CGAL::Basic_viewer_qt(config.parent, "GlobeViewer", true, true, true, false, false),
     _globe_generator(std::move(config.globe_generator)) {
-    add_elements();
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -66,7 +62,7 @@ void GlobeViewer<PG, NG>::add_voronoi_edges() {
         auto source = to_point(arc.source());
         auto target = to_point(arc.target());
 
-        add_circular_arc(source, target, BLACK);
+        add_circular_arc(source, target);
     }
 }
 
