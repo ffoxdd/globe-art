@@ -1,31 +1,14 @@
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
-#include "noise_generator.hpp"
 #include "anl_noise_generator.hpp"
-#include "../point_generator/random_sphere_point_generator.hpp"
-#include "../point_generator/mock_point_generator.hpp"
 
 using namespace globe;
 
 TEST(NoiseGeneratorTest, ValueMethodReturnsDouble) {
     Point3 location = {0.1, 0.2, 0.3};
-
-    auto point_generator = std::make_unique<MockPointGenerator>();
-
-    ON_CALL(*point_generator, generate).WillByDefault([]() {
-            return Point3(1, 1, 1);
-        }
-    );
-
-    AnlNoiseGenerator<MockPointGenerator> noise_generator(
-        AnlNoiseGenerator<MockPointGenerator>::Config{
-            .low =  -1,
-            .high =  1,
-            .point_generator =  std::move(point_generator)
-        }
-    );
+    AnlNoiseGenerator noise_generator;
 
     double value = noise_generator.value(location);
+
     EXPECT_TRUE(typeid(value) == typeid(double));
 }
 
@@ -36,20 +19,7 @@ TEST(NoiseGeneratorTest, ValueMethodReturnsConsistentResult) {
     points.emplace_back(location);
     points.emplace_back(0.4, 0.5, 0.6);
 
-    auto point_generator = std::make_unique<MockPointGenerator>();
-
-    ON_CALL(*point_generator, generate).WillByDefault([]() {
-            return Point3();
-        }
-    );
-
-    AnlNoiseGenerator<MockPointGenerator> noise_generator(
-        AnlNoiseGenerator<MockPointGenerator>::Config{
-            .low =  -1,
-            .high =  1,
-            .point_generator =  std::move(point_generator)
-        }
-    );
+    AnlNoiseGenerator noise_generator;
 
     double value1 = noise_generator.value(location);
     double value2 = noise_generator.value(location);
@@ -65,20 +35,7 @@ TEST(NoiseGeneratorTest, ValueMethodDifferentLocations) {
     points.emplace_back(location1);
     points.emplace_back(location2);
 
-    auto point_generator = std::make_unique<MockPointGenerator>();
-
-    ON_CALL(*point_generator, generate).WillByDefault([]() {
-            return Point3();
-        }
-    );
-
-    AnlNoiseGenerator<MockPointGenerator> noise_generator(
-        AnlNoiseGenerator<MockPointGenerator>::Config{
-            .low =  -1,
-            .high =  1,
-            .point_generator =  std::move(point_generator)
-        }
-    );
+    AnlNoiseGenerator noise_generator;
 
     double value1 = noise_generator.value(location1);
     double value2 = noise_generator.value(location2);
@@ -87,33 +44,20 @@ TEST(NoiseGeneratorTest, ValueMethodDifferentLocations) {
 }
 
 TEST(NoiseGeneratorTest, CanNormalizeOutputOverSamplePoints) {
-    std::vector<Point3> points;
-    points.emplace_back(0.1, 0.2, 0.3);
-    points.emplace_back(0.4, 0.5, 0.6);
-    points.emplace_back(0.7, 0.8, 0.9);
+    std::vector<Point3> sample_points;
+    sample_points.emplace_back(0.1, 0.2, 0.3);
+    sample_points.emplace_back(0.4, 0.5, 0.6);
+    sample_points.emplace_back(0.7, 0.8, 0.9);
 
-    double low = -0.01;
-    double high = 0.02;
+    Range output_range = Range(-0.01, 0.02);
 
-//    auto point_generator = std::make_unique<MockPointGenerator>();
-    auto point_generator = std::make_unique<RandomSpherePointGenerator>(1);
+    AnlNoiseGenerator noise_generator;
+    noise_generator.normalize(sample_points, output_range);
 
-//    ON_CALL(*point_generator, generate).WillByDefault([]() {
-//        return Point3();
-//    });
-
-    AnlNoiseGenerator<RandomSpherePointGenerator> noise_generator(
-        AnlNoiseGenerator<RandomSpherePointGenerator>::Config{
-            .low =  -1,
-            .high =  1,
-            .point_generator =  std::move(point_generator)
-        }
-    );
-
-    for (auto &point : points) {
+    for (auto &point : sample_points) {
         double value = noise_generator.value(point);
 
-        EXPECT_GE(value, low);
-        EXPECT_LE(value, high);
+        EXPECT_GE(value, output_range.low());
+        EXPECT_LE(value, output_range.high());
     }
 }

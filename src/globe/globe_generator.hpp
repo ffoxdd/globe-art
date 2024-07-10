@@ -12,63 +12,54 @@
 
 namespace globe {
 
-const double LOW_DISTANCE_MULTIPLIER = 1.0 / 20.0;
-const double HIGH_DISTANCE_MULTIPLIER = 1.0 / 4.0;
+const Range POINT_DISTANCE_RANGE = Range(1.0 / 20.0, 1.0 / 4.0);
 const int RANDOM_POINT_ITERATIONS = 10000;
 
 template<
     PointGenerator PG = RandomSpherePointGenerator,
-    NoiseGenerator NG = AnlNoiseGenerator<PG>
+    NoiseGenerator NG = AnlNoiseGenerator
 >
 class GlobeGenerator {
  public:
     struct Config;
 
     GlobeGenerator();
-    explicit GlobeGenerator(Config&& config);
+    explicit GlobeGenerator(Config &&config);
 
-    GlobeGenerator& generate_points();
-    void save_ply(const std::string& filename) const;
+    GlobeGenerator &build();
+    void save_ply(const std::string &filename) const;
 
     auto dual_arcs() -> decltype(auto);
-    std::unique_ptr<PointsCollection> points_collection();
+    auto dual_neighborhoods() -> decltype(auto);
 
  private:
     std::unique_ptr<PG> _point_generator;
     std::unique_ptr<PointsCollection> _points_collection;
     std::unique_ptr<NG> _noise_generator;
-    std::vector<Point3> _points;
 
-    void add_random_point();
-    [[nodiscard]] bool too_close(const Point3& point) const;
+    void normalize_noise();
+    std::vector<Point3> sample_points(size_t n);
+    void add_points();
+    void add_point();
+    [[nodiscard]] bool too_close(const Point3 &point) const;
     [[nodiscard]] SurfaceMesh triangulation_mesh() const;
-    static void save_mesh_ply(SurfaceMesh& mesh, const std::string& filename);
+    static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
 struct GlobeGenerator<PG, NG>::Config {
     double radius = 1.0;
 
-    std::unique_ptr<PG> point_generator =
-        std::make_unique<PG>(RandomSpherePointGenerator(RandomSpherePointGenerator::Config{.radius = radius}));
+    std::unique_ptr<PG> point_generator = std::make_unique<PG>(
+        RandomSpherePointGenerator(RandomSpherePointGenerator::Config{.radius = radius})
+    );
 
-    std::unique_ptr<PointsCollection> points_collection =
-        std::make_unique<PointsCollection>();
+    std::unique_ptr<PointsCollection> points_collection = std::make_unique<PointsCollection>(
+    );
 
-    std::unique_ptr<NG> noise_generator =
-        std::make_unique<NG>(
-            AnlNoiseGenerator<PG>(
-                AnlNoiseGenerator(AnlNoiseGenerator<>::Config{
-                        .low = radius * LOW_DISTANCE_MULTIPLIER,
-                        .high = radius * HIGH_DISTANCE_MULTIPLIER,
-
-                        .point_generator = std::make_unique<PG>(
-                            RandomSpherePointGenerator(RandomSpherePointGenerator::Config{.radius = radius})
-                        )
-                    }
-                )
-            )
-        );
+    std::unique_ptr<NG> noise_generator = std::make_unique<NG>(
+        AnlNoiseGenerator()
+    );
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -78,28 +69,45 @@ template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG>::GlobeGenerator(GlobeGenerator::Config &&config) :
     _point_generator(std::move(config.point_generator)),
     _points_collection(std::move(config.points_collection)),
-    _noise_generator(std::move(config.noise_generator)) { }
+    _noise_generator(std::move(config.noise_generator)) {
+}
 
 template<PointGenerator PG, NoiseGenerator NG>
-GlobeGenerator<PG, NG>& GlobeGenerator<PG, NG>::generate_points() {
-    const int iterations = RANDOM_POINT_ITERATIONS;
-
-    for (int i = 0; i < iterations; i++) {
-        add_random_point();
-    }
-
+GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::build() {
+    normalize_noise();
+    add_points();
     return *this;
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-void GlobeGenerator<PG, NG>::save_ply(const std::string& filename) const {
+void GlobeGenerator<PG, NG>::save_ply(const std::string &filename) const {
     SurfaceMesh mesh = triangulation_mesh();
     save_mesh_ply(mesh, filename);
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-std::unique_ptr<PointsCollection> GlobeGenerator<PG, NG>::points_collection() {
-    return std::move(_points_collection);
+void GlobeGenerator<PG, NG>::normalize_noise() {
+    _noise_generator->normalize(sample_points(1000), POINT_DISTANCE_RANGE);
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
+std::vector<Point3> GlobeGenerator<PG, NG>::sample_points(size_t n) {
+    std::vector<Point3> points;
+
+    for (size_t i = 0; i < n; i++) {
+        points.push_back(_point_generator->generate());
+    }
+
+    return points;
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
+void GlobeGenerator<PG, NG>::add_points() {
+    const int iterations = RANDOM_POINT_ITERATIONS;
+
+    for (int i = 0; i < iterations; i++) {
+        add_point();
+    }
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -107,18 +115,22 @@ auto GlobeGenerator<PG, NG>::dual_arcs() -> decltype(auto) {
     return _points_collection->dual_arcs();
 }
 
+template<PointGenerator PG, NoiseGenerator NG>
+auto GlobeGenerator<PG, NG>::dual_neighborhoods() -> decltype(auto) {
+    return _points_collection->dual_neighborhoods();
+}
 
 template<PointGenerator PG, NoiseGenerator NG>
 SurfaceMesh GlobeGenerator<PG, NG>::triangulation_mesh() const {
     SurfaceMesh mesh;
-    std::map<Point3, SurfaceMesh::Vertex_index> vertices_by_point;
+    std::map < Point3, SurfaceMesh::Vertex_index > vertices_by_point;
 
-    for (const auto& point : _points_collection->points()) {
+    for (const auto &point : _points_collection->points()) {
         SurfaceMesh::Vertex_index vertex = mesh.add_vertex(point);
         vertices_by_point[point] = vertex;
     }
 
-    for (const auto& face : _points_collection->faces()) {
+    for (const auto &face : _points_collection->faces()) {
         SurfaceMesh::Vertex_index vertex0 = vertices_by_point[face->vertex(0)->point()];
         SurfaceMesh::Vertex_index vertex1 = vertices_by_point[face->vertex(1)->point()];
         SurfaceMesh::Vertex_index vertex2 = vertices_by_point[face->vertex(2)->point()];
@@ -130,8 +142,25 @@ SurfaceMesh GlobeGenerator<PG, NG>::triangulation_mesh() const {
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
+void GlobeGenerator<PG, NG>::add_point() {
+    Point3 point = _point_generator->generate();
+
+    if (too_close(point)) {
+        return;
+    }
+
+    _points_collection->insert(point);
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
+bool GlobeGenerator<PG, NG>::too_close(const Point3 &point) const {
+    double separation_radius = _noise_generator->value(point);
+    return !_points_collection->nearby_points(point, separation_radius).empty();
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::save_mesh_ply(
-    SurfaceMesh& mesh, const std::string& filename
+    SurfaceMesh &mesh, const std::string &filename
 ) {
     std::ofstream stream(filename);
 
@@ -146,22 +175,7 @@ void GlobeGenerator<PG, NG>::save_mesh_ply(
     }
 }
 
-template<PointGenerator PG, NoiseGenerator NG>
-void GlobeGenerator<PG, NG>::add_random_point() {
-    Point3 point = _point_generator->generate();
-
-    if (too_close(point)) {
-        return;
-    }
-
-    _points_collection->insert(point);
-}
-
-template<PointGenerator PG, NoiseGenerator NG>
-bool GlobeGenerator<PG, NG>::too_close(const Point3& point) const {
-    double separation_radius = _noise_generator->value(point);
-    return !_points_collection->nearby_points(point, separation_radius).empty();
-}
+GlobeGenerator() -> GlobeGenerator<RandomSpherePointGenerator, AnlNoiseGenerator>;
 
 } // namespace globe
 

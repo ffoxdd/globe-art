@@ -33,12 +33,15 @@ target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KE
 
 pkg_search_module(GTEST REQUIRED gtest_main)
 pkg_search_module(GMOCK REQUIRED gmock)
+
 file(GLOB_RECURSE TEST_SOURCES src/globe/*_test.cpp)
 
-add_executable(test_project)
-target_sources(test_project PRIVATE ${GLOBE_HEADERS} ${GLOBE_SOURCES} ${TEST_SOURCES})
-target_link_libraries(test_project PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl ${GTEST_LDFLAGS} ${GMOCK_LDFLAGS} )
-target_compile_options(test_project PRIVATE ${GTEST_CFLAGS} ${GMOCK_CFLAGS} )
+foreach (TEST_SRC ${TEST_SOURCES})
+    get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
+    add_executable(${TEST_NAME} ${TEST_SRC} ${GLOBE_SOURCES})
+    target_link_libraries(${TEST_NAME} PRIVATE CGAL::CGAL CGAL::CGAL_Qt5 anl ${GTEST_LDFLAGS} ${GMOCK_LDFLAGS})
+    target_compile_options(${TEST_NAME} PRIVATE ${GTEST_CFLAGS} ${GMOCK_CFLAGS})
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+endforeach ()
 
 enable_testing()
-add_test(first_and_only_test testapp)

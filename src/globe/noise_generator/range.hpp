@@ -5,10 +5,13 @@
 
 namespace globe {
 
-class Range {
+class Range { // TODO: rename to "Interval"
  public:
     Range();
     Range(double low, double high);
+
+    [[nodiscard]] double low() const;
+    [[nodiscard]] double high() const;
 
     void update_domain(double value);
     static double map(Range &input_range, Range &output_range, double value);
@@ -24,9 +27,21 @@ class Range {
 
 Range::Range() :
     _low(std::numeric_limits<double>::max()),
-    _high(std::numeric_limits<double>::lowest()) { };
+    _high(std::numeric_limits<double>::lowest()) {
+};
 
-Range::Range(double low, double high) : _low(low), _high(high) { };
+Range::Range(double low, double high) :
+    _low(low),
+    _high(high) {
+};
+
+double Range::low() const {
+    return _low;
+}
+
+double Range::high() const {
+    return _high;
+}
 
 void Range::update_domain(double value) {
     if (value < _low) {

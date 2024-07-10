@@ -8,15 +8,17 @@
 #include <CGAL/IO/Color.h>
 #include <CGAL/Kernel/global_functions_3.h>
 
+#include <iostream>
+
 namespace globe {
 
 const CGAL::IO::Color BLACK(0, 0, 0);
-const CGAL::IO::Color BLUE(0, 0, 255);
-const CGAL::IO::Color RED(255, 0, 0);
+//const CGAL::IO::Color BLUE(0, 0, 255);
+//const CGAL::IO::Color RED(255, 0, 0);
 
 template<
     PointGenerator PG = RandomSpherePointGenerator,
-    NoiseGenerator NG = AnlNoiseGenerator<PG>
+    NoiseGenerator NG = AnlNoiseGenerator
 >
 class GlobeViewer : public CGAL::Basic_viewer_qt {
  public:
@@ -25,14 +27,15 @@ class GlobeViewer : public CGAL::Basic_viewer_qt {
     GlobeViewer();
     explicit GlobeViewer(Config &&config);
 
-    void add_elements();
+    void build();
 
  protected:
-    void add_voronoi_edges();
+    void build_dual_edges();
     void add_circular_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color = BLACK);
 
  private:
     std::unique_ptr<GlobeGenerator<PG, NG>> _globe_generator{};
+    void build_dual_neighborhoods();
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -52,12 +55,13 @@ GlobeViewer<PG, NG>::GlobeViewer(GlobeViewer::Config &&config) :
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-void GlobeViewer<PG, NG>::add_elements() {
-    add_voronoi_edges();
+void GlobeViewer<PG, NG>::build() {
+    build_dual_edges();
+    build_dual_neighborhoods();
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-void GlobeViewer<PG, NG>::add_voronoi_edges() {
+void GlobeViewer<PG, NG>::build_dual_edges() {
     for (const auto &arc : _globe_generator->dual_arcs()) {
         auto source = to_point(arc.source());
         auto target = to_point(arc.target());
@@ -65,6 +69,20 @@ void GlobeViewer<PG, NG>::add_voronoi_edges() {
         add_circular_arc(source, target);
     }
 }
+
+template<PointGenerator PG, NoiseGenerator NG>
+void GlobeViewer<PG, NG>::build_dual_neighborhoods() {
+    for (const auto &dual_neighborhood : _globe_generator->dual_neighborhoods()) {
+        std::cout << "point: " << dual_neighborhood.point << std::endl;
+
+        for (const auto &dual_cell_point : dual_neighborhood.dual_cell_points) {
+            std::cout << "dual cell: " << dual_cell_point << std::endl;
+        }
+
+        std::cout << std::endl;
+    }
+}
+
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeViewer<PG, NG>::add_circular_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color) {

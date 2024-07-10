@@ -9,22 +9,16 @@
 
 namespace globe {
 
-template<PointGenerator PG = RandomSpherePointGenerator>
 class AnlNoiseGenerator {
  public:
-    struct Config;
-
-    explicit AnlNoiseGenerator(Config&& config);
     AnlNoiseGenerator();
 
+    void normalize(const std::vector<Point3> &sample_points, Range output_range);
     double value(const Point3 &location);
 
  private:
-    std::unique_ptr<PG> _point_generator;
     std::unique_ptr<anl::CKernel> _kernel;
     std::unique_ptr<anl::CInstructionIndex> _instruction_index;
-
-    void normalize(double low, double high);
 
     static anl::CInstructionIndex initialize_kernel(anl::CKernel &kernel);
     double noise_value(const Point3 &location);
@@ -33,52 +27,33 @@ class AnlNoiseGenerator {
     Range _output_range;
 };
 
-template<PointGenerator PG>
-struct AnlNoiseGenerator<PG>::Config {
-    double low = 0.0; // TODO: see if there's a more direct way of representing [low, high]
-    double high = 1.0;
-
-    std::unique_ptr<PG> point_generator =
-        std::make_unique<PG>(RandomSpherePointGenerator(RandomSpherePointGenerator::Config{
-            .radius = 1.0
-        }));
-};
-
-template<PointGenerator PG>
-AnlNoiseGenerator<PG>::AnlNoiseGenerator() : AnlNoiseGenerator(Config()) { }
-
-template<PointGenerator PG>
-AnlNoiseGenerator<PG>::AnlNoiseGenerator(AnlNoiseGenerator::Config&& config) :
+AnlNoiseGenerator::AnlNoiseGenerator() :
     _kernel(std::make_unique<anl::CKernel>()),
     _instruction_index(std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel))),
-    _point_generator(std::move(config.point_generator)) {
-    normalize(config.low, config.high);
+    _noise_range(Range(0.0, 1.0)),
+    _output_range(Range(0.0, 1.0)) {
 }
 
-template<PointGenerator PG>
-double AnlNoiseGenerator<PG>::value(const Point3 &location) {
-    return Range::map(_noise_range, _output_range, noise_value(location));
-}
-
-template<PointGenerator PG>
-void AnlNoiseGenerator<PG>::normalize(double low, double high) {
-    for (int i = 0; i < 1000; i++) {
-        double sample_value = noise_value(_point_generator->generate());
+void AnlNoiseGenerator::normalize(const std::vector<Point3> &sample_points, Range output_range) {
+    for (const auto &point : sample_points) {
+        double sample_value = noise_value(point);
         _noise_range.update_domain(sample_value);
     }
 
-    _output_range = Range(low, high);
+    _output_range = output_range;
 }
 
-template<PointGenerator PG>
-double AnlNoiseGenerator<PG>::noise_value(const Point3 &location) {
+double AnlNoiseGenerator::value(const Point3 &location) {
+    return Range::map(_noise_range, _output_range, noise_value(location));
+}
+
+double AnlNoiseGenerator::noise_value(const Point3 &location) {
     return anl::CNoiseExecutor(*_kernel).evaluateScalar(
         location.x(), location.y(), location.z(), *_instruction_index
     );
 }
 
-template<PointGenerator PG>
-anl::CInstructionIndex AnlNoiseGenerator<PG>::initialize_kernel(anl::CKernel &kernel) {
+anl::CInstructionIndex AnlNoiseGenerator::initialize_kernel(anl::CKernel &kernel) {
     const double persistence = 0.5;
     const double lacunarity = 2.0;
     const double octaves = 2;
