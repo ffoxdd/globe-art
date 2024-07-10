@@ -9,33 +9,13 @@
 
 namespace globe {
 
-const int NORMALIZE_ITERATIONS = 1000;
-
 template<PointGenerator PG = RandomSpherePointGenerator>
 class AnlNoiseGenerator {
  public:
-    struct Config {
-        double low = 0.0; // TODO: see if there's a more direct way of representing [low, high]
-        double high = 1.0;
+    struct Config;
 
-        std::unique_ptr<PG> point_generator =
-            std::make_unique<PG>(RandomSpherePointGenerator(1.0));
-    };
-
-    AnlNoiseGenerator() : AnlNoiseGenerator(Config()) { };
-
-    explicit AnlNoiseGenerator(Config&& config) :
-        _kernel(std::make_unique<anl::CKernel>()),
-        _instruction_index(std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel))),
-        _point_generator(std::move(config.point_generator)) {
-        normalize(config.low, config.high);
-    };
-
-    AnlNoiseGenerator(AnlNoiseGenerator&& other) noexcept = default;
-    AnlNoiseGenerator& operator=(AnlNoiseGenerator&& other) noexcept = default;
-
-    AnlNoiseGenerator(const AnlNoiseGenerator&) = delete;
-    AnlNoiseGenerator& operator=(const AnlNoiseGenerator&) = delete;
+    explicit AnlNoiseGenerator(Config&& config);
+    AnlNoiseGenerator();
 
     double value(const Point3 &location);
 
@@ -52,6 +32,28 @@ class AnlNoiseGenerator {
     Range _noise_range;
     Range _output_range;
 };
+
+template<PointGenerator PG>
+struct AnlNoiseGenerator<PG>::Config {
+    double low = 0.0; // TODO: see if there's a more direct way of representing [low, high]
+    double high = 1.0;
+
+    std::unique_ptr<PG> point_generator =
+        std::make_unique<PG>(RandomSpherePointGenerator(RandomSpherePointGenerator::Config{
+            .radius = 1.0
+        }));
+};
+
+template<PointGenerator PG>
+AnlNoiseGenerator<PG>::AnlNoiseGenerator() : AnlNoiseGenerator(Config()) { }
+
+template<PointGenerator PG>
+AnlNoiseGenerator<PG>::AnlNoiseGenerator(AnlNoiseGenerator::Config&& config) :
+    _kernel(std::make_unique<anl::CKernel>()),
+    _instruction_index(std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel))),
+    _point_generator(std::move(config.point_generator)) {
+    normalize(config.low, config.high);
+}
 
 template<PointGenerator PG>
 double AnlNoiseGenerator<PG>::value(const Point3 &location) {

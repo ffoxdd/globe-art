@@ -12,8 +12,7 @@ class HandleIterator {
     using pointer = const ValueType *;
     using reference = const ValueType &;
 
-    HandleIterator() : _iter() { } // Default constructor
-
+    HandleIterator() : _iter() { }
     explicit HandleIterator(Iterator iter) : _iter(iter) { }
 
     reference operator*() const { return _iter; }

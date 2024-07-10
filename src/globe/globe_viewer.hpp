@@ -19,16 +19,7 @@ class GlobeViewer : public CGAL::Basic_viewer_qt {
     explicit GlobeViewer(
         QWidget *parent,
         std::unique_ptr<PointsCollection> points_collection = nullptr // TODO: inject the globe generator instead
-    ) :
-        CGAL::Basic_viewer_qt(parent, "Spherical Triangulation GlobeViewer", true, true, true, false, false),
-
-        _points_collection(
-            points_collection ?
-                std::move(points_collection) :
-                std::make_unique<PointsCollection>()
-        ) {
-        add_elements();
-    }
+    );
 
  protected:
     void add_elements();
@@ -43,6 +34,18 @@ class GlobeViewer : public CGAL::Basic_viewer_qt {
  private:
     std::unique_ptr<PointsCollection> _points_collection;
 };
+
+GlobeViewer::GlobeViewer(QWidget *parent, std::unique_ptr<PointsCollection> points_collection) :
+    CGAL::Basic_viewer_qt(parent, "Spherical Triangulation GlobeViewer", true, true, true, false, false),
+
+    _points_collection(
+        points_collection ?
+            std::move(points_collection) :
+            std::make_unique<PointsCollection>()
+    ) {
+
+    add_elements();
+}
 
 void GlobeViewer::add_elements() {
     add_voronoi_edges();

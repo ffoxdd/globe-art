@@ -10,19 +10,19 @@
 
 namespace globe {
 
-typedef CGAL::Search_traits_3<Kernel> KDTreeTraits;
-typedef CGAL::Kd_tree<KDTreeTraits> KDTree;
-typedef CGAL::Fuzzy_sphere<KDTreeTraits> FuzzySphere;
+using KDTreeTraits = CGAL::Search_traits_3<Kernel>;
+using KDTree = CGAL::Kd_tree<KDTreeTraits>;
+using FuzzySphere = CGAL::Fuzzy_sphere<KDTreeTraits>;
 
-typedef CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel> Traits;
-typedef CGAL::Delaunay_triangulation_on_sphere_2<Traits> Triangulation;
-typedef Triangulation::Finite_vertices_iterator FiniteVerticesIterator;
-typedef Triangulation::Vertex_handle VertexHandle;
-typedef Triangulation::Finite_faces_iterator FiniteFacesIterator;
-typedef Triangulation::Face_handle FaceHandle;
-typedef Triangulation::Edge_circulator EdgeCirculator;
-typedef Triangulation::Finite_edges_iterator FiniteEdgesIterator;
-typedef Triangulation::Edge Edge;
+using Traits = CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>;
+using Triangulation = CGAL::Delaunay_triangulation_on_sphere_2<Traits>;
+using FiniteVerticesIterator = Triangulation::Finite_vertices_iterator;
+using VertexHandle = Triangulation::Vertex_handle;
+using FiniteFacesIterator = Triangulation::Finite_faces_iterator;
+using FaceHandle = Triangulation::Face_handle;
+using EdgeCirculator = Triangulation::Edge_circulator;
+using FiniteEdgesIterator = Triangulation::Finite_edges_iterator;
+using Edge = Triangulation::Edge;
 
 } // namespace globe
 

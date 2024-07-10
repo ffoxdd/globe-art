@@ -11,36 +11,10 @@ typedef CGAL::Random_points_on_sphere_3<Point3> CGALRandomSpherePointGenerator;
 
 class RandomSpherePointGenerator {
  public:
-    struct Config {
-        double radius = 1.0;
+    struct Config;
 
-        std::unique_ptr<CGALRandomSpherePointGenerator> cgal_generator =
-            std::make_unique<CGALRandomSpherePointGenerator>(CGALRandomSpherePointGenerator());
-    };
-
-    explicit RandomSpherePointGenerator(Config &&config) :
-        _radius(config.radius),
-        _cgal_generator(std::move(config.cgal_generator)) { };
-
-    explicit RandomSpherePointGenerator(double radius) :
-        _radius(radius),
-        _cgal_generator(std::make_unique<CGALRandomSpherePointGenerator>(CGALRandomSpherePointGenerator())) { };
-
-    RandomSpherePointGenerator(RandomSpherePointGenerator &&other) noexcept:
-        _radius(other._radius),
-        _cgal_generator(std::move(other._cgal_generator)) { }
-
-    RandomSpherePointGenerator &operator=(RandomSpherePointGenerator &&other) noexcept {
-        if (this != &other) {
-            _radius = other._radius;
-            _cgal_generator = std::move(other._cgal_generator);
-        }
-
-        return *this;
-    }
-
-    RandomSpherePointGenerator(const RandomSpherePointGenerator &) = delete;
-    RandomSpherePointGenerator &operator=(const RandomSpherePointGenerator &) = delete;
+    explicit RandomSpherePointGenerator(Config &&config);
+    RandomSpherePointGenerator(RandomSpherePointGenerator &&other) noexcept;
 
     Point3 generate();
 
@@ -48,6 +22,21 @@ class RandomSpherePointGenerator {
     double _radius;
     std::unique_ptr<CGALRandomSpherePointGenerator> _cgal_generator;
 };
+
+struct RandomSpherePointGenerator::Config {
+    double radius = 1.0;
+
+    std::unique_ptr<CGALRandomSpherePointGenerator> cgal_generator =
+        std::make_unique<CGALRandomSpherePointGenerator>(CGALRandomSpherePointGenerator());
+};
+
+RandomSpherePointGenerator::RandomSpherePointGenerator(RandomSpherePointGenerator::Config &&config) :
+    _radius(config.radius),
+    _cgal_generator(std::move(config.cgal_generator)) { };
+
+RandomSpherePointGenerator::RandomSpherePointGenerator(RandomSpherePointGenerator &&other) noexcept:
+    _radius(other._radius),
+    _cgal_generator(std::move(other._cgal_generator)) { }
 
 Point3 RandomSpherePointGenerator::generate() {
     return *(*_cgal_generator)++;

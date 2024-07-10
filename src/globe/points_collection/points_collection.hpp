@@ -20,46 +20,12 @@ class PointsCollection {
     bool empty() const;
     std::vector<Point3> nearby_points(Point3 point, double radius) const;
 
-    auto points() {
-        return std::ranges::subrange(_points.begin(), _points.end());
-    };
-
-    auto edges() {
-        return std::ranges::subrange(
-            _triangulation.finite_edges_begin(),
-            _triangulation.finite_edges_end()
-        );
-    }
-
-    auto all_edges() {
-        return std::ranges::subrange(
-            _triangulation.all_edges_begin(),
-            _triangulation.all_edges_end()
-        );
-    }
-
-    auto faces() {
-        return std::ranges::subrange(
-            FaceHandleIterator(_triangulation.finite_faces_begin()),
-            FaceHandleIterator(_triangulation.finite_faces_end())
-        );
-    }
-
-    auto dual_arcs() {
-        return all_edges() | std::views::transform(
-            [this](Edge edge) {
-                return this->_triangulation.dual_on_sphere(edge);
-            }
-        );
-    }
-
-    auto segments() {
-        return edges() | std::views::transform(
-            [this](Edge edge) {
-                return this->_triangulation.segment(edge);
-            }
-        );
-    }
+    auto points() -> decltype(auto);
+    auto edges() -> decltype(auto);
+    auto all_edges() -> decltype(auto);
+    auto faces() -> decltype(auto);
+    auto dual_arcs() -> decltype(auto);
+    auto segments() -> decltype(auto);
 
  private:
     std::vector<Point3> _points;
@@ -84,6 +50,47 @@ std::vector<Point3> PointsCollection::nearby_points(Point3 point, double radius)
     _kd_tree.search(std::back_inserter(nearby_points), search_sphere);
 
     return nearby_points;
+}
+
+auto PointsCollection::points() -> decltype(auto) {
+    return std::ranges::subrange(_points.begin(), _points.end());
+}
+
+auto PointsCollection::edges() -> decltype(auto) {
+    return std::ranges::subrange(
+        _triangulation.finite_edges_begin(),
+        _triangulation.finite_edges_end()
+    );
+}
+
+auto PointsCollection::all_edges() -> decltype(auto) {
+    return std::ranges::subrange(
+        _triangulation.all_edges_begin(),
+        _triangulation.all_edges_end()
+    );
+}
+
+auto PointsCollection::faces() -> decltype(auto) {
+    return std::ranges::subrange(
+        FaceHandleIterator(_triangulation.finite_faces_begin()),
+        FaceHandleIterator(_triangulation.finite_faces_end())
+    );
+}
+
+auto PointsCollection::dual_arcs() -> decltype(auto) {
+    return all_edges() | std::views::transform(
+        [this](Edge edge) {
+            return this->_triangulation.dual_on_sphere(edge);
+        }
+    );
+}
+
+auto PointsCollection::segments() -> decltype(auto) {
+    return edges() | std::views::transform(
+        [this](Edge edge) {
+            return this->_triangulation.segment(edge);
+        }
+    );
 }
 
 } // namespace globe

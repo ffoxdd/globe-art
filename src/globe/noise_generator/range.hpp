@@ -7,11 +7,8 @@ namespace globe {
 
 class Range {
  public:
-    Range() :
-        _low(std::numeric_limits<double>::max()),
-        _high(std::numeric_limits<double>::lowest()) { };
-
-    Range(double low, double high) : _low(low), _high(high) { };
+    Range();
+    Range(double low, double high);
 
     void update_domain(double value);
     static double map(Range &input_range, Range &output_range, double value);
@@ -24,6 +21,12 @@ class Range {
     [[nodiscard]] double measure() const;
     double at(double t);
 };
+
+Range::Range() :
+    _low(std::numeric_limits<double>::max()),
+    _high(std::numeric_limits<double>::lowest()) { };
+
+Range::Range(double low, double high) : _low(low), _high(high) { };
 
 void Range::update_domain(double value) {
     if (value < _low) {
