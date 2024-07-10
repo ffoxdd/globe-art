@@ -7,69 +7,21 @@ project(GlobeArt)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE true) # remove for release
 
-
-#cmake_minimum_required(VERSION 3.1...3.15)
-#find_package(CGAL COMPONENTS Qt5)
-#add_definitions(-DCGAL_USE_BASIC_VIEWER -DQT_NO_KEYWORDS)
-
 # Libraries
-
-set(Qt5_DIR "/opt/homebrew/opt/qt@5/lib/cmake/Qt5")
-#set(ENV{PKG_CONFIG_PATH} "/opt/homebrew/opt/qt@5/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 
 find_package(PkgConfig REQUIRED)
 
-#pkg_search_module(QT5 REQUIRED Qt5Widgets)
-
+set(Qt5_DIR "/opt/homebrew/opt/qt@5/lib/cmake/Qt5")
 find_package(CGAL QUIET COMPONENTS Qt5)
+include_directories(BEFORE SYSTEM /opt/homebrew/Cellar/qt@5/5.15.13_1/include)
 add_definitions(-DCGAL_USE_BASIC_VIEWER -DQT_NO_KEYWORDS)
-include_directories(test_qt BEFORE SYSTEM /opt/homebrew/Cellar/qt@5/5.15.13_1/include)
 
-#find_package(CGAL QUIET)
 find_package(Boost REQUIRED)
-
-#pkg_search_module(QT5 REQUIRED Qt5Widgets)
-#pkg_search_module(PNG REQUIRED libpng)
-#find_library(PNG_LIBRARY_FULLPATH NAMES ${PNG_LIBRARIES} PATHS ${PNG_LIBRARY_DIRS} NO_DEFAULT_PATH)
-
-#find_library(NOISE_LIBRARY NAMES libnoise noise)
-#find_path(NOISE_INCLUDE_DIR NAMES noise/noise.h)
-#find_package(tinyply REQUIRED)
 find_package(anl REQUIRED)
 
-# Experiments
+# Main Executable
 
-#add_executable(test_qt src/experiments/test_qt.cpp)
-#include_directories(test_qt BEFORE SYSTEM /opt/homebrew/Cellar/qt@5/5.15.13_1/include)
-#target_include_directories(test_qt BEFORE PUBLIC /opt/homebrew/Cellar/qt@5/5.15.13_1/include)
-#target_link_libraries(test_qt PUBLIC CGAL::CGAL_Qt5)
-
-#add_executable(test_cgal src/experiments/test_cgal.cpp)
-#target_link_libraries(test_cgal PRIVATE CGAL::CGAL)
-
-#add_executable(test_libnoise_png src/experiments/test_libnoise_png.cpp)
-#target_include_directories(test_libnoise_png PRIVATE ${PNG_INCLUDE_DIRS} ${NOISE_INCLUDE_DIR})
-#target_link_libraries(test_libnoise_png PRIVATE ${PNG_LIBRARY_FULLPATH} ${NOISE_LIBRARY})
-
-#add_executable(test_ply src/experiments/test_ply.cpp)
-#target_link_libraries(test_ply PRIVATE tinyply)
-
-#add_executable(test_cgal_sphere src/experiments/test_cgal_sphere.cpp)
-#target_include_directories(test_cgal_sphere PRIVATE ${NOISE_INCLUDE_DIR})
-#target_link_libraries(test_cgal_sphere PRIVATE CGAL::CGAL ${NOISE_LIBRARY})
-
-#add_executable(test_anl src/experiments/test_anl.cpp)
-#target_link_libraries(test_anl PRIVATE anl)
-
-#add_executable(test_mesh_capabilities src/experiments/test_mesh_capabilities.cpp)
-#target_link_libraries(test_mesh_capabilities PRIVATE CGAL::CGAL)
-
-#add_executable(test_union src/experiments/test_union.cpp)
-#target_link_libraries(test_union PRIVATE CGAL::CGAL)
-
-# Generate Globe
-
-function(filter_files source_list pattern dest_list) # custom function to filter out files based on a pattern
+function(filter_files source_list pattern dest_list)
     set(filtered_list "")
     foreach (file ${${source_list}})
         if (NOT file MATCHES ${pattern})
