@@ -17,8 +17,12 @@ int main(int argc, char *argv[]) {
     auto globe_generator = GlobeGenerator();
     globe_generator.generate_points();
 
-    GlobeViewer viewer(QApplication::activeWindow(), std::move(globe_generator.points_collection()));
-    viewer.show();
+    auto globe_viewer = GlobeViewer<>(GlobeViewer<>::Config{
+        .parent = QApplication::activeWindow(),
+        .globe_generator = std::make_unique<GlobeGenerator<>>(std::move(globe_generator))
+    });
+
+    globe_viewer.show();
 
     return QApplication::exec();
 }

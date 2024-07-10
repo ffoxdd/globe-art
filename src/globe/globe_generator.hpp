@@ -30,6 +30,7 @@ class GlobeGenerator {
     GlobeGenerator& generate_points();
     void save_ply(const std::string& filename) const;
 
+    auto dual_arcs() -> decltype(auto);
     std::unique_ptr<PointsCollection> points_collection();
 
  private:
@@ -97,6 +98,17 @@ void GlobeGenerator<PG, NG>::save_ply(const std::string& filename) const {
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
+std::unique_ptr<PointsCollection> GlobeGenerator<PG, NG>::points_collection() {
+    return std::move(_points_collection);
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
+auto GlobeGenerator<PG, NG>::dual_arcs() -> decltype(auto) {
+    return _points_collection->dual_arcs();
+}
+
+
+template<PointGenerator PG, NoiseGenerator NG>
 SurfaceMesh GlobeGenerator<PG, NG>::triangulation_mesh() const {
     SurfaceMesh mesh;
     std::map<Point3, SurfaceMesh::Vertex_index> vertices_by_point;
@@ -149,11 +161,6 @@ template<PointGenerator PG, NoiseGenerator NG>
 bool GlobeGenerator<PG, NG>::too_close(const Point3& point) const {
     double separation_radius = _noise_generator->value(point);
     return !_points_collection->nearby_points(point, separation_radius).empty();
-}
-
-template<PointGenerator PG, NoiseGenerator NG>
-std::unique_ptr<PointsCollection> GlobeGenerator<PG, NG>::points_collection() {
-    return std::move(_points_collection);
 }
 
 } // namespace globe

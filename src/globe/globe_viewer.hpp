@@ -14,12 +14,16 @@ const CGAL::IO::Color BLACK(0, 0, 0);
 const CGAL::IO::Color BLUE(0, 0, 255);
 const CGAL::IO::Color RED(255, 0, 0);
 
+template<
+    PointGenerator PG = RandomSpherePointGenerator,
+    NoiseGenerator NG = AnlNoiseGenerator<PG>
+>
 class GlobeViewer : public CGAL::Basic_viewer_qt {
  public:
-    explicit GlobeViewer(
-        QWidget *parent,
-        std::unique_ptr<PointsCollection> points_collection = nullptr // TODO: inject the globe generator instead
-    );
+    struct Config;
+
+    GlobeViewer();
+    explicit GlobeViewer(Config&& config);
 
  protected:
     void add_elements();
@@ -32,27 +36,33 @@ class GlobeViewer : public CGAL::Basic_viewer_qt {
     );
 
  private:
-    std::unique_ptr<PointsCollection> _points_collection;
+    std::unique_ptr<GlobeGenerator<PG, NG>> _globe_generator{};
 };
 
-GlobeViewer::GlobeViewer(QWidget *parent, std::unique_ptr<PointsCollection> points_collection) :
-    CGAL::Basic_viewer_qt(parent, "Spherical Triangulation GlobeViewer", true, true, true, false, false),
+template<PointGenerator PG, NoiseGenerator NG>
+struct GlobeViewer<PG, NG>::Config {
+    QWidget *parent = nullptr;
+    std::unique_ptr<GlobeGenerator<PG, NG>> globe_generator = std::make_unique<GlobeGenerator<PG, NG>>();
+};
 
-    _points_collection(
-        points_collection ?
-            std::move(points_collection) :
-            std::make_unique<PointsCollection>()
-    ) {
+template<PointGenerator PG, NoiseGenerator NG>
+GlobeViewer<PG, NG>::GlobeViewer() : GlobeViewer(Config()) { }
 
+template<PointGenerator PG, NoiseGenerator NG>
+GlobeViewer<PG, NG>::GlobeViewer(GlobeViewer::Config &&config) :
+    CGAL::Basic_viewer_qt(config.parent, "GlobeViewer", true, true, true, false, false),
+    _globe_generator(std::move(config.globe_generator)) {
     add_elements();
 }
 
-void GlobeViewer::add_elements() {
+template<PointGenerator PG, NoiseGenerator NG>
+void GlobeViewer<PG, NG>::add_elements() {
     add_voronoi_edges();
 }
 
-void GlobeViewer::add_voronoi_edges() {
-    for (const auto &arc : _points_collection->dual_arcs()) {
+template<PointGenerator PG, NoiseGenerator NG>
+void GlobeViewer<PG, NG>::add_voronoi_edges() {
+    for (const auto &arc : _globe_generator->dual_arcs()) {
         auto source = to_point(arc.source());
         auto target = to_point(arc.target());
 
@@ -60,7 +70,8 @@ void GlobeViewer::add_voronoi_edges() {
     }
 }
 
-void GlobeViewer::add_circular_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color) {
+template<PointGenerator PG, NoiseGenerator NG>
+void GlobeViewer<PG, NG>::add_circular_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color) {
     const Point3 center(0.0, 0.0, 0.0);
 
     int num_segments = 50;
