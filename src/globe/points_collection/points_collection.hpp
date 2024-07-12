@@ -18,16 +18,24 @@ using FaceHandleIterator = HandleIterator<FiniteFacesIterator, FaceHandleValue>;
 using FaceHandleCirculatorValue = typename std::iterator_traits<FaceCirculator>::value_type::Face_handle;
 using FaceHandleCirculatorIterator = HandleIterator<FaceCirculator, FaceHandleCirculatorValue>;
 
+struct DualNeighborhood {
+    Point3 &point;
+    std::vector<Point3> dual_cell_points;
+};
+
 class PointsCollection {
  public:
+    struct Config;
+
+    PointsCollection();
+    explicit PointsCollection(Config &&config);
+
+    PointsCollection(PointsCollection&&) = default;
+    PointsCollection& operator=(PointsCollection&&) = default;
+
     void insert(Point3 point);
     bool empty() const;
     std::vector<Point3> nearby_points(Point3 point, double radius) const;
-
-    struct DualNeighborhood {
-        Point3 &point;
-        std::vector<Point3> dual_cell_points;
-    };
 
     auto dual_arcs() -> decltype(auto);
     auto dual_neighborhoods() -> decltype(auto);
@@ -40,6 +48,8 @@ class PointsCollection {
     KDTree _kd_tree;
     Triangulation _triangulation;
 
+    std::function<void(const DualNeighborhood&)> _dual_neighborhood_callback;
+
     auto vertices() -> decltype(auto);
     auto edges() -> decltype(auto);
     auto all_edges() -> decltype(auto);
@@ -47,6 +57,17 @@ class PointsCollection {
     auto static face_circulator_range(FaceCirculator face_circulator) -> decltype(auto);
     auto incident_faces_range(VertexHandleValue vertex_handle) -> decltype(auto);
 };
+
+struct PointsCollection::Config {
+    std::function<void(const DualNeighborhood&)> dual_neighborhood_callback = [](const DualNeighborhood &) { };
+};
+
+PointsCollection::PointsCollection() : PointsCollection(Config()) {
+}
+
+PointsCollection::PointsCollection(Config &&config) :
+    _dual_neighborhood_callback(config.dual_neighborhood_callback) {
+}
 
 void PointsCollection::insert(Point3 point) {
     _points.push_back(point);
@@ -118,10 +139,14 @@ auto PointsCollection::segments() -> decltype(auto) {
 auto PointsCollection::dual_neighborhoods() -> decltype(auto) {
     return vertices() | std::views::transform(
         [this](VertexHandleValue vertex_handle) {
-            return DualNeighborhood{
+            auto dual_neighborhood = DualNeighborhood{
                 .point = vertex_handle->point(),
                 .dual_cell_points = dual_cell_points(vertex_handle)
             };
+
+            _dual_neighborhood_callback(dual_neighborhood);
+
+            return dual_neighborhood;
         }
     );
 }
