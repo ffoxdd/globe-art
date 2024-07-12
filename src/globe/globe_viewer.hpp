@@ -29,7 +29,7 @@ class GlobeViewer {
     std::shared_ptr<GeometryViewer> _geometry_viewer;
     std::unique_ptr<GlobeGenerator<PG, NG>> _globe_generator;
 
-    void build_dual_edges();
+    void build_dual_edges(); // TODO: remove this when we're sure it won't ever be used
     void build_dual_neighborhoods();
 };
 
@@ -81,13 +81,9 @@ void GlobeViewer<PG, NG>::build_dual_edges() {
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeViewer<PG, NG>::build_dual_neighborhoods() {
     for (const auto &dual_neighborhood : _globe_generator->dual_neighborhoods()) {
-        auto cell_points = dual_neighborhood.dual_cell_points;
-
-        for (size_t i = 0; i < cell_points.size(); ++i) {
-            size_t i_ = (i + 1) % cell_points.size();
-
-            auto source = cell_points[i];
-            auto target = cell_points[i_];
+        for (const auto &arc : dual_neighborhood.dual_cell_arcs) {
+            auto source = to_point(arc.source());
+            auto target = to_point(arc.target());
 
             _geometry_viewer->add_circular_arc(source, target, BLUE);
         }

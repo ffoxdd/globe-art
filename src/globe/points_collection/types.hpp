@@ -18,12 +18,14 @@ using Traits = CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, Spherical
 using Triangulation = CGAL::Delaunay_triangulation_on_sphere_2<Traits>;
 using FiniteVerticesIterator = Triangulation::Finite_vertices_iterator;
 using VertexHandle = Triangulation::Vertex_handle;
+using EdgeCirculator = Triangulation::Edge_circulator;
 using FaceCirculator = Triangulation::Face_circulator;
 using FiniteFacesIterator = Triangulation::Finite_faces_iterator;
 using FaceHandle = Triangulation::Face_handle;
 using EdgeCirculator = Triangulation::Edge_circulator;
 using FiniteEdgesIterator = Triangulation::Finite_edges_iterator;
 using Edge = Triangulation::Edge;
+using Arc = Triangulation::Arc_on_sphere_2;
 
 } // namespace globe
 
