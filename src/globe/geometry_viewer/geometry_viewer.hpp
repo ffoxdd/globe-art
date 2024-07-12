@@ -20,6 +20,7 @@ class GeometryViewer : public CGAL::Basic_viewer_qt {
     void add_point(const Point3 &point, const CGAL::IO::Color &color = BLACK);
     void add_segment(const Point3 &source, const Point3 &target, const CGAL::IO::Color &color = BLACK);
     void add_circular_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color = BLACK);
+    void add_text(const Point3 &point, const std::string &text);
 
     void show();
 };
@@ -49,6 +50,10 @@ void GeometryViewer::add_circular_arc(const Point3 &point1, const Point3 &point2
 
         add_segment(segment_source, segment_target, color);
     }
+}
+
+void GeometryViewer::add_text(const Point3 &point, const std::string &text) {
+    CGAL::Basic_viewer_qt::add_text(point, text);
 }
 
 void GeometryViewer::show() {

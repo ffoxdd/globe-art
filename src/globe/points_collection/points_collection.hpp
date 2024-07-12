@@ -4,6 +4,7 @@
 #include "../types.hpp"
 #include "types.hpp"
 #include "handle_iterator.hpp"
+#include "handle_circulator_iterator.hpp"
 #include "../geometry/helpers.hpp"
 #include <ranges>
 #include <algorithm>
@@ -16,7 +17,7 @@ using VertexHandleIterator = HandleIterator<FiniteVerticesIterator, VertexHandle
 using FaceHandleValue = typename std::iterator_traits<FiniteFacesIterator>::value_type::Face_handle;
 using FaceHandleIterator = HandleIterator<FiniteFacesIterator, FaceHandleValue>;
 using FaceHandleCirculatorValue = typename std::iterator_traits<FaceCirculator>::value_type::Face_handle;
-using FaceHandleCirculatorIterator = HandleIterator<FaceCirculator, FaceHandleCirculatorValue>;
+using FaceHandleCirculatorIterator = HandleCirculatorIterator<FaceCirculator, FaceHandleCirculatorValue>;
 
 struct DualNeighborhood {
     Point3 &point;
@@ -29,9 +30,6 @@ class PointsCollection {
 
     PointsCollection();
     explicit PointsCollection(Config &&config);
-
-    PointsCollection(PointsCollection&&) = default;
-    PointsCollection& operator=(PointsCollection&&) = default;
 
     void insert(Point3 point);
     bool empty() const;
@@ -152,8 +150,8 @@ auto PointsCollection::dual_neighborhoods() -> decltype(auto) {
 }
 
 auto PointsCollection::face_circulator_range(FaceCirculator face_circulator) -> decltype(auto) {
+    auto begin = FaceHandleCirculatorIterator(face_circulator);
     auto end = FaceHandleCirculatorIterator(face_circulator);
-    auto begin = FaceHandleCirculatorIterator(++face_circulator);
 
     return std::ranges::subrange(begin, end);
 }

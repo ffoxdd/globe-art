@@ -1,6 +1,9 @@
 #ifndef GLOBEART_SRC_GLOBE_POINTS_COLLECTION_HANDLE_ITERATOR_H_
 #define GLOBEART_SRC_GLOBE_POINTS_COLLECTION_HANDLE_ITERATOR_H_
 
+#include <iterator>
+#include <cstddef>
+
 namespace globe {
 
 template<typename Iterator, typename ValueType>
