@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GLOBE_VIEWER_H_
 #define GLOBEART_SRC_GLOBE_GLOBE_VIEWER_H_
 
-#include "globe_generator.hpp"
+#include "globe_generator/globe_generator.hpp"
 #include "geometry_viewer/geometry_viewer.hpp"
 #include "geometry/helpers.hpp"
 #include <CGAL/IO/Color.h>

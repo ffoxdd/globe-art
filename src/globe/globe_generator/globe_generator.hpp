@@ -1,13 +1,13 @@
 #ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 
-#include "types.hpp"
-#include "sphere_mesh_generator/sphere_mesh_generator.hpp"
-#include "point_generator/point_generator.hpp"
-#include "point_generator/random_sphere_point_generator.hpp"
-#include "points_collection/points_collection.hpp"
-#include "noise_generator/noise_generator.hpp"
-#include "noise_generator/anl_noise_generator.hpp"
+#include "../types.hpp"
+#include "../sphere_mesh_generator/sphere_mesh_generator.hpp"
+#include "../point_generator/point_generator.hpp"
+#include "../point_generator/random_sphere_point_generator.hpp"
+#include "../points_collection/points_collection.hpp"
+#include "../noise_generator/noise_generator.hpp"
+#include "../noise_generator/anl_noise_generator.hpp"
 #include <memory>
 
 namespace globe {
@@ -38,9 +38,11 @@ class GlobeGenerator {
     std::unique_ptr<NG> _noise_generator;
 
     void normalize_noise();
-    std::vector<Point3> sample_points(size_t n);
     void add_points();
+    void relax();
+
     void add_point();
+    std::vector<Point3> sample_points(size_t n);
     [[nodiscard]] bool too_close(const Point3 &point) const;
     [[nodiscard]] SurfaceMesh triangulation_mesh() const;
     static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
@@ -76,6 +78,7 @@ template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::build() {
     normalize_noise();
     add_points();
+    // relax
     return *this;
 }
 
@@ -91,6 +94,24 @@ void GlobeGenerator<PG, NG>::normalize_noise() {
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
+void GlobeGenerator<PG, NG>::add_points() {
+    const int iterations = RANDOM_POINT_ITERATIONS;
+
+    for (int i = 0; i < iterations; i++) {
+        add_point();
+    }
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
+void GlobeGenerator<PG, NG>::relax() {
+    for (const auto &dual_neighborhood : _points_collection->dual_neighborhoods()) {
+//        auto cell_points = dual_neighborhood.dual_cell_arcs | std::ranges::views::transform(
+//            [](const auto &arc) { return arc->vertex(0)->point(); }
+//        );
+    }
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
 std::vector<Point3> GlobeGenerator<PG, NG>::sample_points(size_t n) {
     std::vector<Point3> points;
 
@@ -99,15 +120,6 @@ std::vector<Point3> GlobeGenerator<PG, NG>::sample_points(size_t n) {
     }
 
     return points;
-}
-
-template<PointGenerator PG, NoiseGenerator NG>
-void GlobeGenerator<PG, NG>::add_points() {
-    const int iterations = RANDOM_POINT_ITERATIONS;
-
-    for (int i = 0; i < iterations; i++) {
-        add_point();
-    }
 }
 
 template<PointGenerator PG, NoiseGenerator NG>

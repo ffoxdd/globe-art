@@ -1,8 +1,8 @@
+#include "globe/globe_viewer.hpp"
+#include "globe/globe_generator/globe_generator.hpp"
+#include "globe/points_collection/points_collection.hpp"
 #include <QtWidgets/QApplication>
 #include <CGAL/Qt/init_ogl_context.h>
-#include "globe/points_collection/points_collection.hpp"
-#include "globe/globe_generator.hpp"
-#include "globe/globe_viewer.hpp"
 
 using namespace globe;
 
