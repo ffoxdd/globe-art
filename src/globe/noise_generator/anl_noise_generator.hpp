@@ -13,7 +13,7 @@ class AnlNoiseGenerator {
  public:
     AnlNoiseGenerator();
 
-    void normalize(const std::vector<Point3> &sample_points, Interval output_range);
+    void normalize(const std::vector<Point3> &sample_points, Interval output_interval);
     double value(const Point3 &location);
 
  private:
@@ -23,28 +23,30 @@ class AnlNoiseGenerator {
     static anl::CInstructionIndex initialize_kernel(anl::CKernel &kernel);
     double noise_value(const Point3 &location);
 
-    Interval _noise_range;
-    Interval _output_range;
+    Interval _noise_interval;
+    Interval _output_interval;
 };
 
 AnlNoiseGenerator::AnlNoiseGenerator() :
     _kernel(std::make_unique<anl::CKernel>()),
     _instruction_index(std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel))),
-    _noise_range(Interval(0.0, 1.0)),
-    _output_range(Interval(0.0, 1.0)) {
+    _noise_interval(Interval(0.0, 1.0)),
+    _output_interval(Interval(0.0, 1.0)) {
 }
 
-void AnlNoiseGenerator::normalize(const std::vector<Point3> &sample_points, Interval output_range) {
-    for (const auto &point : sample_points) {
-        double sample_value = noise_value(point);
-        _noise_range.update_domain(sample_value);
-    }
+void AnlNoiseGenerator::normalize(const std::vector<Point3> &sample_points, Interval output_interval) {
+    auto noise_samples = sample_points | std::views::transform(
+        [this](const Point3 &point) {
+            return noise_value(point);
+        }
+    );
 
-    _output_range = output_range;
+    _noise_interval = Interval(noise_samples);
+    _output_interval = output_interval;
 }
 
 double AnlNoiseGenerator::value(const Point3 &location) {
-    return Interval::map(_noise_range, _output_range, noise_value(location));
+    return Interval::map(_noise_interval, _output_interval, noise_value(location));
 }
 
 double AnlNoiseGenerator::noise_value(const Point3 &location) {

@@ -2,27 +2,36 @@
 #define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_RANGE_H_
 
 #include <limits>
+#include <concepts>
+#include <ranges>
 
 namespace globe {
+
+template<typename T>
+concept DoubleRange = std::ranges::range<T> && std::same_as<std::ranges::range_value_t<T>, double>;
 
 class Interval {
  public:
     Interval();
     Interval(double low, double high);
+    template<DoubleRange DR> explicit Interval(DR &range);
 
     [[nodiscard]] double low() const;
     [[nodiscard]] double high() const;
 
-    void update_domain(double value);
     static double map(Interval &input_range, Interval &output_range, double value);
 
  private:
     double _low;
     double _high;
 
+    explicit Interval(const std::pair<double, double> &min_max);
+
     double t(double value);
     [[nodiscard]] double measure() const;
     double at(double t);
+
+    template<DoubleRange DR> static std::pair<double, double> min_max(DR &range);
 };
 
 Interval::Interval() :
@@ -35,6 +44,15 @@ Interval::Interval(double low, double high) :
     _high(high) {
 };
 
+template<DoubleRange DR>
+Interval::Interval(DR &range): Interval(min_max(range)) {
+}
+
+Interval::Interval(const std::pair<double, double> &min_max) :
+    _low(min_max.first),
+    _high(min_max.second) {
+}
+
 double Interval::low() const {
     return _low;
 }
@@ -43,18 +61,13 @@ double Interval::high() const {
     return _high;
 }
 
-void Interval::update_domain(double value) {
-    if (value < _low) {
-        _low = value;
-    }
-
-    if (value > _high) {
-        _high = value;
-    }
-}
-
 double Interval::map(Interval &input_range, Interval &output_range, double value) {
     return output_range.at(input_range.t(value));
+}
+
+template<DoubleRange DR> std::pair<double, double> Interval::min_max(DR &range) {
+    auto [min_it, max_it] = std::ranges::minmax_element(range);
+    return {*min_it, *max_it};
 }
 
 double Interval::t(double value) {
