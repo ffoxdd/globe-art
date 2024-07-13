@@ -49,7 +49,7 @@ TEST(NoiseGeneratorTest, CanNormalizeOutputOverSamplePoints) {
     sample_points.emplace_back(0.4, 0.5, 0.6);
     sample_points.emplace_back(0.7, 0.8, 0.9);
 
-    Range output_range = Range(-0.01, 0.02);
+    Interval output_range = Interval(-0.01, 0.02);
 
     AnlNoiseGenerator noise_generator;
     noise_generator.normalize(sample_points, output_range);

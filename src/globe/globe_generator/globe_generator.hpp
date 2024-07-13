@@ -12,7 +12,7 @@
 
 namespace globe {
 
-const Range POINT_DISTANCE_RANGE = Range(1.0 / 20.0, 1.0 / 4.0);
+const Interval POINT_DISTANCE_RANGE = Interval(1.0 / 20.0, 1.0 / 4.0);
 const int RANDOM_POINT_ITERATIONS = 10000;
 
 template<

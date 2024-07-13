@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_ANL_NOISE_GENERATOR_H_
 
 #include "../types.hpp"
-#include "range.hpp"
+#include "interval.hpp"
 #include "../point_generator/point_generator.hpp"
 #include "../point_generator/random_sphere_point_generator.hpp"
 #include <anl/anl.h>
@@ -13,7 +13,7 @@ class AnlNoiseGenerator {
  public:
     AnlNoiseGenerator();
 
-    void normalize(const std::vector<Point3> &sample_points, Range output_range);
+    void normalize(const std::vector<Point3> &sample_points, Interval output_range);
     double value(const Point3 &location);
 
  private:
@@ -23,18 +23,18 @@ class AnlNoiseGenerator {
     static anl::CInstructionIndex initialize_kernel(anl::CKernel &kernel);
     double noise_value(const Point3 &location);
 
-    Range _noise_range;
-    Range _output_range;
+    Interval _noise_range;
+    Interval _output_range;
 };
 
 AnlNoiseGenerator::AnlNoiseGenerator() :
     _kernel(std::make_unique<anl::CKernel>()),
     _instruction_index(std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel))),
-    _noise_range(Range(0.0, 1.0)),
-    _output_range(Range(0.0, 1.0)) {
+    _noise_range(Interval(0.0, 1.0)),
+    _output_range(Interval(0.0, 1.0)) {
 }
 
-void AnlNoiseGenerator::normalize(const std::vector<Point3> &sample_points, Range output_range) {
+void AnlNoiseGenerator::normalize(const std::vector<Point3> &sample_points, Interval output_range) {
     for (const auto &point : sample_points) {
         double sample_value = noise_value(point);
         _noise_range.update_domain(sample_value);
@@ -44,7 +44,7 @@ void AnlNoiseGenerator::normalize(const std::vector<Point3> &sample_points, Rang
 }
 
 double AnlNoiseGenerator::value(const Point3 &location) {
-    return Range::map(_noise_range, _output_range, noise_value(location));
+    return Interval::map(_noise_range, _output_range, noise_value(location));
 }
 
 double AnlNoiseGenerator::noise_value(const Point3 &location) {

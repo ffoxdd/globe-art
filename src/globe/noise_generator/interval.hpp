@@ -5,16 +5,16 @@
 
 namespace globe {
 
-class Range { // TODO: rename to "Interval"
+class Interval {
  public:
-    Range();
-    Range(double low, double high);
+    Interval();
+    Interval(double low, double high);
 
     [[nodiscard]] double low() const;
     [[nodiscard]] double high() const;
 
     void update_domain(double value);
-    static double map(Range &input_range, Range &output_range, double value);
+    static double map(Interval &input_range, Interval &output_range, double value);
 
  private:
     double _low;
@@ -25,25 +25,25 @@ class Range { // TODO: rename to "Interval"
     double at(double t);
 };
 
-Range::Range() :
+Interval::Interval() :
     _low(std::numeric_limits<double>::max()),
     _high(std::numeric_limits<double>::lowest()) {
 };
 
-Range::Range(double low, double high) :
+Interval::Interval(double low, double high) :
     _low(low),
     _high(high) {
 };
 
-double Range::low() const {
+double Interval::low() const {
     return _low;
 }
 
-double Range::high() const {
+double Interval::high() const {
     return _high;
 }
 
-void Range::update_domain(double value) {
+void Interval::update_domain(double value) {
     if (value < _low) {
         _low = value;
     }
@@ -53,11 +53,11 @@ void Range::update_domain(double value) {
     }
 }
 
-double Range::map(Range &input_range, Range &output_range, double value) {
+double Interval::map(Interval &input_range, Interval &output_range, double value) {
     return output_range.at(input_range.t(value));
 }
 
-double Range::t(double value) {
+double Interval::t(double value) {
     if (measure() == 0) {
         return 0;
     }
@@ -65,11 +65,11 @@ double Range::t(double value) {
     return (value - _low) / measure();
 }
 
-double Range::measure() const {
+double Interval::measure() const {
     return _high - _low;
 }
 
-double Range::at(double t) {
+double Interval::at(double t) {
     return _low + (measure() * t);
 }
 
