@@ -14,10 +14,11 @@ class Interval {
  public:
     Interval();
     Interval(double low, double high);
-    template<DoubleRange DR> explicit Interval(DR &range);
+    template<DoubleRange DR> explicit Interval(const DR &range);
 
     [[nodiscard]] double low() const;
     [[nodiscard]] double high() const;
+    [[nodiscard]] double measure() const;
 
     static double map(Interval &input_range, Interval &output_range, double value);
 
@@ -27,11 +28,10 @@ class Interval {
 
     explicit Interval(const std::pair<double, double> &min_max);
 
-    double t(double value);
-    [[nodiscard]] double measure() const;
-    double at(double t);
+    [[nodiscard]] double t(double value) const;
+    [[nodiscard]] double at(double t) const;
 
-    template<DoubleRange DR> static std::pair<double, double> min_max(DR &range);
+    template<DoubleRange DR> static std::pair<double, double> min_max(const DR &range);
 };
 
 Interval::Interval() :
@@ -45,7 +45,7 @@ Interval::Interval(double low, double high) :
 };
 
 template<DoubleRange DR>
-Interval::Interval(DR &range): Interval(min_max(range)) {
+Interval::Interval(const DR &range): Interval(min_max(range)) {
 }
 
 Interval::Interval(const std::pair<double, double> &min_max) :
@@ -65,12 +65,12 @@ double Interval::map(Interval &input_range, Interval &output_range, double value
     return output_range.at(input_range.t(value));
 }
 
-template<DoubleRange DR> std::pair<double, double> Interval::min_max(DR &range) {
+template<DoubleRange DR> std::pair<double, double> Interval::min_max(const DR &range) {
     auto [min_it, max_it] = std::ranges::minmax_element(range);
     return {*min_it, *max_it};
 }
 
-double Interval::t(double value) {
+double Interval::t(double value) const {
     if (measure() == 0) {
         return 0;
     }
@@ -82,7 +82,7 @@ double Interval::measure() const {
     return _high - _low;
 }
 
-double Interval::at(double t) {
+double Interval::at(double t) const {
     return _low + (measure() * t);
 }
 

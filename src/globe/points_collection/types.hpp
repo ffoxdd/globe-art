@@ -27,9 +27,8 @@ using FiniteEdgesIterator = Triangulation::Finite_edges_iterator;
 using Edge = Triangulation::Edge;
 using Arc = Triangulation::Arc_on_sphere_2;
 
-struct DualNeighborhood {
+struct DualNeighborhood { // TODO: move this out of here
     Point3 &point;
-    std::vector<Point3> dual_cell_points;
     std::vector<Arc> dual_cell_arcs;
 };
 

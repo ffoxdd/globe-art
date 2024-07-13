@@ -1,9 +1,9 @@
 #ifndef GLOBEART_SRC_GLOBE_GLOBE_VIEWER_H_
 #define GLOBEART_SRC_GLOBE_GLOBE_VIEWER_H_
 
-#include "globe_generator/globe_generator.hpp"
-#include "geometry_viewer/geometry_viewer.hpp"
-#include "geometry/helpers.hpp"
+#include "../globe_generator/globe_generator.hpp"
+#include "../geometry_viewer/geometry_viewer.hpp"
+#include "../geometry/helpers.hpp"
 #include <CGAL/IO/Color.h>
 #include <CGAL/Kernel/global_functions_3.h>
 #include <QtWidgets/QWidget>
@@ -85,7 +85,7 @@ void GlobeViewer<PG, NG>::build_dual_neighborhoods() {
             auto source = to_point(arc.source());
             auto target = to_point(arc.target());
 
-            _geometry_viewer->add_circular_arc(source, target, BLUE);
+            _geometry_viewer->add_circular_arc(source, target);
         }
     }
 }

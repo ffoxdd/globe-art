@@ -1,6 +1,5 @@
-#include "globe/globe_viewer.hpp"
+#include "globe/globe_viewer/globe_viewer.hpp"
 #include "globe/globe_generator/globe_generator.hpp"
-#include "globe/points_collection/points_collection.hpp"
 #include <QtWidgets/QApplication>
 #include <CGAL/Qt/init_ogl_context.h>
 
@@ -12,17 +11,12 @@ int main(int argc, char *argv[]) {
 
     auto viewer = std::make_shared<GeometryViewer>(QApplication::activeWindow());
 
-    GlobeGenerator globe_generator(GlobeGenerator<>::Config{
-            .points_collection = std::make_unique<PointsCollection>(PointsCollection::Config{
-                    .dual_neighborhood_callback = [viewer](const DualNeighborhood &dual_neighborhood) {
-                        viewer->add_point(dual_neighborhood.point, RED);
-
-                        for (const auto &point : dual_neighborhood.dual_cell_points) {
-                            viewer->add_point(point, BLUE);
-                        }
-                    }
-                }
-            )
+    GlobeGenerator globe_generator(
+        GlobeGenerator<>::Config{
+            .relax_callback = [viewer](const RelaxCellIteration &relax_cell_iteration) {
+                viewer->add_point(relax_cell_iteration.point, BLUE);
+                viewer->add_point(relax_cell_iteration.centroid, RED);
+            }
         }
     );
 

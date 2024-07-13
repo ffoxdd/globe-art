@@ -2,6 +2,7 @@
 #define GLOBEART_SRC_GLOBE_SPHERE_GENERATOR_SPHERE_MESH_GENERATOR_H_
 
 #include "../types.hpp"
+#include "../geometry/helpers.hpp"
 #include <CGAL/subdivision_method_3.h>
 
 namespace globe {
@@ -65,11 +66,8 @@ void SphereMeshGenerator::SphereMesh::subdivide() {
 
 void SphereMeshGenerator::SphereMesh::project_to_sphere() {
     for (auto vertex : _mesh.vertices()) {
-        // TODO: make a common utility function for this
         Point3 &point = _mesh.point(vertex);
-        Kernel::Vector_3 vector = point - _center;
-        double scale = _radius / std::sqrt(vector.squared_length());
-        point = _center + (vector * scale);
+        point = globe::project_to_sphere(point, _center, _radius);
     }
 }
 
