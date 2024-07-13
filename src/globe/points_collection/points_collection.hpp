@@ -21,12 +21,6 @@ using EdgeCirculatorIterator = CirculatorIterator<EdgeCirculator, Edge>;
 using FaceHandleCirculatorValue = typename std::iterator_traits<FaceCirculator>::value_type::Face_handle;
 using FaceHandleCirculatorIterator = HandleCirculatorIterator<FaceCirculator, FaceHandleCirculatorValue>;
 
-struct DualNeighborhood {
-    Point3 &point;
-    std::vector<Point3> dual_cell_points;
-    std::vector<Arc> dual_cell_arcs;
-};
-
 class PointsCollection {
  public:
     struct Config;

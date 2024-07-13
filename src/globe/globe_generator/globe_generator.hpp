@@ -105,6 +105,14 @@ void GlobeGenerator<PG, NG>::add_points() {
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::relax() {
     for (const auto &dual_neighborhood : _points_collection->dual_neighborhoods()) {
+        // make a spherical polygon
+        // get its area and spherical bounding box
+        // randomly generate points in the bounding box
+        // if the point is in the polygon, add it to the centroid calculation
+        // stop after some number determined by the area
+        // store the result in a map from vertex point -> weighted centroid
+        // at the end, move all vertex points to the weighted centroid
+
 //        auto cell_points = dual_neighborhood.dual_cell_arcs | std::ranges::views::transform(
 //            [](const auto &arc) { return arc->vertex(0)->point(); }
 //        );

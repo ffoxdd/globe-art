@@ -27,6 +27,12 @@ using FiniteEdgesIterator = Triangulation::Finite_edges_iterator;
 using Edge = Triangulation::Edge;
 using Arc = Triangulation::Arc_on_sphere_2;
 
+struct DualNeighborhood {
+    Point3 &point;
+    std::vector<Point3> dual_cell_points;
+    std::vector<Arc> dual_cell_arcs;
+};
+
 } // namespace globe
 
 #endif //GLOBEART_SRC_GLOBE_POINTS_COLLECTION_TYPES_H_
