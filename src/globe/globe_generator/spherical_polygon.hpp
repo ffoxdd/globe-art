@@ -12,9 +12,6 @@
 
 namespace globe {
 
-template<typename T>
-concept Point3Range = std::ranges::range<T> && std::same_as<std::ranges::range_value_t<T>, Point3>;
-
 class SphericalPolygon {
  public:
     explicit SphericalPolygon(std::vector<Arc> arcs);

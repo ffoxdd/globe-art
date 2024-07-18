@@ -17,14 +17,8 @@
 
 namespace globe {
 
-const Interval POINT_DISTANCE_RANGE = Interval(1.0 / 20.0, 1.0 / 4.0);
+const Interval POINT_DISTANCE_RANGE = Interval(1.0 / 100.0, 1.0 / 1.0);
 const int RANDOM_POINT_ITERATIONS = 10000;
-
-struct RelaxCellIteration {
-    const Point3 &point;
-    const SphericalPolygon &dual_cell;
-    const Point3 &centroid;
-};
 
 template<
     PointGenerator PG = RandomSpherePointGenerator,
@@ -37,6 +31,10 @@ class GlobeGenerator {
     explicit GlobeGenerator(Config &&config);
 
     GlobeGenerator &build();
+    GlobeGenerator &initialize();
+    GlobeGenerator &add_points();
+    GlobeGenerator &relax(int count = 1);
+
     void save_ply(const std::string &filename) const;
 
     auto dual_arcs() -> decltype(auto);
@@ -46,18 +44,15 @@ class GlobeGenerator {
     std::unique_ptr<PG> _point_generator;
     std::unique_ptr<PointsCollection> _points_collection;
     std::unique_ptr<NG> _noise_generator;
-    std::function<void(const RelaxCellIteration &)> _relax_callback;
 
     void normalize_noise();
-    void add_points();
-    void relax();
-
     void add_point();
     std::vector<Point3> sample_points(size_t n);
     [[nodiscard]] bool too_close(const Point3 &point) const;
     [[nodiscard]] SurfaceMesh triangulation_mesh() const;
     static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
     Point3 centroid(const SphericalPolygon &spherical_polygon);
+    void perform_relaxation_iteration();
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -70,7 +65,6 @@ struct GlobeGenerator<PG, NG>::Config {
 
     std::unique_ptr<PointsCollection> points_collection = std::make_unique<PointsCollection>();
     std::unique_ptr<NG> noise_generator = std::make_unique<NG>(AnlNoiseGenerator());
-    std::function<void(const RelaxCellIteration &)> relax_callback = [](const RelaxCellIteration &) { };
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -80,13 +74,13 @@ template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG>::GlobeGenerator(GlobeGenerator::Config &&config) :
     _point_generator(std::move(config.point_generator)),
     _points_collection(std::move(config.points_collection)),
-    _noise_generator(std::move(config.noise_generator)),
-    _relax_callback(config.relax_callback) {
+    _noise_generator(std::move(config.noise_generator))
+    {
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::build() {
-    normalize_noise();
+    initialize();
     add_points();
     relax();
 
@@ -100,21 +94,38 @@ void GlobeGenerator<PG, NG>::save_ply(const std::string &filename) const {
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
+GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::initialize() {
+    normalize_noise();
+    return *this;
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::normalize_noise() {
     _noise_generator->normalize(sample_points(1000), POINT_DISTANCE_RANGE);
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-void GlobeGenerator<PG, NG>::add_points() {
+GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::add_points() {
     const int iterations = RANDOM_POINT_ITERATIONS;
 
     for (int i = 0; i < iterations; i++) {
         add_point();
     }
+
+    return *this;
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon& spherical_polygon) {
+GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::relax(int count) {
+    for (int i = 0; i < count; i++) {
+        perform_relaxation_iteration();
+    }
+
+    return *this;
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
+Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon &spherical_polygon) {
     return CentroidCalculator<NG>(
         CentroidCalculator<>::Config{
             .spherical_polygon = spherical_polygon,
@@ -124,18 +135,17 @@ Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon& spherical_polygo
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-void GlobeGenerator<PG, NG>::relax() {
+void GlobeGenerator<PG, NG>::perform_relaxation_iteration() {
+    std::vector<Point3> new_points;
+
     for (const auto &dual_neighborhood : _points_collection->dual_neighborhoods()) {
         const SphericalPolygon spherical_polygon(dual_neighborhood.dual_cell_arcs);
-
-        auto relax_cell_iteration = RelaxCellIteration{
-            .point = dual_neighborhood.point,
-            .dual_cell = spherical_polygon,
-            .centroid = centroid(spherical_polygon)
-        };
-
-        _relax_callback(relax_cell_iteration);
+        Point3 new_point = centroid(spherical_polygon);
+        // double error = (dual_neighborhood.point - new_point).squared_length();
+        new_points.push_back(new_point);
     }
+
+    _points_collection->reset(new_points);
 }
 
 template<PointGenerator PG, NoiseGenerator NG>

@@ -71,10 +71,7 @@ void GlobeViewer<PG, NG>::show() {
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeViewer<PG, NG>::build_dual_edges() {
     for (const auto &arc : _globe_generator->dual_arcs()) {
-        auto source = to_point(arc.source());
-        auto target = to_point(arc.target());
-
-        _geometry_viewer->add_circular_arc(source, target);
+        _geometry_viewer->add_arc(arc);
     }
 }
 
@@ -82,10 +79,7 @@ template<PointGenerator PG, NoiseGenerator NG>
 void GlobeViewer<PG, NG>::build_dual_neighborhoods() {
     for (const auto &dual_neighborhood : _globe_generator->dual_neighborhoods()) {
         for (const auto &arc : dual_neighborhood.dual_cell_arcs) {
-            auto source = to_point(arc.source());
-            auto target = to_point(arc.target());
-
-            _geometry_viewer->add_circular_arc(source, target);
+            _geometry_viewer->add_arc(arc);
         }
     }
 }

@@ -37,6 +37,8 @@ class PointsCollection {
     auto points() -> decltype(auto);
     auto faces() -> decltype(auto);
 
+    template<Point3Range PR> void reset(PR new_points);
+
  private:
     std::vector<Point3> _points;
     KDTree _kd_tree;
@@ -51,6 +53,7 @@ class PointsCollection {
     auto static face_circulator_range(FaceCirculator face_circulator) -> decltype(auto);
     auto incident_edges_range(VertexHandleValue vertex_handle) -> decltype(auto);
     std::vector<Arc> dual_cell_arcs(VertexHandle vertex_handle);
+    void clear();
 };
 
 struct PointsCollection::Config {
@@ -114,6 +117,20 @@ auto PointsCollection::faces() -> decltype(auto) {
         FaceHandleIterator(_triangulation.finite_faces_begin()),
         FaceHandleIterator(_triangulation.finite_faces_end())
     );
+}
+
+template<Point3Range PR> void PointsCollection::reset(PR new_points) {
+    clear();
+
+    for (auto point : new_points) {
+        insert(point);
+    }
+}
+
+void PointsCollection::clear() {
+    _points.clear();
+    _kd_tree.clear();
+    _triangulation.clear();
 }
 
 auto PointsCollection::dual_arcs() -> decltype(auto) {

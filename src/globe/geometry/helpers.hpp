@@ -38,11 +38,7 @@ Vector3 normalize(const Vector3 &vector) {
     return {vector.x() / length, vector.y() / length, vector.z() / length};
 }
 
-Point3 spherical_interpolate(const Point3 &point1,
-    const globe::Point3 &point2,
-    double t,
-    const globe::Point3 &center
-) {
+Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, double t, const Point3 &center = ORIGIN) {
     globe::Vector3 v1 = point1 - center;
     globe::Vector3 v2 = point2 - center;
 
@@ -56,7 +52,7 @@ Point3 spherical_interpolate(const Point3 &point1,
     double alpha = sin((1 - t) * theta) / sin_theta;
     double beta = sin(t * theta) / sin_theta;
 
-    globe::Vector3 interpolated_vector = (alpha * v1) + (beta * v2);
+    Vector3 interpolated_vector = (alpha * v1) + (beta * v2);
 
     return center + interpolated_vector;
 }
