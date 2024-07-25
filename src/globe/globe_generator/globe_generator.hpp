@@ -14,6 +14,8 @@
 #include "centroid_calculator.hpp"
 #include "../noise_generator/interval.hpp"
 #include <memory>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
 
 namespace globe {
 
@@ -136,14 +138,23 @@ Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon &spherical_polygo
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::perform_relaxation_iteration() {
-    std::vector<Point3> new_points;
+    using DualNeighborhoodIterator = decltype(_points_collection->dual_neighborhoods().begin());
+    using DualNeighborhoodType = typename std::iterator_traits<DualNeighborhoodIterator>::value_type;
 
-    for (const auto &dual_neighborhood : _points_collection->dual_neighborhoods()) {
-        const SphericalPolygon spherical_polygon(dual_neighborhood.dual_cell_arcs);
-        Point3 new_point = centroid(spherical_polygon);
-        // double error = (dual_neighborhood.point - new_point).squared_length();
-        new_points.push_back(new_point);
-    }
+    std::vector<DualNeighborhoodType> temp_dual_neighborhoods(
+        _points_collection->dual_neighborhoods().begin(), _points_collection->dual_neighborhoods().end()
+    );
+
+    std::vector<Point3> new_points(temp_dual_neighborhoods.size());
+
+    oneapi::tbb::parallel_for(oneapi::tbb::blocked_range<size_t>(0, temp_dual_neighborhoods.size()),
+        [&](const oneapi::tbb::blocked_range<size_t>& range) {
+            for (size_t i = range.begin(); i < range.end(); ++i) {
+                const SphericalPolygon spherical_polygon(temp_dual_neighborhoods[i].dual_cell_arcs);
+                new_points[i] = this->centroid(spherical_polygon);
+            }
+        }
+    );
 
     _points_collection->reset(new_points);
 }
