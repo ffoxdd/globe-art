@@ -10,10 +10,6 @@
 
 namespace globe {
 
-using KDTreeTraits = CGAL::Search_traits_3<Kernel>;
-using KDTree = CGAL::Kd_tree<KDTreeTraits>;
-using FuzzySphere = CGAL::Fuzzy_sphere<KDTreeTraits>;
-
 using Traits = CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>;
 using Triangulation = CGAL::Delaunay_triangulation_on_sphere_2<Traits>;
 using FiniteVerticesIterator = Triangulation::Finite_vertices_iterator;

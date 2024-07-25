@@ -30,8 +30,6 @@ class PointsCollection {
 
     void insert(Point3 point);
     bool empty() const;
-    std::vector<Point3> nearby_points(Point3 point, double radius) const;
-
     auto dual_arcs() -> decltype(auto);
     auto dual_neighborhoods() -> decltype(auto);
     auto points() -> decltype(auto);
@@ -41,7 +39,6 @@ class PointsCollection {
 
  private:
     std::vector<Point3> _points;
-    KDTree _kd_tree;
     Triangulation _triangulation;
 
     std::function<void(const DualNeighborhood &)> _dual_neighborhood_callback;
@@ -70,21 +67,11 @@ PointsCollection::PointsCollection(Config &&config) :
 
 void PointsCollection::insert(Point3 point) {
     _points.push_back(point);
-    _kd_tree.insert(point);
     _triangulation.insert(point);
 }
 
 bool PointsCollection::empty() const {
     return _points.empty();
-}
-
-std::vector<Point3> PointsCollection::nearby_points(Point3 point, double radius) const {
-    FuzzySphere search_sphere(point, radius);
-
-    std::vector<Point3> nearby_points;
-    _kd_tree.search(std::back_inserter(nearby_points), search_sphere);
-
-    return nearby_points;
 }
 
 auto PointsCollection::points() -> decltype(auto) {
@@ -129,7 +116,6 @@ template<Point3Range PR> void PointsCollection::reset(PR new_points) {
 
 void PointsCollection::clear() {
     _points.clear();
-    _kd_tree.clear();
     _triangulation.clear();
 }
 

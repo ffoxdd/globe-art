@@ -20,7 +20,7 @@
 namespace globe {
 
 const Interval POINT_DISTANCE_RANGE = Interval(1.0 / 100.0, 1.0 / 1.0);
-const int RANDOM_POINT_ITERATIONS = 10000;
+const int POINT_COUNT = 250;
 
 template<
     PointGenerator PG = RandomSpherePointGenerator,
@@ -50,7 +50,6 @@ class GlobeGenerator {
     void normalize_noise();
     void add_point();
     std::vector<Point3> sample_points(size_t n);
-    [[nodiscard]] bool too_close(const Point3 &point) const;
     [[nodiscard]] SurfaceMesh triangulation_mesh() const;
     static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
     Point3 centroid(const SphericalPolygon &spherical_polygon);
@@ -108,9 +107,7 @@ void GlobeGenerator<PG, NG>::normalize_noise() {
 
 template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::add_points() {
-    const int iterations = RANDOM_POINT_ITERATIONS;
-
-    for (int i = 0; i < iterations; i++) {
+    for (int i = 0; i < POINT_COUNT; i++) {
         add_point();
     }
 
@@ -204,18 +201,7 @@ SurfaceMesh GlobeGenerator<PG, NG>::triangulation_mesh() const {
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::add_point() {
     Point3 point = _point_generator->generate();
-
-    if (too_close(point)) {
-        return;
-    }
-
     _points_collection->insert(point);
-}
-
-template<PointGenerator PG, NoiseGenerator NG>
-bool GlobeGenerator<PG, NG>::too_close(const Point3 &point) const {
-    double separation_radius = _noise_generator->value(point);
-    return !_points_collection->nearby_points(point, separation_radius).empty();
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
