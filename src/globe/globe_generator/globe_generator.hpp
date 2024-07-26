@@ -19,7 +19,7 @@
 
 namespace globe {
 
-const Interval POINT_DISTANCE_RANGE = Interval(1.0 / 100.0, 1.0 / 1.0);
+const Interval NOISE_INTERVAL = Interval(1, 100);
 const int POINT_COUNT = 250;
 
 template<
@@ -102,7 +102,7 @@ GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::initialize() {
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::normalize_noise() {
-    _noise_generator->normalize(sample_points(1000), POINT_DISTANCE_RANGE);
+    _noise_generator->normalize(sample_points(1000), NOISE_INTERVAL);
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
