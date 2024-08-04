@@ -53,7 +53,8 @@ class GlobeGenerator {
     [[nodiscard]] SurfaceMesh triangulation_mesh() const;
     static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
     Point3 centroid(const SphericalPolygon &spherical_polygon);
-    void perform_relaxation_iteration();
+    void adjust_capacity();
+    void adjust_centroids();
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -75,8 +76,7 @@ template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG>::GlobeGenerator(GlobeGenerator::Config &&config) :
     _point_generator(std::move(config.point_generator)),
     _points_collection(std::move(config.points_collection)),
-    _noise_generator(std::move(config.noise_generator))
-    {
+    _noise_generator(std::move(config.noise_generator)) {
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -117,24 +117,26 @@ GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::add_points() {
 template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::relax(int count) {
     for (int i = 0; i < count; i++) {
-        perform_relaxation_iteration();
+        adjust_capacity();
+        adjust_centroids();
     }
 
     return *this;
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon &spherical_polygon) {
-    return CentroidCalculator<NG>(
-        CentroidCalculator<>::Config{
-            .spherical_polygon = spherical_polygon,
-            .noise_generator = *_noise_generator
-        }
-    ).centroid();
+void GlobeGenerator<PG, NG>::adjust_capacity() {
+    // calculate the capacities of all cells
+    // take the cell that is the smallest relative to the desired capacity
+    // adjust the location of the point to minimize the capacity error w/the downhill simplex method
+    //   - you can just perform a few minimization steps rather than finding the actual minimum
+    // recalculate the capacities of adjacent cells
+    // if it didn't change -> stop
+    //
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-void GlobeGenerator<PG, NG>::perform_relaxation_iteration() {
+void GlobeGenerator<PG, NG>::adjust_centroids() {
     using DualNeighborhoodIterator = decltype(_points_collection->dual_neighborhoods().begin());
     using DualNeighborhoodType = typename std::iterator_traits<DualNeighborhoodIterator>::value_type;
 
@@ -145,7 +147,7 @@ void GlobeGenerator<PG, NG>::perform_relaxation_iteration() {
     std::vector<Point3> new_points(temp_dual_neighborhoods.size());
 
     oneapi::tbb::parallel_for(oneapi::tbb::blocked_range<size_t>(0, temp_dual_neighborhoods.size()),
-        [&](const oneapi::tbb::blocked_range<size_t>& range) {
+        [&](const oneapi::tbb::blocked_range<size_t> &range) {
             for (size_t i = range.begin(); i < range.end(); ++i) {
                 const SphericalPolygon spherical_polygon(temp_dual_neighborhoods[i].dual_cell_arcs);
                 new_points[i] = this->centroid(spherical_polygon);
@@ -154,6 +156,16 @@ void GlobeGenerator<PG, NG>::perform_relaxation_iteration() {
     );
 
     _points_collection->reset(new_points);
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
+Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon &spherical_polygon) {
+    return CentroidCalculator<NG>(
+        CentroidCalculator<>::Config{
+            .spherical_polygon = spherical_polygon,
+            .noise_generator = *_noise_generator
+        }
+    ).centroid();
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -180,7 +192,7 @@ auto GlobeGenerator<PG, NG>::dual_neighborhoods() -> decltype(auto) {
 template<PointGenerator PG, NoiseGenerator NG>
 SurfaceMesh GlobeGenerator<PG, NG>::triangulation_mesh() const {
     SurfaceMesh mesh;
-    std::map < Point3, SurfaceMesh::Vertex_index > vertices_by_point;
+    std::map<Point3, SurfaceMesh::Vertex_index> vertices_by_point;
 
     for (const auto &point : _points_collection->points()) {
         SurfaceMesh::Vertex_index vertex = mesh.add_vertex(point);
