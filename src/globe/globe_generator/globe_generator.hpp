@@ -136,9 +136,9 @@ void GlobeGenerator<PG, NG>::adjust_capacity() {
 
     // need:
     // min-heap
-    // vertex accessor
+    // * vertex accessor
     // downhill simplex algorithm
-    // ability to move a vertex
+    // * ability to move a vertex
     // method to get the dual face neighborhood for a vertex
     // ability to find the area of a face (spherical polygon)
 }

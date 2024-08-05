@@ -29,29 +29,26 @@ class PointsCollection {
     explicit PointsCollection(Config &&config);
 
     void insert(Point3 point);
-    bool empty() const;
+    template<Point3Range PR> void reset(PR new_points);
+    void move_vertex(VertexHandle vertex_handle, Point3 new_point);
 
     auto vertices() -> decltype(auto);
     auto dual_arcs() -> decltype(auto);
     auto dual_neighborhoods() -> decltype(auto);
-    auto points() -> decltype(auto);
     auto faces() -> decltype(auto);
 
-    template<Point3Range PR> void reset(PR new_points);
-
  private:
-    std::vector<Point3> _points;
     Triangulation _triangulation;
 
     std::function<void(const DualNeighborhood &)> _dual_neighborhood_callback;
 
-    auto edges() -> decltype(auto);
     auto all_edges() -> decltype(auto);
     auto static edge_circulator_range(EdgeCirculator edge_circulator) -> decltype(auto);
     auto static face_circulator_range(FaceCirculator face_circulator) -> decltype(auto);
     auto incident_edges_range(VertexHandleValue vertex_handle) -> decltype(auto);
     std::vector<Arc> dual_cell_arcs(VertexHandle vertex_handle);
     void clear();
+
 };
 
 struct PointsCollection::Config {
@@ -67,29 +64,26 @@ PointsCollection::PointsCollection(Config &&config) :
 }
 
 void PointsCollection::insert(Point3 point) {
-    _points.push_back(point);
     _triangulation.insert(point);
 }
 
-bool PointsCollection::empty() const {
-    return _points.empty();
+template<Point3Range PR> void PointsCollection::reset(PR new_points) {
+    clear();
+
+    for (auto point : new_points) {
+        insert(point);
+    }
 }
 
-auto PointsCollection::points() -> decltype(auto) {
-    return std::ranges::subrange(_points.begin(), _points.end());
+void PointsCollection::move_vertex(VertexHandle vertex_handle, Point3 new_point) {
+    _triangulation.remove(vertex_handle);
+    _triangulation.insert(new_point);
 }
 
 auto PointsCollection::vertices() -> decltype(auto) {
     return std::ranges::subrange(
         VertexHandleIterator(_triangulation.finite_vertices_begin()),
         VertexHandleIterator(_triangulation.finite_vertices_end())
-    );
-}
-
-auto PointsCollection::edges() -> decltype(auto) {
-    return std::ranges::subrange(
-        _triangulation.finite_edges_begin(),
-        _triangulation.finite_edges_end()
     );
 }
 
@@ -107,16 +101,7 @@ auto PointsCollection::faces() -> decltype(auto) {
     );
 }
 
-template<Point3Range PR> void PointsCollection::reset(PR new_points) {
-    clear();
-
-    for (auto point : new_points) {
-        insert(point);
-    }
-}
-
 void PointsCollection::clear() {
-    _points.clear();
     _triangulation.clear();
 }
 
