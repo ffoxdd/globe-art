@@ -57,8 +57,6 @@ CentroidCalculator<NG>::CentroidCalculator() :
     CentroidCalculator(Config()) {
 }
 
-#include <iostream>
-
 template<NoiseGenerator NG>
 Point3 CentroidCalculator<NG>::centroid() {
     double total_weight = 0;

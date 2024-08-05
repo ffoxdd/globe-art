@@ -30,6 +30,8 @@ class PointsCollection {
 
     void insert(Point3 point);
     bool empty() const;
+
+    auto vertices() -> decltype(auto);
     auto dual_arcs() -> decltype(auto);
     auto dual_neighborhoods() -> decltype(auto);
     auto points() -> decltype(auto);
@@ -43,7 +45,6 @@ class PointsCollection {
 
     std::function<void(const DualNeighborhood &)> _dual_neighborhood_callback;
 
-    auto vertices() -> decltype(auto);
     auto edges() -> decltype(auto);
     auto all_edges() -> decltype(auto);
     auto static edge_circulator_range(EdgeCirculator edge_circulator) -> decltype(auto);

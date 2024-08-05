@@ -126,13 +126,21 @@ GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::relax(int count) {
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::adjust_capacity() {
-    // calculate the capacities of all cells
-    // take the cell that is the smallest relative to the desired capacity
-    // adjust the location of the point to minimize the capacity error w/the downhill simplex method
-    //   - you can just perform a few minimization steps rather than finding the actual minimum
+    // initialize a min-heap with all vertices keyed on their capacity difference
+    // take the vertex whose dual cell has the minimal capacity difference
+    // minimize the capacity error w/ the downhill simplex method
+    // move the vertex around, within the area of its dual face neighborhood
     // recalculate the capacities of adjacent cells
-    // if it didn't change -> stop
-    //
+    // you can just do a few minimization steps as opposed to finding the true minimum
+    // repeat until no vertices move
+
+    // need:
+    // min-heap
+    // vertex accessor
+    // downhill simplex algorithm
+    // ability to move a vertex
+    // method to get the dual face neighborhood for a vertex
+    // ability to find the area of a face (spherical polygon)
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
