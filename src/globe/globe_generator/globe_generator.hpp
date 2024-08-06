@@ -139,8 +139,7 @@ void GlobeGenerator<PG, NG>::adjust_capacity() {
     // * vertex accessor
     // downhill simplex algorithm
     // * ability to move a vertex
-    // method to get the dual face neighborhood for a vertex
-    // ability to find the area of a face (spherical polygon)
+    // * method to get the dual face neighborhood for a vertex
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
