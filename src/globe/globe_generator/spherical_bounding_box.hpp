@@ -34,6 +34,10 @@ class SphericalBoundingBox {
         return _z_interval;
     }
 
+    [[nodiscard]] double area() const { // this only works for r == 1
+        return _theta_interval.measure() * _z_interval.measure();
+    }
+
  private:
     const Interval _theta_interval;
     const Interval _z_interval;

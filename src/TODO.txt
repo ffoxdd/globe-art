@@ -1,0 +1,2 @@
+- Refactor the common code in area_calculator and centroid_calculator
+- Inject the random number stuff into area_calculator and centroid_calculator to avoid reinitializing

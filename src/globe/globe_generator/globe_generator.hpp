@@ -14,6 +14,8 @@
 #include "centroid_calculator.hpp"
 #include "../noise_generator/interval.hpp"
 #include <memory>
+#include <queue>
+#include <vector>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
 
@@ -124,8 +126,17 @@ GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::relax(int count) {
     return *this;
 }
 
+// we need to do operations on (cell, capacity) pairs
+
+struct VoronoiCell {
+    VertexHandle vertex;
+    double capacity;
+};
+
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::adjust_capacity() {
+    std::priority_queue<VertexHandle, std::vector<VertexHandle>, CapacityDifferenceComparator> min_heap;
+
     // initialize a min-heap with all vertices keyed on their capacity difference
     // take the vertex whose dual cell has the minimal capacity difference
     // minimize the capacity error w/ the downhill simplex method
