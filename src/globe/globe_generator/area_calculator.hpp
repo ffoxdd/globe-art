@@ -8,6 +8,7 @@
 #include "../noise_generator/noise_generator.hpp"
 #include "../noise_generator/anl_noise_generator.hpp"
 #include "../noise_generator/interval.hpp"
+#include <cmath>
 
 namespace globe {
 
@@ -57,10 +58,10 @@ AreaCalculator<NG>::AreaCalculator() :
 
 template<NoiseGenerator NG>
 double AreaCalculator<NG>::area() {
-    double total_weighted_area = 0;
-    double total_density_sum = 0;
+
     int points_inside_polygon = 0;
     int total_points_sampled = 0;
+    double total_mass = 0;
     int consecutive_stable_iterations = 0;
     double previous_weighted_area = 0;
 
@@ -70,18 +71,15 @@ double AreaCalculator<NG>::area() {
 
         if (_spherical_polygon.contains(sample_point)) {
             points_inside_polygon++;
-            double density = density_at(sample_point);
-            total_weighted_area += density;
-            total_density_sum += 1;
+            total_mass += density_at(sample_point);
         }
 
-        double spherical_polygon_area_estimate =
-            _bounding_box.area() * (static_cast<double>(points_inside_polygon) / total_points_sampled);
+        double inside_fraction = static_cast<double>(points_inside_polygon) / total_points_sampled;
+        double spherical_polygon_area_estimate = _bounding_box.area() * inside_fraction;
+        double average_density = total_mass / static_cast<double>(points_inside_polygon);
+        double weighted_area_estimate = spherical_polygon_area_estimate * average_density;
 
-        double weighted_area_estimate =
-            spherical_polygon_area_estimate * (total_weighted_area / total_density_sum);
-
-        double error = std::abs(weighted_area_estimate - previous_weighted_area);
+        double error = std::pow(weighted_area_estimate - previous_weighted_area, 2);
 
         if (error < _error_threshold) {
             consecutive_stable_iterations++;

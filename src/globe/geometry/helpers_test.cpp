@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include "helpers.hpp"
-#include "../types.hpp"
 #include <cmath>
 
 using namespace globe;

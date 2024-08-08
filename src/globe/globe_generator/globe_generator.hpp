@@ -135,7 +135,7 @@ struct VoronoiCell {
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::adjust_capacity() {
-    std::priority_queue<VertexHandle, std::vector<VertexHandle>, CapacityDifferenceComparator> min_heap;
+//    std::priority_queue<VertexHandle, std::vector<VertexHandle>, CapacityDifferenceComparator> min_heap;
 
     // initialize a min-heap with all vertices keyed on their capacity difference
     // take the vertex whose dual cell has the minimal capacity difference
