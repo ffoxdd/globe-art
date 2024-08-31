@@ -17,11 +17,11 @@ int main(int argc, char *argv[]) {
     globe_generator.build();
     draw(globe_generator, geometry_viewer);
 
-    geometry_viewer.set_key_press_callback([&](GeometryViewer &geometry_viewer, QKeyEvent *event) {
-            globe_generator.relax();
-            draw(globe_generator, geometry_viewer);
-        }
-    );
+//    geometry_viewer.set_key_press_callback([&](GeometryViewer &geometry_viewer, QKeyEvent *event) {
+//            globe_generator.relax();
+//            draw(globe_generator, geometry_viewer);
+//        }
+//    );
 
     geometry_viewer.show();
     return QApplication::exec();

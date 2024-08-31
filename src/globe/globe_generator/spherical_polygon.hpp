@@ -9,6 +9,9 @@
 #include <CGAL/Projection_traits_xy_3.h>
 #include <utility>
 #include <ranges>
+#include <limits>
+
+#include <iostream>
 
 namespace globe {
 
@@ -24,7 +27,7 @@ class SphericalPolygon {
     std::vector<Arc> _arcs;
 
     static double signed_interior_angle(const Arc &arc, const Point3 &point);
-    static double orientation_sign(Vector3& a, Vector3& b, Vector3& c);
+    static double orientation_sign(Vector3 &a, Vector3 &b, Vector3 &c);
 };
 
 auto SphericalPolygon::arcs() -> decltype(auto) { return _arcs; }
@@ -58,10 +61,13 @@ double SphericalPolygon::signed_interior_angle(const Arc &arc, const Point3 &poi
     Vector3 b = position_vector(point);
     Vector3 c = position_vector(arc.target());
 
+    std::cout << a << "," << b << "," << c << std::endl;
+    std::cout << "sign: " << orientation_sign(a, b, c) << std::endl;
+
     return globe::spherical_angle(a, b, c) * orientation_sign(a, b, c);
 }
 
-double SphericalPolygon::orientation_sign(Vector3& a, Vector3& b, Vector3& c) {
+double SphericalPolygon::orientation_sign(Vector3 &a, Vector3 &b, Vector3 &c) {
     return CGAL::orientation(a, b, c) == CGAL::LEFT_TURN ? 1 : -1;
 }
 

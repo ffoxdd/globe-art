@@ -6,12 +6,9 @@
 using namespace globe;
 using ::testing::Return;
 
-using Circle3 = SphericalKernel::Circle_3;
-using SphericalVector3 = SphericalKernel::Vector_3;
-
 TEST(AreaCalculatorTest, CalculatesAreaCorrectly) {
     MockNoiseGenerator mock_noise_generator;
-    Circle3 circle(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0));
+    SphericalCircle3 circle(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0));
 
     SphericalPolygon spherical_polygon = SphericalPolygon(
         std::vector<Arc>{
@@ -37,7 +34,7 @@ TEST(AreaCalculatorTest, CalculatesAreaCorrectly) {
 
 TEST(AreaCalculatorTest, CalculatesAreaWithAlternatingDensity) {
     MockNoiseGenerator mock_noise_generator;
-    Circle3 circle(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0));
+    SphericalCircle3 circle(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0));
 
     SphericalPolygon spherical_polygon = SphericalPolygon(
         std::vector<Arc>{

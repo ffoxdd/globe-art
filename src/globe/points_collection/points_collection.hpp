@@ -40,6 +40,7 @@ class PointsCollection {
     auto dual_neighborhoods() -> decltype(auto);
     auto faces() -> decltype(auto);
     auto dual_face_neighborhood(VertexHandle vertex_handle) -> decltype(auto);
+    std::vector<Arc> dual_cell_arcs(VertexHandle vertex_handle);
 
  private:
     Triangulation _triangulation;
@@ -52,7 +53,6 @@ class PointsCollection {
     auto static face_circulator_range(FaceCirculator face_circulator) -> decltype(auto);
     auto incident_vertices_range(VertexHandleValue vertex_handle) -> decltype(auto);
     auto incident_edges_range(VertexHandleValue vertex_handle) -> decltype(auto);
-    std::vector<Arc> dual_cell_arcs(VertexHandle vertex_handle);
     void clear();
 };
 

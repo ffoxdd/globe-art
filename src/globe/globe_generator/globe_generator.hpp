@@ -12,12 +12,15 @@
 #include "spherical_bounding_box.hpp"
 #include "spherical_bounding_box_sampler.hpp"
 #include "centroid_calculator.hpp"
+#include "area_calculator.hpp"
 #include "../noise_generator/interval.hpp"
 #include <memory>
 #include <queue>
 #include <vector>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
+
+#include <iostream> // TEMP
 
 namespace globe {
 
@@ -50,11 +53,13 @@ class GlobeGenerator {
     std::unique_ptr<NG> _noise_generator;
 
     void normalize_noise();
+    void calculate_target_capacity();
     void add_point();
     std::vector<Point3> sample_points(size_t n);
     [[nodiscard]] SurfaceMesh triangulation_mesh() const;
     static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
     Point3 centroid(const SphericalPolygon &spherical_polygon);
+    double area(const SphericalPolygon &spherical_polygon);
     void adjust_capacity();
     void adjust_centroids();
 };
@@ -99,12 +104,28 @@ void GlobeGenerator<PG, NG>::save_ply(const std::string &filename) const {
 template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::initialize() {
     normalize_noise();
+    calculate_target_capacity();
     return *this;
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::normalize_noise() {
     _noise_generator->normalize(sample_points(1000), NOISE_INTERVAL);
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
+void GlobeGenerator<PG, NG>::calculate_target_capacity() {
+    SphericalCircle3 circle(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0));
+
+    SphericalPolygon spherical_polygon = SphericalPolygon(
+        std::vector<Arc>{
+            Arc(circle, SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
+            Arc(circle, SphericalPoint3(0, 1, 0), SphericalPoint3(0, 0, 1)),
+            Arc(circle, SphericalPoint3(0, 0, 1), SphericalPoint3(1, 0, 0))
+        }
+    );
+
+
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -120,23 +141,45 @@ template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::relax(int count) {
     for (int i = 0; i < count; i++) {
         adjust_capacity();
-        adjust_centroids();
+//        adjust_centroids();
     }
 
     return *this;
 }
 
-// we need to do operations on (cell, capacity) pairs
-
 struct VoronoiCell {
     VertexHandle vertex;
-    double capacity;
+    double capacity{};
+};
+
+struct MinCapacityComparator {
+    bool operator()(const VoronoiCell &a, const VoronoiCell &b) const {
+        return a.capacity > b.capacity;
+    }
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::adjust_capacity() {
-//    std::priority_queue<VertexHandle, std::vector<VertexHandle>, CapacityDifferenceComparator> min_heap;
+    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinCapacityComparator> min_capacity_heap;
 
+    for (const auto &vertex : _points_collection->vertices()) {
+        const SphericalPolygon spherical_polygon(_points_collection->dual_cell_arcs(vertex));
+        double capacity = area(spherical_polygon);
+        VoronoiCell voronoi_cell{vertex, capacity};
+
+        min_capacity_heap.push(voronoi_cell);
+    }
+
+    const VoronoiCell &min_cell = min_capacity_heap.top();
+
+    // ok, now we need to move the cell's vertex, minimizing the capacity error
+    // for now we'll calculate the error globally
+    // an optimization is to search only the faces that have changed after each vertex movement
+
+    // steps
+
+    // calculate the global mass
+    // determine the optimal capacity per cell
     // initialize a min-heap with all vertices keyed on their capacity difference
     // take the vertex whose dual cell has the minimal capacity difference
     // minimize the capacity error w/ the downhill simplex method
@@ -150,7 +193,6 @@ void GlobeGenerator<PG, NG>::adjust_capacity() {
     // * vertex accessor
     // downhill simplex algorithm
     // * ability to move a vertex
-    // * method to get the dual face neighborhood for a vertex
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -184,6 +226,16 @@ Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon &spherical_polygo
             .noise_generator = *_noise_generator
         }
     ).centroid();
+}
+
+template<PointGenerator PG, NoiseGenerator NG>
+double GlobeGenerator<PG, NG>::area(const SphericalPolygon &spherical_polygon) {
+    return AreaCalculator<NG>(
+        AreaCalculator<>::Config{
+            .spherical_polygon = spherical_polygon,
+            .noise_generator = *_noise_generator
+        }
+    ).area();
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
