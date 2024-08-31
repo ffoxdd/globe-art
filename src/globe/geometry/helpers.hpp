@@ -35,6 +35,11 @@ Vector3 position_vector(const P &point) {
 
 Vector3 normalize(const Vector3 &vector) {
     double length = std::sqrt(vector.squared_length());
+
+    if (length == 0) {
+        return {0, 0, 0};
+    }
+
     return {vector.x() / length, vector.y() / length, vector.z() / length};
 }
 
@@ -60,6 +65,9 @@ Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, double 
 double spherical_angle(const Vector3 &a, const Vector3 &b, const Vector3 &c) {
     Vector3 u = CGAL::cross_product(a, b);
     Vector3 v = CGAL::cross_product(c, b);
+
+    std::cout << "u: " << u << std::endl;
+    std::cout << "v: " << v << std::endl;
 
     u = normalize(u);
     v = normalize(v);
