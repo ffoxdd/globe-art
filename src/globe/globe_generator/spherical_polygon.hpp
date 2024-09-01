@@ -11,8 +11,6 @@
 #include <ranges>
 #include <limits>
 
-#include <iostream>
-
 namespace globe {
 
 class SphericalPolygon {
@@ -27,7 +25,7 @@ class SphericalPolygon {
     std::vector<Arc> _arcs;
 
     static double signed_interior_angle(const Arc &arc, const Point3 &point);
-    static double orientation_sign(Vector3 &a, Vector3 &b, Vector3 &c);
+    static double orientation_sign(const Arc &arc, const Point3 &point);
 };
 
 auto SphericalPolygon::arcs() -> decltype(auto) { return _arcs; }
@@ -53,8 +51,6 @@ bool SphericalPolygon::contains(const Point3 &point) const {
     // The sum of the angles should be close to 2π if the point is inside the polygon.
     // We'll use π as the threshold to account for numerical inaccuracies.
 
-    std::cout << "angle_sum: " << angle_sum << std::endl;
-
     return std::fabs(angle_sum - (2 * CGAL_PI)) < CGAL_PI;
 }
 
@@ -63,15 +59,11 @@ double SphericalPolygon::signed_interior_angle(const Arc &arc, const Point3 &poi
     Vector3 b = position_vector(point);
     Vector3 c = position_vector(arc.target());
 
-    std::cout << "a: " << a << ", b: " << b << ", c: " << c << std::endl;
-    std::cout << "spherical_angle: " << globe::spherical_angle(a, b, c) << std::endl;
-    std::cout << "orientation_sign: " << orientation_sign(a, b, c) << std::endl;
-
-    return globe::spherical_angle(a, b, c) * orientation_sign(a, b, c);
+    return interior_angle(arc, point) * orientation_sign(arc, point);
 }
 
-double SphericalPolygon::orientation_sign(Vector3 &a, Vector3 &b, Vector3 &c) {
-    return CGAL::orientation(a, b, c) == CGAL::RIGHT_TURN ? 1 : -1;
+double SphericalPolygon::orientation_sign(const Arc &arc, const Point3 &point) {
+    return (orientation(arc, point)) == CGAL::POSITIVE ? 1 : -1;
 }
 
 double theta(double x, double y) { // TODO: put theta(double, double) somewhere generic

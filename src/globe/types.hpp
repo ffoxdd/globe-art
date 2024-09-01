@@ -10,6 +10,7 @@ namespace globe {
 
 using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
 using Point2 = Kernel::Point_2;
+using Vector2 = Kernel::Vector_2;
 using Polygon2 = CGAL::Polygon_2<Kernel>;
 using Vector3 = Kernel::Vector_3;
 using Direction3 = Kernel::Direction_3;
@@ -17,6 +18,7 @@ using Point3 = Kernel::Point_3;
 using Plane3 = Kernel::Plane_3;
 using SurfaceMesh = CGAL::Surface_mesh<Point3>;
 using VertexIterator = SurfaceMesh::Vertex_iterator;
+
 using SphericalKernel = CGAL::Exact_spherical_kernel_3;
 using SphericalPoint3 = SphericalKernel::Point_3;
 using SphericalCircle3 = SphericalKernel::Circle_3;
