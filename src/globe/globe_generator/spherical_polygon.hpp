@@ -11,6 +11,8 @@
 #include <ranges>
 #include <limits>
 
+#include <iostream>
+
 namespace globe {
 
 class SphericalPolygon {
@@ -55,10 +57,6 @@ bool SphericalPolygon::contains(const Point3 &point) const {
 }
 
 double SphericalPolygon::signed_interior_angle(const Arc &arc, const Point3 &point) {
-    Vector3 a = position_vector(arc.source());
-    Vector3 b = position_vector(point);
-    Vector3 c = position_vector(arc.target());
-
     return interior_angle(arc, point) * orientation_sign(arc, point);
 }
 
