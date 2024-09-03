@@ -72,8 +72,8 @@ double angular_distance(const Vector3 &a, const Vector3 &b) {
 
 double spherical_angle(const Vector3 &a, const Vector3 &b, const Vector3 &c) {
     return angular_distance(
-        CGAL::cross_product(a, b),
-        CGAL::cross_product(c, b)
+        CGAL::cross_product(b, a),
+        CGAL::cross_product(b, c)
     );
 }
 
@@ -85,49 +85,8 @@ double interior_angle(const Arc &arc, const Point3 &point) {
     return spherical_angle(a, b, c);
 }
 
-Vector3 plane_normal(const Vector3 &a, const Vector3 &b, const Vector3 &c) {
-    return CGAL::cross_product(b - a, c - a);
-}
-
-Vector2 project_onto_plane(const Vector3 &normal, const Vector3 &point) {
-    Vector3 projection = point - (CGAL::scalar_product(point, normal) / normal.squared_length()) * normal;
-
-    Vector3 basis_1 = CGAL::cross_product(normal, Vector3(1, 0, 0));
-
-    if (basis_1.squared_length() == 0) {
-        basis_1 = CGAL::cross_product(normal, Vector3(0, 1, 0));
-    }
-
-    Vector3 basis_2 = CGAL::cross_product(normal, basis_1);
-
-    basis_1 = normalize(basis_1);
-    basis_2 = normalize(basis_2);
-
-    return {
-        CGAL::scalar_product(projection, basis_1),
-        CGAL::scalar_product(projection, basis_2),
-    };
-}
-
-CGAL::Orientation orientation_2d(const Vector3& a, const Vector3& b, const Vector3& c) {
-    Vector3 normal = plane_normal(a, b, c);
-
-    Vector2 a_ = project_onto_plane(normal, a);
-    Vector2 b_ = project_onto_plane(normal, b);
-    Vector2 c_ = project_onto_plane(normal, c);
-
-    Vector2 u = b_ - a_;
-    Vector2 v = c_ - a_;
-
-    return CGAL::orientation(u, v);
-}
-
 CGAL::Orientation orientation(const Vector3 &a, const Vector3 &b, const Vector3 &c) {
     CGAL::Orientation orientation = CGAL::orientation(a, b, c);
-
-    if (orientation == CGAL::COLLINEAR) {
-        return orientation_2d(a, b, c);
-    }
 
     return orientation;
 }

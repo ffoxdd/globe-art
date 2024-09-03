@@ -61,7 +61,13 @@ double SphericalPolygon::signed_interior_angle(const Arc &arc, const Point3 &poi
 }
 
 double SphericalPolygon::orientation_sign(const Arc &arc, const Point3 &point) {
-    return (orientation(arc, point)) == CGAL::POSITIVE ? 1 : -1;
+    auto normal = arc.supporting_circle().supporting_plane().orthogonal_vector();
+
+    return (
+        CGAL::scalar_product(
+            position_vector(to_point(normal)),
+            position_vector(point)
+        ) > 0 ? 1 : -1);
 }
 
 double theta(double x, double y) { // TODO: put theta(double, double) somewhere generic
