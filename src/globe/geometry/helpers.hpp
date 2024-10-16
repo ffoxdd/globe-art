@@ -77,28 +77,6 @@ double spherical_angle(const Vector3 &a, const Vector3 &b, const Vector3 &c) {
     );
 }
 
-double interior_angle(const Arc &arc, const Point3 &point) {
-    Vector3 a = position_vector(arc.source());
-    Vector3 b = position_vector(point);
-    Vector3 c = position_vector(arc.target());
-
-    return spherical_angle(a, b, c);
-}
-
-CGAL::Orientation orientation(const Vector3 &a, const Vector3 &b, const Vector3 &c) {
-    CGAL::Orientation orientation = CGAL::orientation(a, b, c);
-
-    return orientation;
-}
-
-CGAL::Orientation orientation(const Arc &arc, const Point3 &point) {
-    return orientation(
-        position_vector(arc.source()),
-        position_vector(arc.target()),
-        position_vector(point)
-    );
-}
-
 Point3 project_to_sphere(Point3 &point, const Point3 &center = ORIGIN, double radius = 1.0) {
     auto vector = point - ORIGIN;
     double scale = radius / std::sqrt(vector.squared_length());

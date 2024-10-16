@@ -43,31 +43,64 @@ SphericalPolygon::SphericalPolygon(std::vector<Arc> arcs) :
 }
 
 bool SphericalPolygon::contains(const Point3 &point) const {
-    double angle_sum = std::accumulate(
-        _arcs.begin(), _arcs.end(), 0.0,
-        [point](double angle_sum, const Arc &arc) {
-            return angle_sum + SphericalPolygon::signed_interior_angle(arc, point);
-        }
-    );
+    double angle_sum = 0;
 
-    // The sum of the angles should be close to 2π if the point is inside the polygon.
-    // We'll use π as the threshold to account for numerical inaccuracies.
+    for (const auto &arc : _arcs) {
+        Vector3 a = position_vector(arc.source());
+        Vector3 b = position_vector(arc.target());
+        Vector3 p = position_vector(point);
+
+        Vector3 ap = CGAL::cross_product(a, p);
+        Vector3 bp = CGAL::cross_product(b, p);
+
+        double angle = angular_distance(ap, bp);
+
+        auto normal = arc.supporting_circle().supporting_plane().orthogonal_vector();
+        double sign = CGAL::scalar_product(position_vector(normal), p);
+
+        if (sign == 0) { // the point is on the arc's circumcircle
+            SphericalPoint3 p_ = SphericalPoint3(p.x(), p.y(), p.z());
+            Arc p_arc = Arc(arc.supporting_circle(), arc.source(), p_);
+
+            std::cout << "arc normal: " << normal << std::endl;
+            std::cout << "arc source: " << arc.source() << std::endl;
+            std::cout << "arc target: " << arc.target() << std::endl;
+
+            std::cout << "arc angle: " << arc.approximate_angle() << std::endl;
+            std::cout << "p_arc angle: " << p_arc.approximate_angle() << std::endl;
+
+            return p_arc.approximate_angle() < arc.approximate_angle();
+        }
+
+        std::cout << "sign: " << sign << std::endl;
+
+        angle_sum += (sign > 0) ? angle : -angle;
+    }
 
     return std::fabs(angle_sum - (2 * CGAL_PI)) < CGAL_PI;
 }
 
 double SphericalPolygon::signed_interior_angle(const Arc &arc, const Point3 &point) {
-    return interior_angle(arc, point) * orientation_sign(arc, point);
-}
+    Vector3 a = position_vector(arc.source());
+    Vector3 b = position_vector(arc.target());
+    Vector3 p = position_vector(point);
 
-double SphericalPolygon::orientation_sign(const Arc &arc, const Point3 &point) {
+    Vector3 ap = CGAL::cross_product(a, p);
+    Vector3 bp = CGAL::cross_product(b, p);
+
+    double angle = angular_distance(ap, bp);
+
     auto normal = arc.supporting_circle().supporting_plane().orthogonal_vector();
+    double sign = CGAL::scalar_product(position_vector(normal), p);
 
-    return (
-        CGAL::scalar_product(
-            position_vector(to_point(normal)),
-            position_vector(point)
-        ) > 0 ? 1 : -1);
+    if (sign == 0) {
+        sign = angular_distance(a, p) < angular_distance(a, b) ? 1 : -1;
+        // WE NEED TO MAKE THIS SHORT CIRCUIT TO TRUE OR FALSE
+    }
+
+    std::cout << "sign: " << sign << std::endl;
+
+    return (sign > 0) ? angle : -angle;
 }
 
 double theta(double x, double y) { // TODO: put theta(double, double) somewhere generic
