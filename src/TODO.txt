@@ -1,5 +1,10 @@
 - Inject the random number stuff into area_calculator and centroid_calculator to avoid reinitializing
-- Make type aliases for the spherical types in area_calculator_test, test_spherical_polygon, etc
+- Make type aliases for the spherical types in area_calculator_test, test_spherical_polygon, etc.
 - Combine AreaCalculator and CentroidCalculator
 - Stop using the underscore prefix convention for private data members
 - Use the term "density" instead of "noise" where appropriate
+- Make a directed spherical arc type
+    - Compose a spherical arc and a direction
+    - Need PointsCollection::directed_dual_cell_arcs
+    - For that we need directed triangulation::dual_on_sphere
+
