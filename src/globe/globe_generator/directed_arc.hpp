@@ -10,29 +10,37 @@ namespace globe {
 
 class DirectedArc {
  public:
-    explicit DirectedArc(Point3 p, Point3 q);
+    DirectedArc(CircularArc3 arc, bool reverse);
+    double approximate_angle() const;
 
  private:
     Arc _arc;
     bool _reverse;
-
-    static bool is_canonicalized(const SphericalVector3 &vector);
+    // static bool is_canonicalized(const SphericalVector3 &vector);
 };
 
-DirectedArc::DirectedArc(Point3 p, Point3 q) {
-    _arc = Traits().construct_arc_on_sphere_2_object()(p, q);
-    _reverse = is_canonicalized(_arc.supporting_plane().orthogonal_vector());
+DirectedArc::DirectedArc(CircularArc3 arc, bool reverse) :
+    _arc(std::move(arc)),
+    _reverse(reverse) {
 }
 
-bool DirectedArc::is_canonicalized(const SphericalVector3 &vector) {
-    if (vector.x() != 0) {
-        return vector.x() > 0;
-    } else if (vector.y() != 0) {
-        return vector.y() > 0;
+double DirectedArc::approximate_angle() const {
+    if (_reverse) {
+        return 2 * M_PI - _arc.approximate_angle();
     } else {
-        return vector.z() > 0;
+        return _arc.approximate_angle();
     }
 }
+
+//bool DirectedArc::is_canonicalized(const SphericalVector3 &vector) {
+//    if (vector.x() != 0) {
+//        return vector.x() > 0;
+//    } else if (vector.y() != 0) {
+//        return vector.y() > 0;
+//    } else {
+//        return vector.z() > 0;
+//    }
+//}
 
 } // namespace globe
 
