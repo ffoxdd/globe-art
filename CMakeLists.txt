@@ -7,23 +7,24 @@ project(GlobeArt)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE true) # remove for release
 
+set(CMAKE_DISABLE_FIND_PACKAGE_WrapVulkanHeaders ON)
+cmake_policy(SET CMP0167 OLD)  # "Policy CMP0167 is not set: The FindBoost module is removed."
+
 # Libraries
 
 find_package(PkgConfig REQUIRED)
-
-set(Qt6_DIR "/opt/homebrew/opt/qt@6/lib/cmake/Qt6")
-find_package(CGAL QUIET COMPONENTS Qt6) # Use Qt6 component
-include_directories(BEFORE SYSTEM /opt/homebrew/Cellar/qt@6/include)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui OpenGLWidgets Svg)
+find_package(CGAL REQUIRED COMPONENTS Qt6)
 add_definitions(-DCGAL_USE_BASIC_VIEWER)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED CONFIG)
 find_package(anl REQUIRED)
-find_package(TBB REQUIRED)
+find_package(TBB REQUIRED CONFIG)
 
 # Experiments
 
 add_executable(test_noise_sphere src/experiments/test_noise_sphere.cpp src/globe/noise_generator/anl_implementation.cpp)
-target_include_directories(test_noise_sphere PRIVATE ${QT6_INCLUDE_DIRS})
+target_include_directories(test_noise_sphere PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
 target_link_libraries(test_noise_sphere PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb)
 target_compile_definitions(test_noise_sphere PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
 
@@ -33,7 +34,7 @@ file(GLOB_RECURSE GLOBE_HEADERS src/globe/*.hpp)
 set(GLOBE_SOURCES src/globe/noise_generator/anl_implementation.cpp)
 
 add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
-target_include_directories(generate_globe PRIVATE ${QT6_INCLUDE_DIRS})
+target_include_directories(generate_globe PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
 target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb)
 target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
 

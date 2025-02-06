@@ -1,5 +1,6 @@
 #include "../globe/types.h"
 #include <CGAL/Polygon_mesh_processing/corefinement.h>
+#include <CGAL/boost/graph/generators.h>
 #include <iostream>
 
 using namespace globe;

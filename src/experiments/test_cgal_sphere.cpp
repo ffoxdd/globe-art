@@ -2,6 +2,7 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/subdivision_method_3.h>
 #include <CGAL/make_mesh_3.h>
+#include <CGAL/boost/graph/generators.h>
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
