@@ -15,9 +15,11 @@ using SurfaceMesh = CGAL::Surface_mesh<Point3>;
 //using VertexIterator = SurfaceMesh::Vertex_iterator;
 
 using SphericalKernel = CGAL::Exact_spherical_kernel_3;
-using SphericalPoint3 = SphericalKernel::Point_3;
+using SphericalPlane3 = SphericalKernel::Plane_3;
 using SphericalCircle3 = SphericalKernel::Circle_3;
+using SphericalPoint3 = SphericalKernel::Point_3;
 using SphericalVector3 = SphericalKernel::Vector_3;
+
 using CircularArc3 = SphericalKernel::Circular_arc_3;
 
 template<typename T>

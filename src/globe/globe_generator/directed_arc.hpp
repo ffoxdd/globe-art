@@ -3,44 +3,66 @@
 
 #include "../points_collection/types.hpp"
 #include "../types.hpp"
-#include <CGAL/Cartesian_converter.h>
-#include <utility>
 
 namespace globe {
-
 class DirectedArc {
- public:
-    DirectedArc(CircularArc3 arc, bool reverse);
-    double approximate_angle() const;
+public:
+    explicit DirectedArc(CircularArc3 arc);
+    [[nodiscard]] double approximate_angle() const;
 
- private:
+private:
     Arc _arc;
-    bool _reverse;
-    // static bool is_canonicalized(const SphericalVector3 &vector);
+
+    static bool is_canonicalized(const CircularArc3 &arc);
+    static bool is_canonicalized(const SphericalPlane3 &plane);
+    static bool is_canonicalized(const SphericalVector3 &vector);
+    static SphericalVector3 arc_normal(const CircularArc3 &arc);
+    static Arc dual_arc(const CircularArc3 &arc);
 };
 
-DirectedArc::DirectedArc(CircularArc3 arc, bool reverse) :
-    _arc(std::move(arc)),
-    _reverse(reverse) {
-}
-
-double DirectedArc::approximate_angle() const {
-    if (_reverse) {
-        return 2 * M_PI - _arc.approximate_angle();
+inline DirectedArc::DirectedArc(CircularArc3 arc) {
+    if (!is_canonicalized(arc)) {
+        _arc = dual_arc(arc);
     } else {
-        return _arc.approximate_angle();
+        _arc = std::move(arc);
     }
 }
 
-//bool DirectedArc::is_canonicalized(const SphericalVector3 &vector) {
-//    if (vector.x() != 0) {
-//        return vector.x() > 0;
-//    } else if (vector.y() != 0) {
-//        return vector.y() > 0;
-//    } else {
-//        return vector.z() > 0;
-//    }
-//}
+inline double DirectedArc::approximate_angle() const {
+    return _arc.approximate_angle();
+}
+
+inline bool DirectedArc::is_canonicalized(const CircularArc3 &arc) {
+    return is_canonicalized(arc.supporting_plane());
+}
+
+inline bool DirectedArc::is_canonicalized(const SphericalPlane3 &plane) {
+    return is_canonicalized(plane.orthogonal_direction().vector());
+}
+
+inline bool DirectedArc::is_canonicalized(const SphericalVector3 &vector) {
+    if (vector.x() != 0) {
+        return vector.x() > 0;
+    }
+
+    if (vector.y() != 0) {
+        return vector.y() > 0;
+    }
+
+    return vector.z() > 0;
+}
+
+inline Arc DirectedArc::dual_arc(const CircularArc3 &arc) {
+    const auto &circle = arc.supporting_circle();
+
+    SphericalCircle3 opposite_circle(
+        circle.center(),
+        circle.squared_radius(),
+        circle.supporting_plane().opposite()
+    );
+
+    return {opposite_circle, arc.target(), arc.source()};
+}
 
 } // namespace globe
 
