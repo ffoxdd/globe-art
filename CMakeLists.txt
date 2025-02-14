@@ -21,13 +21,6 @@ find_package(Boost REQUIRED CONFIG)
 find_package(anl REQUIRED)
 find_package(TBB REQUIRED CONFIG)
 
-# Experiments
-
-add_executable(test_noise_sphere src/experiments/test_noise_sphere.cpp src/globe/noise_generator/anl_implementation.cpp)
-target_include_directories(test_noise_sphere PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
-target_link_libraries(test_noise_sphere PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb)
-target_compile_definitions(test_noise_sphere PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
-
 # Main Executable
 
 file(GLOB_RECURSE GLOBE_HEADERS src/globe/*.hpp)

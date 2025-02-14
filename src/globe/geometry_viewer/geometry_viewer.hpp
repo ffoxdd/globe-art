@@ -30,7 +30,7 @@ namespace globe {
         void add_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color = BLACK);
         void add_arc(const Arc &arc, const CGAL::IO::Color &color = BLACK);
         void add_text(const Point3 &point, const std::string &text);
-
+        void clear();
         void show();
 
     protected:
@@ -79,6 +79,10 @@ namespace globe {
 
     inline void GeometryViewer::add_text(const Point3 &point, const std::string &text) {
         _scene.add_text(point, text);
+    }
+
+    inline void GeometryViewer::clear() {
+        _scene.clear();
     }
 
     inline void GeometryViewer::show() {
