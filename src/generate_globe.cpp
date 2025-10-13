@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
     CGAL::Qt::init_ogl_context(4, 3);
     QApplication app(argc, argv);
 
-    GlobeGenerator globe_generator;
+    GlobeGenerator<> globe_generator;
     GeometryViewer geometry_viewer(QApplication::activeWindow());
 
     globe_generator.build();

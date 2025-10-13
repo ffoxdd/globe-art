@@ -1,10 +1,13 @@
 #ifndef GLOBEART_SRC_GLOBE_GEOMETRY_VIEWER_GEOMETRY_VIEWER_HPP_
 #define GLOBEART_SRC_GLOBE_GEOMETRY_VIEWER_GEOMETRY_VIEWER_HPP_
 
-#include "../geometry/helpers.hpp"
 #include <CGAL/Qt/Basic_viewer.h>
+#include <CGAL/Graphics_scene.h>
 #include <CGAL/IO/Color.h>
+#include <QtWidgets/QWidget>
+#include <QtGui/QKeyEvent>
 #include <functional>
+#include "../geometry/helpers.hpp"
 
 namespace globe {
     const CGAL::IO::Color BLACK(0, 0, 0);
@@ -13,7 +16,7 @@ namespace globe {
 
     constexpr double CIRCULAR_ARC_RESOLUTION = 50;
 
-    class GeometryViewer final : public CGAL::Basic_viewer {
+    class GeometryViewer final : public ::CGAL::Qt::Basic_viewer {
     public:
         using KeyPressCallback = std::function<void(GeometryViewer &, QKeyEvent *)>;
         struct Config;
@@ -32,6 +35,7 @@ namespace globe {
         void add_text(const Point3 &point, const std::string &text);
         void clear();
         void show();
+        void redraw() override;
 
     protected:
         KeyPressCallback _key_press_callback;
@@ -46,7 +50,7 @@ namespace globe {
     };
 
     inline GeometryViewer::GeometryViewer(Config &&config)
-        : Basic_viewer(config.parent, _scene, "GeometryViewer"),
+        : ::CGAL::Qt::Basic_viewer(config.parent, _scene, "GeometryViewer"),
         _key_press_callback(config.key_press_callback) {
     }
 
@@ -86,7 +90,11 @@ namespace globe {
     }
 
     inline void GeometryViewer::show() {
-        Basic_viewer::show();
+        ::CGAL::Qt::Basic_viewer::show();
+    }
+
+    inline void GeometryViewer::redraw() {
+        ::CGAL::Qt::Basic_viewer::redraw();
     }
 
     inline void GeometryViewer::keyPressEvent(QKeyEvent *event) {

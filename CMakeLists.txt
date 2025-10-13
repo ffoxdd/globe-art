@@ -6,6 +6,7 @@ project(GlobeArt)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CGAL_DO_NOT_WARN_ABOUT_CMAKE_BUILD_TYPE true) # remove for release
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_DISABLE_FIND_PACKAGE_WrapVulkanHeaders ON)
 cmake_policy(SET CMP0167 OLD)  # "Policy CMP0167 is not set: The FindBoost module is removed."
@@ -29,7 +30,7 @@ set(GLOBE_SOURCES src/globe/noise_generator/anl_implementation.cpp)
 add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
 target_include_directories(generate_globe PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
 target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb)
-target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER QT_NO_KEYWORDS)
+target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER CGAL_USE_BASIC_VIEWER_QT QT_NO_KEYWORDS)
 
 # Tests
 
