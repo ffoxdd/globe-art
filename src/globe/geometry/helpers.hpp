@@ -7,7 +7,6 @@
 #include <CGAL/Projection_traits_xy_3.h>
 #include <CGAL/centroid.h>
 #include "../noise_generator/interval.hpp" // TODO: move interval out of noise_generator
-#include "../geometry/helpers.hpp"
 #include "../points_collection/types.hpp" // TODO: consider moving spherical_polygon closer to points_collection
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Exact_spherical_kernel_3.h>
@@ -33,7 +32,7 @@ Vector3 position_vector(const P &point) {
     return to_point(point) - ORIGIN;
 }
 
-Vector3 normalize(const Vector3 &vector) {
+inline Vector3 normalize(const Vector3 &vector) {
     double length = std::sqrt(vector.squared_length());
 
     if (length == 0) {
@@ -43,7 +42,7 @@ Vector3 normalize(const Vector3 &vector) {
     return {vector.x() / length, vector.y() / length, vector.z() / length};
 }
 
-Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, double t, const Point3 &center = ORIGIN) {
+inline Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, double t, const Point3 &center = ORIGIN) {
     globe::Vector3 v1 = point1 - center;
     globe::Vector3 v2 = point2 - center;
 
@@ -62,7 +61,7 @@ Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, double 
     return center + interpolated_vector;
 }
 
-double angular_distance(const Vector3 &a, const Vector3 &b) {
+inline double angular_distance(const Vector3 &a, const Vector3 &b) {
     Vector3 a_ = normalize(a);
     Vector3 b_ = normalize(b);
 
@@ -70,14 +69,14 @@ double angular_distance(const Vector3 &a, const Vector3 &b) {
     return std::acos(std::clamp(cos_theta, -1.0, 1.0));
 }
 
-double spherical_angle(const Vector3 &a, const Vector3 &b, const Vector3 &c) {
+inline double spherical_angle(const Vector3 &a, const Vector3 &b, const Vector3 &c) {
     return angular_distance(
         CGAL::cross_product(b, a),
         CGAL::cross_product(b, c)
     );
 }
 
-Point3 project_to_sphere(Point3 &point, const Point3 &center = ORIGIN, double radius = 1.0) {
+inline Point3 project_to_sphere(Point3 &point, const Point3 &center = ORIGIN, double radius = 1.0) {
     auto vector = point - ORIGIN;
     double scale = radius / std::sqrt(vector.squared_length());
     return center + (vector * scale);

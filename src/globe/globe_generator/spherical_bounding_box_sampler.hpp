@@ -10,7 +10,7 @@ namespace globe {
 
 class SphericalBoundingBoxSampler {
  public:
-    [[nodiscard]] Point3 sample(const SphericalBoundingBox &bounding_box) {
+    [[nodiscard]] inline Point3 sample(const SphericalBoundingBox &bounding_box) {
         double theta = _interval_sampler.sample(bounding_box.theta_interval());
         double z = _interval_sampler.sample(bounding_box.z_interval());
         double r = std::sqrt(1 - (z * z)); // not the sphere's radius, but the radius of the xy circle at that z

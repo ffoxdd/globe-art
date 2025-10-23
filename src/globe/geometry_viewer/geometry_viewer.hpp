@@ -24,7 +24,7 @@ namespace globe {
         explicit GeometryViewer(Config &&config);
         explicit GeometryViewer(QWidget *parent);
 
-        void set_key_press_callback(const KeyPressCallback &key_press_callback) {
+        inline void set_key_press_callback(const KeyPressCallback &key_press_callback) {
             _key_press_callback = key_press_callback;
         }
 

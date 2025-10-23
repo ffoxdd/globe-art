@@ -12,7 +12,7 @@ class IntervalSampler {
         _random_engine(_random_device()) {
     }
 
-    [[nodiscard]] double sample(const Interval& interval) {
+    [[nodiscard]] inline double sample(const Interval& interval) {
         return distribution(interval)(_random_engine);
     }
 
@@ -20,7 +20,7 @@ class IntervalSampler {
     std::random_device _random_device;
     std::mt19937 _random_engine;
 
-    static std::uniform_real_distribution<double> distribution(const Interval& interval) {
+    static inline std::uniform_real_distribution<double> distribution(const Interval& interval) {
         return std::uniform_real_distribution<>(interval.low(), interval.high());
     }
 };

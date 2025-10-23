@@ -30,9 +30,9 @@ class SphericalPolygon {
     static double orientation_sign(const Arc &arc, const Point3 &point);
 };
 
-auto SphericalPolygon::arcs() -> decltype(auto) { return _arcs; }
+inline auto SphericalPolygon::arcs() -> decltype(auto) { return _arcs; }
 
-auto SphericalPolygon::points() const -> decltype(auto) {
+inline auto SphericalPolygon::points() const -> decltype(auto) {
     return _arcs | std::views::transform(
         [](const Arc &arc) { return to_point(arc.source()); }
     );
@@ -103,7 +103,7 @@ double SphericalPolygon::signed_interior_angle(const Arc &arc, const Point3 &poi
     return (sign > 0) ? angle : -angle;
 }
 
-double theta(double x, double y) { // TODO: put theta(double, double) somewhere generic
+inline double theta(double x, double y) { // TODO: put theta(double, double) somewhere generic
     return std::atan2(y, x);
 }
 
