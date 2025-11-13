@@ -9,6 +9,9 @@
 #include "../noise_generator/anl_noise_generator.hpp"
 #include "../noise_generator/interval.hpp"
 #include <cmath>
+#include <functional>
+#include <optional>
+#include <utility>
 
 namespace globe {
 
@@ -28,27 +31,40 @@ class AreaCalculator {
     SphericalBoundingBoxSampler _spherical_bounding_box_sampler;
     double _error_threshold;
     int _consecutive_stable_iterations_threshold;
+    std::function<Point3()> _sample_point_generator;
 
-    Point3 bounding_box_sample_point();
     double density_at(const Point3 &point);
+    Point3 sample_point();
 };
 
 template<NoiseGenerator NG>
 struct AreaCalculator<NG>::Config {
     const SphericalPolygon &spherical_polygon;
     NG &noise_generator;
-    double error_threshold = 01e-6;
+    double error_threshold = 1e-6;
     int consecutive_stable_iterations_threshold = 10;
+    std::function<Point3()> sample_point_generator = {};
+    std::optional<SphericalBoundingBox> bounding_box_override = std::nullopt;
 };
 
 template<NoiseGenerator NG>
 AreaCalculator<NG>::AreaCalculator(AreaCalculator::Config &&config):
     _spherical_polygon(config.spherical_polygon),
     _noise_generator(config.noise_generator),
+    _bounding_box(config.bounding_box_override.has_value()
+        ? *config.bounding_box_override
+        : _spherical_polygon.bounding_box()),
     _spherical_bounding_box_sampler(SphericalBoundingBoxSampler()),
-    _bounding_box(_spherical_polygon.bounding_box()),
     _error_threshold(config.error_threshold),
     _consecutive_stable_iterations_threshold(config.consecutive_stable_iterations_threshold) {
+
+    if (config.sample_point_generator) {
+        _sample_point_generator = std::move(config.sample_point_generator);
+    } else {
+        _sample_point_generator = [this]() {
+            return _spherical_bounding_box_sampler.sample(_bounding_box);
+        };
+    }
 }
 
 template<NoiseGenerator NG>
@@ -66,12 +82,16 @@ double AreaCalculator<NG>::area() {
     double previous_weighted_area = 0;
 
     while (true) {
-        Point3 sample_point = bounding_box_sample_point();
+        Point3 sampled_point = sample_point();
         total_points_sampled++;
 
-        if (_spherical_polygon.contains(sample_point)) {
+        if (_spherical_polygon.contains(sampled_point)) {
             points_inside_polygon++;
-            total_mass += density_at(sample_point);
+            total_mass += density_at(sampled_point);
+        }
+
+        if (points_inside_polygon == 0) {
+            continue;
         }
 
         double inside_fraction = static_cast<double>(points_inside_polygon) / total_points_sampled;
@@ -101,8 +121,8 @@ double AreaCalculator<NG>::density_at(const Point3 &point) {
 }
 
 template<NoiseGenerator NG>
-Point3 AreaCalculator<NG>::bounding_box_sample_point() {
-    return _spherical_bounding_box_sampler.sample(_bounding_box);
+Point3 AreaCalculator<NG>::sample_point() {
+    return _sample_point_generator();
 }
 
 } // namespace globe
