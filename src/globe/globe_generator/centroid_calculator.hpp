@@ -47,7 +47,7 @@ struct CentroidCalculator<NG>::Config {
 };
 
 template<NoiseGenerator NG>
-CentroidCalculator<NG>::CentroidCalculator(CentroidCalculator::Config &&config):
+inline CentroidCalculator<NG>::CentroidCalculator(CentroidCalculator::Config &&config):
     _spherical_polygon(config.spherical_polygon),
     _noise_generator(config.noise_generator),
     _bounding_box(config.bounding_box_override.has_value()
@@ -67,12 +67,12 @@ CentroidCalculator<NG>::CentroidCalculator(CentroidCalculator::Config &&config):
 }
 
 template<NoiseGenerator NG>
-CentroidCalculator<NG>::CentroidCalculator() :
+inline CentroidCalculator<NG>::CentroidCalculator() :
     CentroidCalculator(Config()) {
 }
 
 template<NoiseGenerator NG>
-Point3 CentroidCalculator<NG>::centroid() {
+inline Point3 CentroidCalculator<NG>::centroid() {
     double total_weight = 0;
     Vector3 total_position(0, 0, 0);
     Vector3 previous_centroid(0, 0, 0);
@@ -110,12 +110,12 @@ Point3 CentroidCalculator<NG>::centroid() {
 }
 
 template<NoiseGenerator NG>
-double CentroidCalculator<NG>::density_at(const Point3 &point) {
+inline double CentroidCalculator<NG>::density_at(const Point3 &point) {
     return _noise_generator.value(point);
 }
 
 template<NoiseGenerator NG>
-Point3 CentroidCalculator<NG>::sample_point() {
+inline Point3 CentroidCalculator<NG>::sample_point() {
     return _sample_point_generator();
 }
 

@@ -60,20 +60,20 @@ struct PointsCollection::Config {
     std::function<void(const DualNeighborhood &)> dual_neighborhood_callback = [](const DualNeighborhood &) { };
 };
 
-PointsCollection::PointsCollection() :
+inline PointsCollection::PointsCollection() :
     PointsCollection(Config()) {
 }
 
-PointsCollection::PointsCollection(Config &&config) :
+inline PointsCollection::PointsCollection(Config &&config) :
     _dual_neighborhood_callback(config.dual_neighborhood_callback) {
 }
 
-void PointsCollection::insert(Point3 point) {
+inline void PointsCollection::insert(Point3 point) {
     _triangulation.insert(point);
 }
 
 template<Point3Range PR>
-void PointsCollection::reset(PR new_points) {
+inline void PointsCollection::reset(PR new_points) {
     clear();
 
     for (auto point : new_points) {
@@ -81,48 +81,48 @@ void PointsCollection::reset(PR new_points) {
     }
 }
 
-VertexHandle PointsCollection::move_vertex(VertexHandle vertex_handle, Point3 new_point) {
+inline VertexHandle PointsCollection::move_vertex(VertexHandle vertex_handle, Point3 new_point) {
     _triangulation.remove(vertex_handle);
     return _triangulation.insert(new_point);
 }
 
-auto PointsCollection::vertex_circulator_range(VertexCirculator vertex_circulator) -> decltype(auto) {
+inline auto PointsCollection::vertex_circulator_range(VertexCirculator vertex_circulator) -> decltype(auto) {
     auto begin = VertexCirculatorIterator(vertex_circulator);
     auto end = VertexCirculatorIterator(vertex_circulator);
 
     return std::ranges::subrange(begin, end);
 }
 
-auto PointsCollection::edge_circulator_range(EdgeCirculator edge_circulator) -> decltype(auto) {
+inline auto PointsCollection::edge_circulator_range(EdgeCirculator edge_circulator) -> decltype(auto) {
     auto begin = EdgeCirculatorIterator(edge_circulator);
     auto end = EdgeCirculatorIterator(edge_circulator);
 
     return std::ranges::subrange(begin, end);
 }
 
-auto PointsCollection::face_circulator_range(FaceCirculator face_circulator) -> decltype(auto) {
+inline auto PointsCollection::face_circulator_range(FaceCirculator face_circulator) -> decltype(auto) {
     auto begin = FaceHandleCirculatorIterator(face_circulator);
     auto end = FaceHandleCirculatorIterator(face_circulator);
 
     return std::ranges::subrange(begin, end);
 }
 
-auto PointsCollection::incident_vertices_range(VertexHandle vertex_handle) -> decltype(auto) {
+inline auto PointsCollection::incident_vertices_range(VertexHandle vertex_handle) -> decltype(auto) {
     return vertex_circulator_range(_triangulation.incident_vertices(vertex_handle));
 }
 
-auto PointsCollection::incident_edges_range(VertexHandle vertex_handle) -> decltype(auto) {
+inline auto PointsCollection::incident_edges_range(VertexHandle vertex_handle) -> decltype(auto) {
     return edge_circulator_range(_triangulation.incident_edges(vertex_handle));
 }
 
-auto PointsCollection::vertices() -> decltype(auto) {
+inline auto PointsCollection::vertices() -> decltype(auto) {
     return std::ranges::subrange(
         VertexHandleIterator(_triangulation.finite_vertices_begin()),
         VertexHandleIterator(_triangulation.finite_vertices_end())
     );
 }
 
-auto PointsCollection::points() -> decltype(auto) {
+inline auto PointsCollection::points() -> decltype(auto) {
     return vertices() | std::views::transform(
         [](VertexHandleValue vertex_handle) {
             return vertex_handle->point();
@@ -130,21 +130,21 @@ auto PointsCollection::points() -> decltype(auto) {
     );
 }
 
-auto PointsCollection::all_edges() -> decltype(auto) {
+inline auto PointsCollection::all_edges() -> decltype(auto) {
     return std::ranges::subrange(
         _triangulation.all_edges_begin(),
         _triangulation.all_edges_end()
     );
 }
 
-auto PointsCollection::faces() -> decltype(auto) {
+inline auto PointsCollection::faces() -> decltype(auto) {
     return std::ranges::subrange(
         FaceHandleIterator(_triangulation.finite_faces_begin()),
         FaceHandleIterator(_triangulation.finite_faces_end())
     );
 }
 
-auto PointsCollection::dual_face_neighborhood(VertexHandle vertex_handle) -> decltype(auto) {
+inline auto PointsCollection::dual_face_neighborhood(VertexHandle vertex_handle) -> decltype(auto) {
     return incident_vertices_range(vertex_handle) | std::views::transform(
         [this](VertexHandleValue vertex_handle) {
             return dual_cell_arcs(vertex_handle);
@@ -152,11 +152,11 @@ auto PointsCollection::dual_face_neighborhood(VertexHandle vertex_handle) -> dec
     );
 }
 
-void PointsCollection::clear() {
+inline void PointsCollection::clear() {
     _triangulation.clear();
 }
 
-auto PointsCollection::dual_arcs() -> decltype(auto) {
+inline auto PointsCollection::dual_arcs() -> decltype(auto) {
     return all_edges() | std::views::transform(
         [this](Edge edge) {
             return this->_triangulation.dual_on_sphere(edge);
@@ -164,7 +164,7 @@ auto PointsCollection::dual_arcs() -> decltype(auto) {
     );
 }
 
-auto PointsCollection::dual_neighborhoods() -> decltype(auto) {
+inline auto PointsCollection::dual_neighborhoods() -> decltype(auto) {
     return vertices() | std::views::transform(
         [this](VertexHandleValue vertex_handle) {
             auto dual_neighborhood = DualNeighborhood{
@@ -179,7 +179,7 @@ auto PointsCollection::dual_neighborhoods() -> decltype(auto) {
     );
 }
 
-std::vector<Arc> PointsCollection::dual_cell_arcs(VertexHandle vertex_handle) {
+inline std::vector<Arc> PointsCollection::dual_cell_arcs(VertexHandle vertex_handle) {
     auto range = incident_edges_range(vertex_handle) | std::views::transform(
         [this](Edge edge) {
             return this->_triangulation.dual_on_sphere(edge);

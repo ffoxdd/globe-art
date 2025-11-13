@@ -31,20 +31,20 @@ struct RandomSpherePointGenerator::Config {
         std::make_unique<CGALRandomSpherePointGenerator>(CGALRandomSpherePointGenerator());
 };
 
-RandomSpherePointGenerator::RandomSpherePointGenerator(RandomSpherePointGenerator::Config &&config) :
+inline RandomSpherePointGenerator::RandomSpherePointGenerator(RandomSpherePointGenerator::Config &&config) :
     _radius(config.radius),
     _cgal_generator(std::move(config.cgal_generator)) {
 };
 
-RandomSpherePointGenerator::RandomSpherePointGenerator() : RandomSpherePointGenerator(Config()) {
+inline RandomSpherePointGenerator::RandomSpherePointGenerator() : RandomSpherePointGenerator(Config()) {
 }
 
-RandomSpherePointGenerator::RandomSpherePointGenerator(RandomSpherePointGenerator &&other) noexcept:
+inline RandomSpherePointGenerator::RandomSpherePointGenerator(RandomSpherePointGenerator &&other) noexcept:
     _radius(other._radius),
     _cgal_generator(std::move(other._cgal_generator)) {
 }
 
-Point3 RandomSpherePointGenerator::generate() {
+inline Point3 RandomSpherePointGenerator::generate() {
     return *(*_cgal_generator)++;
 }
 

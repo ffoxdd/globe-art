@@ -27,14 +27,14 @@ class AnlNoiseGenerator {
     Interval _output_interval;
 };
 
-AnlNoiseGenerator::AnlNoiseGenerator() :
+inline AnlNoiseGenerator::AnlNoiseGenerator() :
     _kernel(std::make_unique<anl::CKernel>()),
     _instruction_index(std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel))),
     _noise_interval(Interval(0.0, 1.0)),
     _output_interval(Interval(0.0, 1.0)) {
 }
 
-void AnlNoiseGenerator::normalize(const std::vector<Point3> &sample_points, Interval output_interval) {
+inline void AnlNoiseGenerator::normalize(const std::vector<Point3> &sample_points, Interval output_interval) {
     auto noise_samples = sample_points | std::views::transform(
         [this](const Point3 &point) {
             return noise_value(point);
@@ -45,17 +45,17 @@ void AnlNoiseGenerator::normalize(const std::vector<Point3> &sample_points, Inte
     _output_interval = output_interval;
 }
 
-double AnlNoiseGenerator::value(const Point3 &location) {
+inline double AnlNoiseGenerator::value(const Point3 &location) {
     return Interval::map(_noise_interval, _output_interval, noise_value(location));
 }
 
-double AnlNoiseGenerator::noise_value(const Point3 &location) {
+inline double AnlNoiseGenerator::noise_value(const Point3 &location) {
     return anl::CNoiseExecutor(*_kernel).evaluateScalar(
         location.x(), location.y(), location.z(), *_instruction_index
     );
 }
 
-anl::CInstructionIndex AnlNoiseGenerator::initialize_kernel(anl::CKernel &kernel) {
+inline anl::CInstructionIndex AnlNoiseGenerator::initialize_kernel(anl::CKernel &kernel) {
     const double persistence = 0.5;
     const double lacunarity = 2.0;
     const double octaves = 2;

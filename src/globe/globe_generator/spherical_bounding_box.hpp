@@ -23,33 +23,33 @@ class SphericalBoundingBox {
     const Interval _z_interval;
 };
 
-SphericalBoundingBox::SphericalBoundingBox() :
+inline SphericalBoundingBox::SphericalBoundingBox() :
     SphericalBoundingBox(
         Interval(0, 2 * M_PI),
         Interval(-1, 1)
     ) {
 }
 
-SphericalBoundingBox::SphericalBoundingBox(Interval theta_interval, Interval z_interval) :
+inline SphericalBoundingBox::SphericalBoundingBox(Interval theta_interval, Interval z_interval) :
     _theta_interval(theta_interval),
     _z_interval(z_interval) {
 }
 
 template<DoubleRange DR>
-SphericalBoundingBox::SphericalBoundingBox(const DR &theta_values, const DR &z_values) :
+inline SphericalBoundingBox::SphericalBoundingBox(const DR &theta_values, const DR &z_values) :
     _theta_interval(theta_values),
     _z_interval(z_values) {
 }
 
-Interval SphericalBoundingBox::theta_interval() const {
+inline Interval SphericalBoundingBox::theta_interval() const {
     return _theta_interval;
 }
 
-Interval SphericalBoundingBox::z_interval() const {
+inline Interval SphericalBoundingBox::z_interval() const {
     return _z_interval;
 }
 
-double SphericalBoundingBox::area() const {
+inline double SphericalBoundingBox::area() const {
     return _theta_interval.measure() * _z_interval.measure();
 }
 

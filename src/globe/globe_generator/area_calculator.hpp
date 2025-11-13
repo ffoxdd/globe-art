@@ -48,7 +48,7 @@ struct AreaCalculator<NG>::Config {
 };
 
 template<NoiseGenerator NG>
-AreaCalculator<NG>::AreaCalculator(AreaCalculator::Config &&config):
+inline AreaCalculator<NG>::AreaCalculator(AreaCalculator::Config &&config):
     _spherical_polygon(config.spherical_polygon),
     _noise_generator(config.noise_generator),
     _bounding_box(config.bounding_box_override.has_value()
@@ -68,12 +68,12 @@ AreaCalculator<NG>::AreaCalculator(AreaCalculator::Config &&config):
 }
 
 template<NoiseGenerator NG>
-AreaCalculator<NG>::AreaCalculator() :
+inline AreaCalculator<NG>::AreaCalculator() :
     AreaCalculator(Config()) {
 }
 
 template<NoiseGenerator NG>
-double AreaCalculator<NG>::area() {
+inline double AreaCalculator<NG>::area() {
 
     int points_inside_polygon = 0;
     int total_points_sampled = 0;
@@ -116,12 +116,12 @@ double AreaCalculator<NG>::area() {
 }
 
 template<NoiseGenerator NG>
-double AreaCalculator<NG>::density_at(const Point3 &point) {
+inline double AreaCalculator<NG>::density_at(const Point3 &point) {
     return _noise_generator.value(point);
 }
 
 template<NoiseGenerator NG>
-Point3 AreaCalculator<NG>::sample_point() {
+inline Point3 AreaCalculator<NG>::sample_point() {
     return _sample_point_generator();
 }
 
