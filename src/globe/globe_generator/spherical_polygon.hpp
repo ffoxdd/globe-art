@@ -38,11 +38,11 @@ inline auto SphericalPolygon::points() const -> decltype(auto) {
     );
 }
 
-SphericalPolygon::SphericalPolygon(std::vector<Arc> arcs) :
+inline SphericalPolygon::SphericalPolygon(std::vector<Arc> arcs) :
     _arcs(std::move(arcs)) {
 }
 
-bool SphericalPolygon::contains(const Point3 &point) const {
+inline bool SphericalPolygon::contains(const Point3 &point) const {
     double angle_sum = 0;
 
     for (const auto &arc : _arcs) {
@@ -80,7 +80,7 @@ bool SphericalPolygon::contains(const Point3 &point) const {
     return std::fabs(angle_sum - (2 * CGAL_PI)) < CGAL_PI;
 }
 
-double SphericalPolygon::signed_interior_angle(const Arc &arc, const Point3 &point) {
+inline double SphericalPolygon::signed_interior_angle(const Arc &arc, const Point3 &point) {
     Vector3 a = position_vector(arc.source());
     Vector3 b = position_vector(arc.target());
     Vector3 p = position_vector(point);
@@ -107,7 +107,7 @@ inline double theta(double x, double y) { // TODO: put theta(double, double) som
     return std::atan2(y, x);
 }
 
-SphericalBoundingBox SphericalPolygon::bounding_box() const {
+inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
     auto theta_values = points() | std::views::transform(
         [](const Point3 &point) { return theta(point.x(), point.y()); }
     );
