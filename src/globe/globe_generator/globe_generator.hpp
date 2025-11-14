@@ -49,6 +49,7 @@ class GlobeGenerator {
 
     auto dual_arcs();
     auto dual_neighborhoods();
+    std::vector<std::pair<Point3, double>> cell_capacities();
 
  private:
     PG _point_generator;
@@ -228,6 +229,27 @@ double GlobeGenerator<PG, DF>::area(const SphericalPolygon &spherical_polygon) {
         _density_field,
         std::move(generator)
     ).area();
+}
+
+template<PointGenerator PG, ScalarField DF>
+std::vector<std::pair<Point3, double>> GlobeGenerator<PG, DF>::cell_capacities() {
+    std::vector<std::pair<Point3, double>> capacities;
+
+    for (const auto &vertex : _points_collection.vertices()) {
+        auto dual_cell = _points_collection.dual_cell_arcs(vertex);
+
+        if (dual_cell.empty()) {
+            continue;
+        }
+
+        SphericalPolygon spherical_polygon(dual_cell);
+        double capacity = area(spherical_polygon);
+        Point3 label_position = centroid(spherical_polygon);
+
+        capacities.emplace_back(label_position, capacity);
+    }
+
+    return capacities;
 }
 
 template<PointGenerator PG, ScalarField DF>
