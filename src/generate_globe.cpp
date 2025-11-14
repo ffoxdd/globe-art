@@ -114,7 +114,7 @@ void draw(ConstantGlobeGenerator &globe_generator, GeometryViewer &geometry_view
 void log_debug_info(const ConstantGlobeGenerator::CellDebugInfo &info, std::size_t index, std::size_t total) {
     std::cout << "---- Debugging polygon " << index + 1 << " / " << total << " ----" << std::endl;
     std::cout << "Site: (" << info.site.x() << ", " << info.site.y() << ", " << info.site.z() << ")" << std::endl;
-    std::cout << "Area (Monte Carlo): " << info.capacity << std::endl;
+    std::cout << "Mass (Monte Carlo): " << info.mass << std::endl;
     std::cout << "Centroid: (" << info.centroid.x() << ", " << info.centroid.y() << ", " << info.centroid.z() << ")"
               << std::endl;
     std::cout << "Bounding box theta: [" << info.theta_low << ", "

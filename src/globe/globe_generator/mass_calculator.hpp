@@ -1,5 +1,5 @@
-#ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_AREA_CALCULATOR_HPP_
-#define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_AREA_CALCULATOR_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MASS_CALCULATOR_HPP_
+#define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MASS_CALCULATOR_HPP_
 
 #include "../types.hpp"
 #include "spherical_polygon.hpp"
@@ -15,9 +15,9 @@
 namespace globe {
 
 template<ScalarField DF = NoiseField, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
-class AreaCalculator {
+class MassCalculator {
  public:
-    AreaCalculator(
+    MassCalculator(
         const SphericalPolygon &spherical_polygon,
         DF &density_field,
         SPG sample_point_generator,
@@ -26,7 +26,7 @@ class AreaCalculator {
         std::optional<SphericalBoundingBox> bounding_box_override = std::nullopt
     );
 
-    [[nodiscard]] double area();
+    [[nodiscard]] double mass();
 
  private:
     const SphericalPolygon &_spherical_polygon;
@@ -41,7 +41,7 @@ class AreaCalculator {
 };
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline AreaCalculator<DF, SPG>::AreaCalculator(
+inline MassCalculator<DF, SPG>::MassCalculator(
     const SphericalPolygon &spherical_polygon,
     DF &density_field,
     SPG sample_point_generator,
@@ -60,7 +60,7 @@ inline AreaCalculator<DF, SPG>::AreaCalculator(
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline double AreaCalculator<DF, SPG>::area() {
+inline double MassCalculator<DF, SPG>::mass() {
 
     int points_inside_polygon = 0;
     int total_points_sampled = 0;
@@ -103,15 +103,15 @@ inline double AreaCalculator<DF, SPG>::area() {
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline double AreaCalculator<DF, SPG>::density_at(const Point3 &point) {
+inline double MassCalculator<DF, SPG>::density_at(const Point3 &point) {
     return _density_field.value(point);
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline Point3 AreaCalculator<DF, SPG>::sample_point() {
+inline Point3 MassCalculator<DF, SPG>::sample_point() {
     return _sample_point_generator.generate();
 }
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_AREA_CALCULATOR_HPP_
+#endif //GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MASS_CALCULATOR_HPP_

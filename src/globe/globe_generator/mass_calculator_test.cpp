@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "./area_calculator.hpp"
+#include "./mass_calculator.hpp"
 #include "../noise_generator/mock_scalar_field.hpp"
 #include <utility>
 #include <vector>
@@ -85,14 +85,14 @@ class SequenceSamplePointGenerator {
 
 } // namespace
 
-TEST(AreaCalculatorTest, EstimatesHemisphereAreaWithUniformDensity) {
+TEST(MassCalculatorTest, EstimatesHemisphereMassWithUniformDensity) {
     MockScalarField mock_noise_generator;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    AreaCalculator<MockScalarField, ConstantSamplePointGenerator> area_calculator(
+    MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
         spherical_polygon,
         mock_noise_generator,
         ConstantSamplePointGenerator(inside_point),
@@ -101,10 +101,10 @@ TEST(AreaCalculatorTest, EstimatesHemisphereAreaWithUniformDensity) {
         hemisphere_bounding_box()
     );
 
-    EXPECT_NEAR(area_calculator.area(), 2 * M_PI, 1e-6);
+    EXPECT_NEAR(mass_calculator.mass(), 2 * M_PI, 1e-6);
 }
 
-TEST(AreaCalculatorTest, HandlesSamplesOutsideBeforeInside) {
+TEST(MassCalculatorTest, HandlesSamplesOutsideBeforeInside) {
     MockScalarField mock_noise_generator;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
@@ -112,7 +112,7 @@ TEST(AreaCalculatorTest, HandlesSamplesOutsideBeforeInside) {
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    AreaCalculator<MockScalarField, TogglingSamplePointGenerator> area_calculator(
+    MassCalculator<MockScalarField, TogglingSamplePointGenerator> mass_calculator(
         spherical_polygon,
         mock_noise_generator,
         TogglingSamplePointGenerator(outside_point, inside_point),
@@ -121,11 +121,11 @@ TEST(AreaCalculatorTest, HandlesSamplesOutsideBeforeInside) {
         hemisphere_bounding_box()
     );
 
-    double area = area_calculator.area();
-    EXPECT_NEAR(area / (2 * M_PI), 1.0, 0.1);
+    double cell_mass = mass_calculator.mass();
+    EXPECT_NEAR(cell_mass / (2 * M_PI), 1.0, 0.1);
 }
 
-TEST(AreaCalculatorTest, AppliesNoiseDensityWeighting) {
+TEST(MassCalculatorTest, AppliesNoiseDensityWeighting) {
     MockScalarField mock_noise_generator;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
@@ -135,7 +135,7 @@ TEST(AreaCalculatorTest, AppliesNoiseDensityWeighting) {
         .WillOnce(Return(3.0))
         .WillRepeatedly(Return(2.0));
 
-    AreaCalculator<MockScalarField, ConstantSamplePointGenerator> area_calculator(
+    MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
         spherical_polygon,
         mock_noise_generator,
         ConstantSamplePointGenerator(inside_point),
@@ -144,5 +144,5 @@ TEST(AreaCalculatorTest, AppliesNoiseDensityWeighting) {
         hemisphere_bounding_box()
     );
 
-    EXPECT_NEAR(area_calculator.area(), 4 * M_PI, 1e-6);
+    EXPECT_NEAR(mass_calculator.mass(), 4 * M_PI, 1e-6);
 }

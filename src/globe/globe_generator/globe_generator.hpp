@@ -10,7 +10,7 @@
 #include "spherical_polygon.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "centroid_calculator.hpp"
-#include "area_calculator.hpp"
+#include "mass_calculator.hpp"
 #include "../noise_generator/interval.hpp"
 #include <queue>
 #include <vector>
@@ -54,7 +54,7 @@ class GlobeGenerator {
     struct CellDebugInfo {
         Point3 site;
         std::vector<Arc> dual_cell_arcs;
-        double capacity;
+        double mass;
         Point3 centroid;
         double theta_low;
         double theta_high;
@@ -70,14 +70,14 @@ class GlobeGenerator {
     DF _density_field;
 
     void normalize_density_field();
-    void calculate_target_capacity();
+    void calculate_target_mass();
     void add_point();
     std::vector<Point3> sample_points(size_t n);
     [[nodiscard]] SurfaceMesh triangulation_mesh() const;
     static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
     Point3 centroid(const SphericalPolygon &spherical_polygon);
-    double area(const SphericalPolygon &spherical_polygon);
-    void adjust_capacity();
+    double mass(const SphericalPolygon &spherical_polygon);
+    void adjust_mass();
     void adjust_centroids();
 };
 
@@ -108,7 +108,7 @@ void GlobeGenerator<PG, DF>::save_ply(const std::string &filename) const {
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::initialize() {
     normalize_density_field();
-    calculate_target_capacity();
+    calculate_target_mass();
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -117,7 +117,7 @@ void GlobeGenerator<PG, DF>::normalize_density_field() {
 }
 
 template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::calculate_target_capacity() {
+void GlobeGenerator<PG, DF>::calculate_target_mass() {
     SphericalCircle3 circle(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0));
 
     SphericalPolygon spherical_polygon = SphericalPolygon(
@@ -141,38 +141,38 @@ void GlobeGenerator<PG, DF>::add_points() {
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::relax(int count) {
     for (int i = 0; i < count; i++) {
-        adjust_capacity();
+        adjust_mass();
 //        adjust_centroids();
     }
 }
 
 struct VoronoiCell {
     VertexHandle vertex;
-    double capacity{};
+    double mass{};
 };
 
-struct MinCapacityComparator {
+struct MinMassComparator {
     bool operator()(const VoronoiCell &a, const VoronoiCell &b) const {
-        return a.capacity > b.capacity;
+        return a.mass > b.mass;
     }
 };
 
 template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::adjust_capacity() {
-    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinCapacityComparator> min_capacity_heap;
+void GlobeGenerator<PG, DF>::adjust_mass() {
+    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> min_mass_heap;
 
     for (const auto &vertex : _points_collection.vertices()) {
         const SphericalPolygon spherical_polygon(_points_collection.dual_cell_arcs(vertex));
 
-        double capacity = area(spherical_polygon);
-        // std::cout << "capacity: " << capacity << std::endl;
+        double cell_mass = mass(spherical_polygon);
+        // std::cout << "mass: " << cell_mass << std::endl;
 
-        VoronoiCell voronoi_cell{vertex, capacity};
+        VoronoiCell voronoi_cell{vertex, cell_mass};
 
-        min_capacity_heap.push(voronoi_cell);
+        min_mass_heap.push(voronoi_cell);
     }
 
-    const VoronoiCell &min_cell = min_capacity_heap.top();
+    const VoronoiCell &min_cell = min_mass_heap.top();
 
     auto min_cell_arcs = _points_collection.dual_cell_arcs(min_cell.vertex);
     if (!min_cell_arcs.empty()) {
@@ -181,8 +181,8 @@ void GlobeGenerator<PG, DF>::adjust_capacity() {
         auto bbox = polygon.bounding_box();
 
         const Point3 &site = min_cell.vertex->point();
-        std::cout << "---- Min Capacity Cell Debug ----" << std::endl;
-        std::cout << "Capacity      : " << min_cell.capacity << std::endl;
+        std::cout << "---- Min Mass Cell Debug ----" << std::endl;
+        std::cout << "Mass          : " << min_cell.mass << std::endl;
         std::cout << "Site          : (" << site.x() << ", " << site.y() << ", " << site.z() << ")" << std::endl;
         std::cout << "Centroid      : (" << polygon_centroid.x() << ", " << polygon_centroid.y() << ", "
                   << polygon_centroid.z() << ")" << std::endl;
@@ -202,17 +202,17 @@ void GlobeGenerator<PG, DF>::adjust_capacity() {
         std::cout << "---------------------------------" << std::endl;
     }
 
-    // ok, now we need to move the cell's vertex, minimizing the capacity error
+    // ok, now we need to move the cell's vertex, minimizing the mass error
     // for now we'll calculate the error globally
     // an optimization is to search only the faces that have changed after each vertex movement
 
     // steps
 
     // calculate the global mass
-    // determine the optimal capacity per cell
-    // initialize a min-heap with all vertices keyed on their capacity difference
-    // take the vertex whose dual cell has the minimal capacity difference
-    // minimize the capacity error w/ the downhill simplex method
+    // determine the optimal mass per cell
+    // initialize a min-heap with all vertices keyed on their mass difference
+    // take the vertex whose dual cell has the minimal mass difference
+    // minimize the mass error w/ the downhill simplex method
     // move the vertex around, within the area of its dual face neighborhood
     // recalculate the capacities of adjacent cells
     // you can just do a few minimization steps as opposed to finding the true minimum
@@ -261,15 +261,15 @@ Point3 GlobeGenerator<PG, DF>::centroid(const SphericalPolygon &spherical_polygo
 }
 
 template<PointGenerator PG, ScalarField DF>
-double GlobeGenerator<PG, DF>::area(const SphericalPolygon &spherical_polygon) {
+double GlobeGenerator<PG, DF>::mass(const SphericalPolygon &spherical_polygon) {
     auto bounding_box = spherical_polygon.bounding_box();
     auto generator = BoundingBoxSamplePointGenerator(bounding_box);
 
-    return AreaCalculator<DF, BoundingBoxSamplePointGenerator>(
+    return MassCalculator<DF, BoundingBoxSamplePointGenerator>(
         spherical_polygon,
         _density_field,
         std::move(generator)
-    ).area();
+    ).mass();
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -284,14 +284,14 @@ std::vector<typename GlobeGenerator<PG, DF>::CellDebugInfo> GlobeGenerator<PG, D
         }
 
         SphericalPolygon spherical_polygon(dual_cell);
-        double capacity = area(spherical_polygon);
+        double cell_mass = mass(spherical_polygon);
         Point3 centroid_value = centroid(spherical_polygon);
         auto bounding_box = spherical_polygon.bounding_box();
 
         debug_info.push_back(CellDebugInfo{
             .site = vertex->point(),
             .dual_cell_arcs = std::move(dual_cell),
-            .capacity = capacity,
+            .mass = cell_mass,
             .centroid = centroid_value,
             .theta_low = bounding_box.theta_interval().low(),
             .theta_high = bounding_box.theta_interval().high(),
