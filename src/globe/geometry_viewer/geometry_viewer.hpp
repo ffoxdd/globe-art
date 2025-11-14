@@ -19,10 +19,11 @@ namespace globe {
     class GeometryViewer final : public ::CGAL::Qt::Basic_viewer {
     public:
         using KeyPressCallback = std::function<void(GeometryViewer &, QKeyEvent *)>;
-        struct Config;
 
-        explicit GeometryViewer(Config &&config);
-        explicit GeometryViewer(QWidget *parent);
+        explicit GeometryViewer(
+            QWidget *parent,
+            KeyPressCallback key_press_callback = [](GeometryViewer &, QKeyEvent *) {}
+        );
 
         inline void set_key_press_callback(const KeyPressCallback &key_press_callback) {
             _key_press_callback = key_press_callback;
@@ -43,18 +44,12 @@ namespace globe {
         CGAL::Graphics_scene _scene;
     };
 
-    struct GeometryViewer::Config {
-        QWidget *parent;
-        KeyPressCallback key_press_callback = [](GeometryViewer &, QKeyEvent *) {
-        };
-    };
-
-    inline GeometryViewer::GeometryViewer(Config &&config)
-        : ::CGAL::Qt::Basic_viewer(config.parent, _scene, "GeometryViewer"),
-        _key_press_callback(config.key_press_callback) {
-    }
-
-    inline GeometryViewer::GeometryViewer(QWidget *parent) : GeometryViewer(Config{.parent = parent}) {
+    inline GeometryViewer::GeometryViewer(
+        QWidget *parent,
+        KeyPressCallback key_press_callback
+    )
+        : ::CGAL::Qt::Basic_viewer(parent, _scene, "GeometryViewer"),
+        _key_press_callback(key_press_callback) {
     }
 
     inline void GeometryViewer::add_point(const Point3 &point, const CGAL::IO::Color &color) {

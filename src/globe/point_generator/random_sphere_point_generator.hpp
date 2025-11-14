@@ -11,10 +11,7 @@ typedef CGAL::Random_points_on_sphere_3<Point3> CGALRandomSpherePointGenerator;
 
 class RandomSpherePointGenerator {
  public:
-    struct Config;
-
-    explicit RandomSpherePointGenerator(Config &&config);
-    RandomSpherePointGenerator();
+    explicit RandomSpherePointGenerator(double radius = 1.0);
     RandomSpherePointGenerator(RandomSpherePointGenerator &&other) noexcept;
 
     Point3 generate();
@@ -24,19 +21,9 @@ class RandomSpherePointGenerator {
     std::unique_ptr<CGALRandomSpherePointGenerator> _cgal_generator;
 };
 
-struct RandomSpherePointGenerator::Config {
-    double radius = 1.0;
-
-    std::unique_ptr<CGALRandomSpherePointGenerator> cgal_generator =
-        std::make_unique<CGALRandomSpherePointGenerator>(CGALRandomSpherePointGenerator());
-};
-
-inline RandomSpherePointGenerator::RandomSpherePointGenerator(RandomSpherePointGenerator::Config &&config) :
-    _radius(config.radius),
-    _cgal_generator(std::move(config.cgal_generator)) {
-};
-
-inline RandomSpherePointGenerator::RandomSpherePointGenerator() : RandomSpherePointGenerator(Config()) {
+inline RandomSpherePointGenerator::RandomSpherePointGenerator(double radius) :
+    _radius(radius),
+    _cgal_generator(std::make_unique<CGALRandomSpherePointGenerator>(CGALRandomSpherePointGenerator())) {
 }
 
 inline RandomSpherePointGenerator::RandomSpherePointGenerator(RandomSpherePointGenerator &&other) noexcept:

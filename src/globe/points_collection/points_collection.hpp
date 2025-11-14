@@ -24,10 +24,9 @@ using FaceHandleCirculatorIterator = HandleCirculatorIterator<FaceCirculator, Fa
 
 class PointsCollection {
  public:
-    struct Config;
-
-    PointsCollection();
-    explicit PointsCollection(Config &&config);
+    explicit PointsCollection(
+        std::function<void(const DualNeighborhood &)> dual_neighborhood_callback = [](const DualNeighborhood &) {}
+    );
 
     void insert(Point3 point);
     template<Point3Range PR>
@@ -56,16 +55,10 @@ class PointsCollection {
     void clear();
 };
 
-struct PointsCollection::Config {
-    std::function<void(const DualNeighborhood &)> dual_neighborhood_callback = [](const DualNeighborhood &) { };
-};
-
-inline PointsCollection::PointsCollection() :
-    PointsCollection(Config()) {
-}
-
-inline PointsCollection::PointsCollection(Config &&config) :
-    _dual_neighborhood_callback(config.dual_neighborhood_callback) {
+inline PointsCollection::PointsCollection(
+    std::function<void(const DualNeighborhood &)> dual_neighborhood_callback
+) :
+    _dual_neighborhood_callback(dual_neighborhood_callback) {
 }
 
 inline void PointsCollection::insert(Point3 point) {

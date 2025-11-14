@@ -33,9 +33,11 @@ template<
 >
 class GlobeGenerator {
  public:
-    struct Config;
-    GlobeGenerator();
-    explicit GlobeGenerator(Config &&config);
+    GlobeGenerator(
+        std::unique_ptr<PG> point_generator = std::make_unique<PG>(RandomSpherePointGenerator(1.0)),
+        std::unique_ptr<PointsCollection> points_collection = std::make_unique<PointsCollection>(),
+        std::unique_ptr<NG> noise_generator = std::make_unique<NG>(AnlNoiseGenerator())
+    );
 
     GlobeGenerator &build();
     GlobeGenerator &initialize();
@@ -65,25 +67,14 @@ class GlobeGenerator {
 };
 
 template<PointGenerator PG, NoiseGenerator NG>
-struct GlobeGenerator<PG, NG>::Config {
-    double radius = 1.0;
-
-    std::unique_ptr<PG> point_generator = std::make_unique<PG>(
-        RandomSpherePointGenerator(RandomSpherePointGenerator::Config{.radius = radius})
-    );
-
-    std::unique_ptr<PointsCollection> points_collection = std::make_unique<PointsCollection>();
-    std::unique_ptr<NG> noise_generator = std::make_unique<NG>(AnlNoiseGenerator());
-};
-
-template<PointGenerator PG, NoiseGenerator NG>
-GlobeGenerator<PG, NG>::GlobeGenerator() : GlobeGenerator(Config()) { }
-
-template<PointGenerator PG, NoiseGenerator NG>
-GlobeGenerator<PG, NG>::GlobeGenerator(GlobeGenerator::Config &&config) :
-    _point_generator(std::move(config.point_generator)),
-    _points_collection(std::move(config.points_collection)),
-    _noise_generator(std::move(config.noise_generator)) {
+GlobeGenerator<PG, NG>::GlobeGenerator(
+    std::unique_ptr<PG> point_generator,
+    std::unique_ptr<PointsCollection> points_collection,
+    std::unique_ptr<NG> noise_generator
+) :
+    _point_generator(std::move(point_generator)),
+    _points_collection(std::move(points_collection)),
+    _noise_generator(std::move(noise_generator)) {
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -224,11 +215,9 @@ Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon &spherical_polygo
     auto generator = BoundingBoxSamplePointGenerator(bounding_box);
 
     return CentroidCalculator<NG, BoundingBoxSamplePointGenerator>(
-        typename CentroidCalculator<NG, BoundingBoxSamplePointGenerator>::Config{
-            .spherical_polygon = spherical_polygon,
-            .noise_generator = *_noise_generator,
-            .sample_point_generator = std::move(generator)
-        }
+        spherical_polygon,
+        *_noise_generator,
+        std::move(generator)
     ).centroid();
 }
 
@@ -238,11 +227,9 @@ double GlobeGenerator<PG, NG>::area(const SphericalPolygon &spherical_polygon) {
     auto generator = BoundingBoxSamplePointGenerator(bounding_box);
 
     return AreaCalculator<NG, BoundingBoxSamplePointGenerator>(
-        typename AreaCalculator<NG, BoundingBoxSamplePointGenerator>::Config{
-            .spherical_polygon = spherical_polygon,
-            .noise_generator = *_noise_generator,
-            .sample_point_generator = std::move(generator)
-        }
+        spherical_polygon,
+        *_noise_generator,
+        std::move(generator)
     ).area();
 }
 

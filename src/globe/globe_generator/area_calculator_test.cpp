@@ -91,16 +91,14 @@ TEST(AreaCalculatorTest, EstimatesHemisphereAreaWithUniformDensity) {
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator>::Config config{
-        .spherical_polygon = spherical_polygon,
-        .noise_generator = mock_noise_generator,
-        .error_threshold = 1e-12,
-        .consecutive_stable_iterations_threshold = 3,
-        .sample_point_generator = ConstantSamplePointGenerator(inside_point),
-        .bounding_box_override = hemisphere_bounding_box()
-    };
-
-    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> area_calculator(std::move(config));
+    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> area_calculator(
+        spherical_polygon,
+        mock_noise_generator,
+        ConstantSamplePointGenerator(inside_point),
+        1e-12,
+        3,
+        hemisphere_bounding_box()
+    );
 
     EXPECT_NEAR(area_calculator.area(), 2 * M_PI, 1e-6);
 }
@@ -113,16 +111,14 @@ TEST(AreaCalculatorTest, HandlesSamplesOutsideBeforeInside) {
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    AreaCalculator<MockNoiseGenerator, TogglingSamplePointGenerator>::Config config{
-        .spherical_polygon = spherical_polygon,
-        .noise_generator = mock_noise_generator,
-        .error_threshold = 1e-6,
-        .consecutive_stable_iterations_threshold = 5,
-        .sample_point_generator = TogglingSamplePointGenerator(outside_point, inside_point),
-        .bounding_box_override = hemisphere_bounding_box()
-    };
-
-    AreaCalculator<MockNoiseGenerator, TogglingSamplePointGenerator> area_calculator(std::move(config));
+    AreaCalculator<MockNoiseGenerator, TogglingSamplePointGenerator> area_calculator(
+        spherical_polygon,
+        mock_noise_generator,
+        TogglingSamplePointGenerator(outside_point, inside_point),
+        1e-6,
+        5,
+        hemisphere_bounding_box()
+    );
 
     double area = area_calculator.area();
     EXPECT_NEAR(area / (2 * M_PI), 1.0, 0.1);
@@ -138,16 +134,14 @@ TEST(AreaCalculatorTest, AppliesNoiseDensityWeighting) {
         .WillOnce(Return(3.0))
         .WillRepeatedly(Return(2.0));
 
-    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator>::Config config{
-        .spherical_polygon = spherical_polygon,
-        .noise_generator = mock_noise_generator,
-        .error_threshold = 1e-12,
-        .consecutive_stable_iterations_threshold = 3,
-        .sample_point_generator = ConstantSamplePointGenerator(inside_point),
-        .bounding_box_override = hemisphere_bounding_box()
-    };
-
-    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> area_calculator(std::move(config));
+    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> area_calculator(
+        spherical_polygon,
+        mock_noise_generator,
+        ConstantSamplePointGenerator(inside_point),
+        1e-12,
+        3,
+        hemisphere_bounding_box()
+    );
 
     EXPECT_NEAR(area_calculator.area(), 4 * M_PI, 1e-6);
 }

@@ -93,16 +93,14 @@ TEST(CentroidCalculatorTest, ComputesHemisphereCentroidWithUniformDensity) {
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    CentroidCalculator<MockNoiseGenerator, ConstantSamplePointGenerator>::Config config{
-        .spherical_polygon = spherical_polygon,
-        .noise_generator = mock_noise_generator,
-        .error_threshold = 1e-12,
-        .consecutive_stable_iterations_threshold = 3,
-        .sample_point_generator = ConstantSamplePointGenerator(inside_point),
-        .bounding_box_override = hemisphere_bounding_box()
-    };
-
-    CentroidCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> centroid_calculator(std::move(config));
+    CentroidCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> centroid_calculator(
+        spherical_polygon,
+        mock_noise_generator,
+        ConstantSamplePointGenerator(inside_point),
+        1e-12,
+        3,
+        hemisphere_bounding_box()
+    );
 
     Point3 centroid = centroid_calculator.centroid();
 
@@ -119,16 +117,14 @@ TEST(CentroidCalculatorTest, HandlesSamplesOutsideBeforeInside) {
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    CentroidCalculator<MockNoiseGenerator, TogglingSamplePointGenerator>::Config config{
-        .spherical_polygon = spherical_polygon,
-        .noise_generator = mock_noise_generator,
-        .error_threshold = 1e-12,
-        .consecutive_stable_iterations_threshold = 3,
-        .sample_point_generator = TogglingSamplePointGenerator(outside_point, inside_point),
-        .bounding_box_override = hemisphere_bounding_box()
-    };
-
-    CentroidCalculator<MockNoiseGenerator, TogglingSamplePointGenerator> centroid_calculator(std::move(config));
+    CentroidCalculator<MockNoiseGenerator, TogglingSamplePointGenerator> centroid_calculator(
+        spherical_polygon,
+        mock_noise_generator,
+        TogglingSamplePointGenerator(outside_point, inside_point),
+        1e-12,
+        3,
+        hemisphere_bounding_box()
+    );
 
     Point3 centroid = centroid_calculator.centroid();
 
@@ -149,16 +145,15 @@ TEST(CentroidCalculatorTest, AppliesNoiseWeighting) {
             return std::abs(point.z() - north_pole.z()) < 1e-9 ? 1.0 : 3.0;
         }));
 
-    CentroidCalculator<MockNoiseGenerator, AlternatingSamplePointGenerator>::Config config{
-        .spherical_polygon = spherical_polygon,
-        .noise_generator = mock_noise_generator,
-        .error_threshold = 1e-12,
-        .consecutive_stable_iterations_threshold = 3,
-        .sample_point_generator = AlternatingSamplePointGenerator(north_pole, equator_point),
-        .bounding_box_override = hemisphere_bounding_box()
-    };
+    CentroidCalculator<MockNoiseGenerator, AlternatingSamplePointGenerator> centroid_calculator(
+        spherical_polygon,
+        mock_noise_generator,
+        AlternatingSamplePointGenerator(north_pole, equator_point),
+        1e-12,
+        3,
+        hemisphere_bounding_box()
+    );
 
-    CentroidCalculator<MockNoiseGenerator, AlternatingSamplePointGenerator> centroid_calculator(std::move(config));
     Point3 centroid = centroid_calculator.centroid();
 
     Vector3 expected_vector = position_vector(north_pole) * 1.0 + position_vector(equator_point) * 3.0;

@@ -16,8 +16,14 @@ namespace globe {
 template<NoiseGenerator NG = AnlNoiseGenerator, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
 class AreaCalculator {
  public:
-    struct Config;
-    explicit AreaCalculator(Config &&config);
+    AreaCalculator(
+        const SphericalPolygon &spherical_polygon,
+        NG &noise_generator,
+        SPG sample_point_generator,
+        double error_threshold = 1e-6,
+        int consecutive_stable_iterations_threshold = 10,
+        std::optional<SphericalBoundingBox> bounding_box_override = std::nullopt
+    );
 
     [[nodiscard]] double area();
 
@@ -34,25 +40,22 @@ class AreaCalculator {
 };
 
 template<NoiseGenerator NG, SamplePointGenerator SPG>
-struct AreaCalculator<NG, SPG>::Config {
-    const SphericalPolygon &spherical_polygon;
-    NG &noise_generator;
-    SPG sample_point_generator;
-    double error_threshold = 1e-6;
-    int consecutive_stable_iterations_threshold = 10;
-    std::optional<SphericalBoundingBox> bounding_box_override = std::nullopt;
-};
-
-template<NoiseGenerator NG, SamplePointGenerator SPG>
-inline AreaCalculator<NG, SPG>::AreaCalculator(AreaCalculator::Config &&config):
-    _spherical_polygon(config.spherical_polygon),
-    _noise_generator(config.noise_generator),
-    _bounding_box(config.bounding_box_override.has_value()
-        ? *config.bounding_box_override
+inline AreaCalculator<NG, SPG>::AreaCalculator(
+    const SphericalPolygon &spherical_polygon,
+    NG &noise_generator,
+    SPG sample_point_generator,
+    double error_threshold,
+    int consecutive_stable_iterations_threshold,
+    std::optional<SphericalBoundingBox> bounding_box_override
+):
+    _spherical_polygon(spherical_polygon),
+    _noise_generator(noise_generator),
+    _bounding_box(bounding_box_override.has_value()
+        ? *bounding_box_override
         : _spherical_polygon.bounding_box()),
-    _error_threshold(config.error_threshold),
-    _consecutive_stable_iterations_threshold(config.consecutive_stable_iterations_threshold),
-    _sample_point_generator(std::move(config.sample_point_generator)) {
+    _error_threshold(error_threshold),
+    _consecutive_stable_iterations_threshold(consecutive_stable_iterations_threshold),
+    _sample_point_generator(std::move(sample_point_generator)) {
 }
 
 template<NoiseGenerator NG, SamplePointGenerator SPG>
