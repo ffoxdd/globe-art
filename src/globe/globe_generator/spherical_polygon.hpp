@@ -18,8 +18,8 @@ namespace globe {
 class SphericalPolygon {
  public:
     explicit SphericalPolygon(std::vector<Arc> arcs);
-    auto arcs() -> decltype(auto);
-    [[nodiscard]] auto points() const -> decltype(auto);
+    auto arcs();
+    [[nodiscard]] auto points() const;
     [[nodiscard]] SphericalBoundingBox bounding_box() const;
     [[nodiscard]] bool contains(const Point3 &point) const;
 
@@ -30,9 +30,9 @@ class SphericalPolygon {
     static double orientation_sign(const Arc &arc, const Point3 &point);
 };
 
-inline auto SphericalPolygon::arcs() -> decltype(auto) { return _arcs; }
+inline auto SphericalPolygon::arcs() { return _arcs; }
 
-inline auto SphericalPolygon::points() const -> decltype(auto) {
+inline auto SphericalPolygon::points() const {
     return _arcs | std::views::transform(
         [](const Arc &arc) { return to_point(arc.source()); }
     );

@@ -34,25 +34,25 @@ template<
 class GlobeGenerator {
  public:
     GlobeGenerator(
-        std::unique_ptr<PG> point_generator = std::make_unique<PG>(RandomSpherePointGenerator(1.0)),
-        std::unique_ptr<PointsCollection> points_collection = std::make_unique<PointsCollection>(),
-        std::unique_ptr<NG> noise_generator = std::make_unique<NG>(AnlNoiseGenerator())
+        PG point_generator = PG(RandomSpherePointGenerator(1.0)),
+        PointsCollection points_collection = PointsCollection(),
+        NG noise_generator = NG(AnlNoiseGenerator())
     );
 
-    GlobeGenerator &build();
-    GlobeGenerator &initialize();
-    GlobeGenerator &add_points();
-    GlobeGenerator &relax(int count = 1);
+    void build();
+    void initialize();
+    void add_points();
+    void relax(int count = 1);
 
     void save_ply(const std::string &filename) const;
 
-    auto dual_arcs() -> decltype(auto);
-    auto dual_neighborhoods() -> decltype(auto);
+    auto dual_arcs();
+    auto dual_neighborhoods();
 
  private:
-    std::unique_ptr<PG> _point_generator;
-    std::unique_ptr<PointsCollection> _points_collection;
-    std::unique_ptr<NG> _noise_generator;
+    PG _point_generator;
+    PointsCollection _points_collection;
+    NG _noise_generator;
 
     void normalize_noise();
     void calculate_target_capacity();
@@ -68,9 +68,9 @@ class GlobeGenerator {
 
 template<PointGenerator PG, NoiseGenerator NG>
 GlobeGenerator<PG, NG>::GlobeGenerator(
-    std::unique_ptr<PG> point_generator,
-    std::unique_ptr<PointsCollection> points_collection,
-    std::unique_ptr<NG> noise_generator
+    PG point_generator,
+    PointsCollection points_collection,
+    NG noise_generator
 ) :
     _point_generator(std::move(point_generator)),
     _points_collection(std::move(points_collection)),
@@ -78,12 +78,10 @@ GlobeGenerator<PG, NG>::GlobeGenerator(
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::build() {
+void GlobeGenerator<PG, NG>::build() {
     initialize();
     add_points();
     relax();
-
-    return *this;
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -93,15 +91,14 @@ void GlobeGenerator<PG, NG>::save_ply(const std::string &filename) const {
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::initialize() {
+void GlobeGenerator<PG, NG>::initialize() {
     normalize_noise();
     calculate_target_capacity();
-    return *this;
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::normalize_noise() {
-    _noise_generator->normalize(sample_points(1000), NOISE_INTERVAL);
+    _noise_generator.normalize(sample_points(1000), NOISE_INTERVAL);
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -120,22 +117,18 @@ void GlobeGenerator<PG, NG>::calculate_target_capacity() {
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::add_points() {
+void GlobeGenerator<PG, NG>::add_points() {
     for (int i = 0; i < POINT_COUNT; i++) {
         add_point();
     }
-
-    return *this;
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-GlobeGenerator<PG, NG> &GlobeGenerator<PG, NG>::relax(int count) {
+void GlobeGenerator<PG, NG>::relax(int count) {
     for (int i = 0; i < count; i++) {
         adjust_capacity();
 //        adjust_centroids();
     }
-
-    return *this;
 }
 
 struct VoronoiCell {
@@ -153,8 +146,8 @@ template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::adjust_capacity() {
     std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinCapacityComparator> min_capacity_heap;
 
-    for (const auto &vertex : _points_collection->vertices()) {
-        const SphericalPolygon spherical_polygon(_points_collection->dual_cell_arcs(vertex));
+    for (const auto &vertex : _points_collection.vertices()) {
+        const SphericalPolygon spherical_polygon(_points_collection.dual_cell_arcs(vertex));
         double capacity = area(spherical_polygon);
         VoronoiCell voronoi_cell{vertex, capacity};
 
@@ -188,11 +181,11 @@ void GlobeGenerator<PG, NG>::adjust_capacity() {
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::adjust_centroids() {
-    using DualNeighborhoodIterator = decltype(_points_collection->dual_neighborhoods().begin());
+    using DualNeighborhoodIterator = decltype(_points_collection.dual_neighborhoods().begin());
     using DualNeighborhoodType = typename std::iterator_traits<DualNeighborhoodIterator>::value_type;
 
     std::vector<DualNeighborhoodType> temp_dual_neighborhoods(
-        _points_collection->dual_neighborhoods().begin(), _points_collection->dual_neighborhoods().end()
+        _points_collection.dual_neighborhoods().begin(), _points_collection.dual_neighborhoods().end()
     );
 
     std::vector<Point3> new_points(temp_dual_neighborhoods.size());
@@ -206,7 +199,7 @@ void GlobeGenerator<PG, NG>::adjust_centroids() {
         }
     );
 
-    _points_collection->reset(new_points);
+    _points_collection.reset(new_points);
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -216,7 +209,7 @@ Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon &spherical_polygo
 
     return CentroidCalculator<NG, BoundingBoxSamplePointGenerator>(
         spherical_polygon,
-        *_noise_generator,
+        _noise_generator,
         std::move(generator)
     ).centroid();
 }
@@ -228,7 +221,7 @@ double GlobeGenerator<PG, NG>::area(const SphericalPolygon &spherical_polygon) {
 
     return AreaCalculator<NG, BoundingBoxSamplePointGenerator>(
         spherical_polygon,
-        *_noise_generator,
+        _noise_generator,
         std::move(generator)
     ).area();
 }
@@ -238,20 +231,20 @@ std::vector<Point3> GlobeGenerator<PG, NG>::sample_points(size_t n) {
     std::vector<Point3> points;
 
     for (size_t i = 0; i < n; i++) {
-        points.push_back(_point_generator->generate());
+        points.push_back(_point_generator.generate());
     }
 
     return points;
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-auto GlobeGenerator<PG, NG>::dual_arcs() -> decltype(auto) {
-    return _points_collection->dual_arcs();
+auto GlobeGenerator<PG, NG>::dual_arcs() {
+    return _points_collection.dual_arcs();
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
-auto GlobeGenerator<PG, NG>::dual_neighborhoods() -> decltype(auto) {
-    return _points_collection->dual_neighborhoods();
+auto GlobeGenerator<PG, NG>::dual_neighborhoods() {
+    return _points_collection.dual_neighborhoods();
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
@@ -259,12 +252,12 @@ SurfaceMesh GlobeGenerator<PG, NG>::triangulation_mesh() const {
     SurfaceMesh mesh;
     std::map<Point3, SurfaceMesh::Vertex_index> vertices_by_point;
 
-    for (const auto &point : _points_collection->points()) {
+    for (const auto &point : _points_collection.points()) {
         SurfaceMesh::Vertex_index vertex = mesh.add_vertex(point);
         vertices_by_point[point] = vertex;
     }
 
-    for (const auto &face : _points_collection->faces()) {
+    for (const auto &face : _points_collection.faces()) {
         SurfaceMesh::Vertex_index vertex0 = vertices_by_point[face->vertex(0)->point()];
         SurfaceMesh::Vertex_index vertex1 = vertices_by_point[face->vertex(1)->point()];
         SurfaceMesh::Vertex_index vertex2 = vertices_by_point[face->vertex(2)->point()];
@@ -277,8 +270,8 @@ SurfaceMesh GlobeGenerator<PG, NG>::triangulation_mesh() const {
 
 template<PointGenerator PG, NoiseGenerator NG>
 void GlobeGenerator<PG, NG>::add_point() {
-    Point3 point = _point_generator->generate();
-    _points_collection->insert(point);
+    Point3 point = _point_generator.generate();
+    _points_collection.insert(point);
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
