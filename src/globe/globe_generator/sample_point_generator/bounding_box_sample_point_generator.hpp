@@ -13,7 +13,7 @@ class BoundingBoxSamplePointGenerator {
     explicit BoundingBoxSamplePointGenerator(const SphericalBoundingBox &bounding_box);
 
     BoundingBoxSamplePointGenerator(BoundingBoxSamplePointGenerator &&other) noexcept = default;
-    BoundingBoxSamplePointGenerator& operator=(BoundingBoxSamplePointGenerator &&other) noexcept = default;
+    BoundingBoxSamplePointGenerator& operator=(BoundingBoxSamplePointGenerator &&other) noexcept = delete;
 
     BoundingBoxSamplePointGenerator(const BoundingBoxSamplePointGenerator&) = delete;
     BoundingBoxSamplePointGenerator& operator=(const BoundingBoxSamplePointGenerator&) = delete;

@@ -1,8 +1,9 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "./area_calculator.hpp"
-#include "./sample_point_generator/sample_point_generator.hpp"
 #include "../noise_generator/mock_noise_generator.hpp"
+#include <utility>
+#include <vector>
 
 using namespace globe;
 using ::testing::Return;
