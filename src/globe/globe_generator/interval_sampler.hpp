@@ -8,16 +8,20 @@ namespace globe {
 
 class IntervalSampler {
  public:
-    IntervalSampler() :
-        _random_engine(_random_device()) {
+    IntervalSampler() : _random_engine(std::random_device{}()) {
     }
+
+    IntervalSampler(IntervalSampler &&other) noexcept = default;
+    IntervalSampler& operator=(IntervalSampler &&other) noexcept = default;
+
+    IntervalSampler(const IntervalSampler&) = delete;
+    IntervalSampler& operator=(const IntervalSampler&) = delete;
 
     [[nodiscard]] inline double sample(const Interval& interval) {
         return distribution(interval)(_random_engine);
     }
 
  private:
-    std::random_device _random_device;
     std::mt19937 _random_engine;
 
     static inline std::uniform_real_distribution<double> distribution(const Interval& interval) {

@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "./area_calculator.hpp"
+#include "./sample_point_generator/sample_point_generator.hpp"
 #include "../noise_generator/mock_noise_generator.hpp"
 
 using namespace globe;
@@ -40,6 +41,47 @@ SphericalBoundingBox hemisphere_bounding_box() {
     return {Interval(0, 2 * M_PI), Interval(0, 1)};
 }
 
+class ConstantSamplePointGenerator {
+ public:
+    explicit ConstantSamplePointGenerator(Point3 point) : _point(point) {}
+    Point3 generate() { return _point; }
+ private:
+    Point3 _point;
+};
+
+class TogglingSamplePointGenerator {
+ public:
+    TogglingSamplePointGenerator(Point3 first_point, Point3 subsequent_point)
+        : _first_point(first_point), _subsequent_point(subsequent_point), _first_call(true) {}
+
+    Point3 generate() {
+        if (_first_call) {
+            _first_call = false;
+            return _first_point;
+        }
+        return _subsequent_point;
+    }
+ private:
+    Point3 _first_point;
+    Point3 _subsequent_point;
+    bool _first_call;
+};
+
+class SequenceSamplePointGenerator {
+ public:
+    SequenceSamplePointGenerator(std::vector<Point3> sequence)
+        : _sequence(std::move(sequence)), _index(0) {}
+
+    Point3 generate() {
+        Point3 result = _sequence[_index % _sequence.size()];
+        _index++;
+        return result;
+    }
+ private:
+    std::vector<Point3> _sequence;
+    size_t _index;
+};
+
 } // namespace
 
 TEST(AreaCalculatorTest, EstimatesHemisphereAreaWithUniformDensity) {
@@ -49,20 +91,16 @@ TEST(AreaCalculatorTest, EstimatesHemisphereAreaWithUniformDensity) {
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    auto sample_generator = [inside_point]() -> Point3 {
-        return inside_point;
-    };
-
-    AreaCalculator<MockNoiseGenerator>::Config config{
+    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator>::Config config{
         .spherical_polygon = spherical_polygon,
         .noise_generator = mock_noise_generator,
         .error_threshold = 1e-12,
         .consecutive_stable_iterations_threshold = 3,
-        .sample_point_generator = sample_generator,
+        .sample_point_generator = ConstantSamplePointGenerator(inside_point),
         .bounding_box_override = hemisphere_bounding_box()
     };
 
-    AreaCalculator<MockNoiseGenerator> area_calculator(std::move(config));
+    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> area_calculator(std::move(config));
 
     EXPECT_NEAR(area_calculator.area(), 2 * M_PI, 1e-6);
 }
@@ -75,24 +113,16 @@ TEST(AreaCalculatorTest, HandlesSamplesOutsideBeforeInside) {
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    auto sample_generator = [inside_point, outside_point, emitted_outside = false]() mutable -> Point3 {
-        if (!emitted_outside) {
-            emitted_outside = true;
-            return outside_point;
-        }
-        return inside_point;
-    };
-
-    AreaCalculator<MockNoiseGenerator>::Config config{
+    AreaCalculator<MockNoiseGenerator, TogglingSamplePointGenerator>::Config config{
         .spherical_polygon = spherical_polygon,
         .noise_generator = mock_noise_generator,
         .error_threshold = 1e-6,
         .consecutive_stable_iterations_threshold = 5,
-        .sample_point_generator = sample_generator,
+        .sample_point_generator = TogglingSamplePointGenerator(outside_point, inside_point),
         .bounding_box_override = hemisphere_bounding_box()
     };
 
-    AreaCalculator<MockNoiseGenerator> area_calculator(std::move(config));
+    AreaCalculator<MockNoiseGenerator, TogglingSamplePointGenerator> area_calculator(std::move(config));
 
     double area = area_calculator.area();
     EXPECT_NEAR(area / (2 * M_PI), 1.0, 0.1);
@@ -108,20 +138,16 @@ TEST(AreaCalculatorTest, AppliesNoiseDensityWeighting) {
         .WillOnce(Return(3.0))
         .WillRepeatedly(Return(2.0));
 
-    auto sample_generator = [inside_point]() -> Point3 {
-        return inside_point;
-    };
-
-    AreaCalculator<MockNoiseGenerator>::Config config{
+    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator>::Config config{
         .spherical_polygon = spherical_polygon,
         .noise_generator = mock_noise_generator,
         .error_threshold = 1e-12,
         .consecutive_stable_iterations_threshold = 3,
-        .sample_point_generator = sample_generator,
+        .sample_point_generator = ConstantSamplePointGenerator(inside_point),
         .bounding_box_override = hemisphere_bounding_box()
     };
 
-    AreaCalculator<MockNoiseGenerator> area_calculator(std::move(config));
+    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> area_calculator(std::move(config));
 
     EXPECT_NEAR(area_calculator.area(), 4 * M_PI, 1e-6);
 }

@@ -10,6 +10,13 @@ namespace globe {
 
 class SphericalBoundingBoxSampler {
  public:
+    SphericalBoundingBoxSampler() = default;
+    SphericalBoundingBoxSampler(SphericalBoundingBoxSampler &&other) noexcept = default;
+    SphericalBoundingBoxSampler& operator=(SphericalBoundingBoxSampler &&other) noexcept = default;
+
+    SphericalBoundingBoxSampler(const SphericalBoundingBoxSampler&) = delete;
+    SphericalBoundingBoxSampler& operator=(const SphericalBoundingBoxSampler&) = delete;
+
     [[nodiscard]] inline Point3 sample(const SphericalBoundingBox &bounding_box) {
         double theta = _interval_sampler.sample(bounding_box.theta_interval());
         double z = _interval_sampler.sample(bounding_box.z_interval());

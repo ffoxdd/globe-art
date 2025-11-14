@@ -220,20 +220,28 @@ void GlobeGenerator<PG, NG>::adjust_centroids() {
 
 template<PointGenerator PG, NoiseGenerator NG>
 Point3 GlobeGenerator<PG, NG>::centroid(const SphericalPolygon &spherical_polygon) {
-    return CentroidCalculator<NG>(
-        CentroidCalculator<>::Config{
+    auto bounding_box = spherical_polygon.bounding_box();
+    auto generator = BoundingBoxSamplePointGenerator(bounding_box);
+
+    return CentroidCalculator<NG, BoundingBoxSamplePointGenerator>(
+        typename CentroidCalculator<NG, BoundingBoxSamplePointGenerator>::Config{
             .spherical_polygon = spherical_polygon,
-            .noise_generator = *_noise_generator
+            .noise_generator = *_noise_generator,
+            .sample_point_generator = std::move(generator)
         }
     ).centroid();
 }
 
 template<PointGenerator PG, NoiseGenerator NG>
 double GlobeGenerator<PG, NG>::area(const SphericalPolygon &spherical_polygon) {
-    return AreaCalculator<NG>(
-        AreaCalculator<>::Config{
+    auto bounding_box = spherical_polygon.bounding_box();
+    auto generator = BoundingBoxSamplePointGenerator(bounding_box);
+
+    return AreaCalculator<NG, BoundingBoxSamplePointGenerator>(
+        typename AreaCalculator<NG, BoundingBoxSamplePointGenerator>::Config{
             .spherical_polygon = spherical_polygon,
-            .noise_generator = *_noise_generator
+            .noise_generator = *_noise_generator,
+            .sample_point_generator = std::move(generator)
         }
     ).area();
 }
