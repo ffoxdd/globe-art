@@ -28,6 +28,8 @@ class SphericalPolygon {
 
  private:
     std::vector<Arc> _arcs;
+
+    [[nodiscard]] bool _arcs_form_closed_loop() const;
 };
 
 inline auto SphericalPolygon::arcs() { return _arcs; }
@@ -40,9 +42,7 @@ inline auto SphericalPolygon::points() const {
 
 inline SphericalPolygon::SphericalPolygon(std::vector<Arc> arcs) :
     _arcs(std::move(arcs)) {
-    CGAL_precondition(!_arcs.empty());
     CGAL_precondition(is_valid());
-    CGAL_expensive_precondition(is_convex());
 }
 
 inline bool SphericalPolygon::contains(const Point3 &point) const {
@@ -81,17 +81,7 @@ inline bool SphericalPolygon::is_valid() const {
         return false;
     }
 
-    for (size_t i = 0; i < _arcs.size(); ++i) {
-        size_t next = (i + 1) % _arcs.size();
-        Point3 current_target = to_point(_arcs[i].target());
-        Point3 next_source = to_point(_arcs[next].source());
-
-        if (CGAL::squared_distance(current_target, next_source) > 1e-10) {
-            return false;
-        }
-    }
-
-    return true;
+    return _arcs_form_closed_loop();
 }
 
 inline bool SphericalPolygon::is_convex() const {
@@ -102,6 +92,7 @@ inline void SphericalPolygon::validate() const {
     if (!is_valid()) {
         throw std::runtime_error("SphericalPolygon is invalid: arcs don't form a closed loop");
     }
+
     if (!is_convex()) {
         throw std::runtime_error("SphericalPolygon is not convex");
     }
@@ -121,6 +112,20 @@ inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
     );
 
     return {Interval(theta_values), Interval(z_values)};
+}
+
+inline bool SphericalPolygon::_arcs_form_closed_loop() const {
+    for (size_t i = 0; i < _arcs.size(); ++i) {
+        size_t next = (i + 1) % _arcs.size();
+        Point3 current_target = to_point(_arcs[i].target());
+        Point3 next_source = to_point(_arcs[next].source());
+
+        if (CGAL::squared_distance(current_target, next_source) > 1e-10) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 } // namespace globe
