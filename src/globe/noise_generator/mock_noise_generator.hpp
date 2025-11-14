@@ -3,7 +3,6 @@
 
 #include "../noise_generator/noise_generator.hpp"
 #include <gmock/gmock.h>
-#include "../types.hpp"
 #include <vector>
 
 namespace globe {

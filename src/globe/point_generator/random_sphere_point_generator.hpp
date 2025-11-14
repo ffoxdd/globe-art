@@ -2,7 +2,6 @@
 #define GLOBEART_SRC_GLOBE_RANDOM_SPHERE_POINT_GENERATOR_RANDOM_SPHERE_POINT_GENERATOR_H_
 
 #include "../types.hpp"
-#include "point_generator.hpp"
 #include <CGAL/point_generators_3.h>
 
 namespace globe {

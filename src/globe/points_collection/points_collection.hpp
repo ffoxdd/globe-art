@@ -8,7 +8,6 @@
 #include "circulator_iterator.hpp"
 #include "../geometry/helpers.hpp"
 #include <ranges>
-#include <algorithm>
 
 namespace globe {
 

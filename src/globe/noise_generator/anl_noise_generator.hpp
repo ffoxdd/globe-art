@@ -3,8 +3,6 @@
 
 #include "../types.hpp"
 #include "interval.hpp"
-#include "../point_generator/point_generator.hpp"
-#include "../point_generator/random_sphere_point_generator.hpp"
 #include <anl/anl.h>
 
 namespace globe {

@@ -4,7 +4,6 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Exact_spherical_kernel_3.h>
-#include <CGAL/Polygon_2.h>
 
 namespace globe {
 

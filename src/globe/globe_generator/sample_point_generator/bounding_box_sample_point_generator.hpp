@@ -2,7 +2,6 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SAMPLE_POINT_GENERATOR_BOUNDING_BOX_SAMPLE_POINT_GENERATOR_HPP_
 
 #include "../../types.hpp"
-#include "sample_point_generator.hpp"
 #include "../spherical_bounding_box.hpp"
 #include "../spherical_bounding_box_sampler.hpp"
 

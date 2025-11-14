@@ -5,13 +5,9 @@
 #include "../points_collection/types.hpp" // TODO: consider moving spherical_polygon closer to points_collection
 #include "../geometry/helpers.hpp"
 #include "../noise_generator/interval.hpp" // TODO: move interval out of noise_generator
-#include <CGAL/centroid.h>
-#include <CGAL/Projection_traits_xy_3.h>
 #include <utility>
-#include <ranges>
-#include <limits>
-
 #include <iostream>
+#include <vector>
 
 namespace globe {
 

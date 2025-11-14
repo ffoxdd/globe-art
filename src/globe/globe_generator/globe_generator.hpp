@@ -2,25 +2,26 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 
 #include "../types.hpp"
-#include "../sphere_mesh_generator/sphere_mesh_generator.hpp"
 #include "../point_generator/point_generator.hpp"
 #include "../point_generator/random_sphere_point_generator.hpp"
 #include "../points_collection/points_collection.hpp"
 #include "../noise_generator/noise_generator.hpp"
 #include "../noise_generator/anl_noise_generator.hpp"
 #include "spherical_polygon.hpp"
-#include "spherical_bounding_box.hpp"
-#include "spherical_bounding_box_sampler.hpp"
+#include "sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "centroid_calculator.hpp"
 #include "area_calculator.hpp"
 #include "../noise_generator/interval.hpp"
-#include <memory>
 #include <queue>
 #include <vector>
+#include <map>
+#include <fstream>
+#include <stdexcept>
+#include <format>
+#include <string>
+#include <utility>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
-
-#include <iostream> // TEMP
 
 namespace globe {
 

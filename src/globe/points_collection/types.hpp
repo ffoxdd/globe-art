@@ -2,11 +2,8 @@
 #define GLOBEART_SRC_GLOBE_POINTS_COLLECTION_TYPES_H_
 
 #include "../types.hpp"
-#include <CGAL/Search_traits_3.h>
-#include <CGAL/Kd_tree.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_2.h>
-#include <CGAL/Fuzzy_sphere.h>
 
 namespace globe {
 

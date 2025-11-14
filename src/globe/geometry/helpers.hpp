@@ -1,17 +1,8 @@
 #ifndef GLOBEART_SRC_GLOBE_GEOMETRY_HELPERS_H_
 #define GLOBEART_SRC_GLOBE_GEOMETRY_HELPERS_H_
 
-#include <iostream>
-#include <ranges>
-#include <utility>
-#include <CGAL/Projection_traits_xy_3.h>
-#include <CGAL/centroid.h>
-#include "../noise_generator/interval.hpp" // TODO: move interval out of noise_generator
-#include "../points_collection/types.hpp" // TODO: consider moving spherical_polygon closer to points_collection
-#include <CGAL/Polygon_2.h>
-#include <CGAL/Exact_spherical_kernel_3.h>
-#include <CGAL/Surface_mesh.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <cmath>
+#include <algorithm>
 #include "../types.hpp"
 
 namespace globe {
