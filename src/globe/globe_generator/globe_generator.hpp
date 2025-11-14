@@ -20,6 +20,7 @@
 #include <format>
 #include <string>
 #include <utility>
+#include <iostream>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
 
@@ -49,7 +50,19 @@ class GlobeGenerator {
 
     auto dual_arcs();
     auto dual_neighborhoods();
-    std::vector<std::pair<Point3, double>> cell_capacities();
+
+    struct CellDebugInfo {
+        Point3 site;
+        std::vector<Arc> dual_cell_arcs;
+        double capacity;
+        Point3 centroid;
+        double theta_low;
+        double theta_high;
+        double z_low;
+        double z_high;
+    };
+
+    std::vector<CellDebugInfo> cell_debug_info();
 
  private:
     PG _point_generator;
@@ -152,7 +165,7 @@ void GlobeGenerator<PG, DF>::adjust_capacity() {
         const SphericalPolygon spherical_polygon(_points_collection.dual_cell_arcs(vertex));
 
         double capacity = area(spherical_polygon);
-        std::cout << "capacity: " << capacity << std::endl;
+        // std::cout << "capacity: " << capacity << std::endl;
 
         VoronoiCell voronoi_cell{vertex, capacity};
 
@@ -160,6 +173,34 @@ void GlobeGenerator<PG, DF>::adjust_capacity() {
     }
 
     const VoronoiCell &min_cell = min_capacity_heap.top();
+
+    auto min_cell_arcs = _points_collection.dual_cell_arcs(min_cell.vertex);
+    if (!min_cell_arcs.empty()) {
+        SphericalPolygon polygon(min_cell_arcs);
+        auto polygon_centroid = centroid(polygon);
+        auto bbox = polygon.bounding_box();
+
+        const Point3 &site = min_cell.vertex->point();
+        std::cout << "---- Min Capacity Cell Debug ----" << std::endl;
+        std::cout << "Capacity      : " << min_cell.capacity << std::endl;
+        std::cout << "Site          : (" << site.x() << ", " << site.y() << ", " << site.z() << ")" << std::endl;
+        std::cout << "Centroid      : (" << polygon_centroid.x() << ", " << polygon_centroid.y() << ", "
+                  << polygon_centroid.z() << ")" << std::endl;
+        std::cout << "Arc Count     : " << min_cell_arcs.size() << std::endl;
+        std::cout << "Theta Interval: [" << bbox.theta_interval().low() << ", " << bbox.theta_interval().high() << "]"
+                  << std::endl;
+        std::cout << "Z Interval    : [" << bbox.z_interval().low() << ", " << bbox.z_interval().high() << "]"
+                  << std::endl;
+
+        for (std::size_t i = 0; i < min_cell_arcs.size(); ++i) {
+            auto source = to_point(min_cell_arcs[i].source());
+            auto target = to_point(min_cell_arcs[i].target());
+            std::cout << "  Arc " << i << ": source(" << source.x() << ", " << source.y() << ", " << source.z()
+                      << ") -> target(" << target.x() << ", " << target.y() << ", " << target.z() << ")"
+                      << std::endl;
+        }
+        std::cout << "---------------------------------" << std::endl;
+    }
 
     // ok, now we need to move the cell's vertex, minimizing the capacity error
     // for now we'll calculate the error globally
@@ -232,8 +273,8 @@ double GlobeGenerator<PG, DF>::area(const SphericalPolygon &spherical_polygon) {
 }
 
 template<PointGenerator PG, ScalarField DF>
-std::vector<std::pair<Point3, double>> GlobeGenerator<PG, DF>::cell_capacities() {
-    std::vector<std::pair<Point3, double>> capacities;
+std::vector<typename GlobeGenerator<PG, DF>::CellDebugInfo> GlobeGenerator<PG, DF>::cell_debug_info() {
+    std::vector<CellDebugInfo> debug_info;
 
     for (const auto &vertex : _points_collection.vertices()) {
         auto dual_cell = _points_collection.dual_cell_arcs(vertex);
@@ -244,12 +285,22 @@ std::vector<std::pair<Point3, double>> GlobeGenerator<PG, DF>::cell_capacities()
 
         SphericalPolygon spherical_polygon(dual_cell);
         double capacity = area(spherical_polygon);
-        Point3 label_position = centroid(spherical_polygon);
+        Point3 centroid_value = centroid(spherical_polygon);
+        auto bounding_box = spherical_polygon.bounding_box();
 
-        capacities.emplace_back(label_position, capacity);
+        debug_info.push_back(CellDebugInfo{
+            .site = vertex->point(),
+            .dual_cell_arcs = std::move(dual_cell),
+            .capacity = capacity,
+            .centroid = centroid_value,
+            .theta_low = bounding_box.theta_interval().low(),
+            .theta_high = bounding_box.theta_interval().high(),
+            .z_low = bounding_box.z_interval().low(),
+            .z_high = bounding_box.z_interval().high()
+        });
     }
 
-    return capacities;
+    return debug_info;
 }
 
 template<PointGenerator PG, ScalarField DF>
