@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "./area_calculator.hpp"
-#include "../noise_generator/mock_noise_generator.hpp"
+#include "../noise_generator/mock_scalar_field.hpp"
 #include <utility>
 #include <vector>
 
@@ -86,13 +86,13 @@ class SequenceSamplePointGenerator {
 } // namespace
 
 TEST(AreaCalculatorTest, EstimatesHemisphereAreaWithUniformDensity) {
-    MockNoiseGenerator mock_noise_generator;
+    MockScalarField mock_noise_generator;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> area_calculator(
+    AreaCalculator<MockScalarField, ConstantSamplePointGenerator> area_calculator(
         spherical_polygon,
         mock_noise_generator,
         ConstantSamplePointGenerator(inside_point),
@@ -105,14 +105,14 @@ TEST(AreaCalculatorTest, EstimatesHemisphereAreaWithUniformDensity) {
 }
 
 TEST(AreaCalculatorTest, HandlesSamplesOutsideBeforeInside) {
-    MockNoiseGenerator mock_noise_generator;
+    MockScalarField mock_noise_generator;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
     const Point3 outside_point(0, 0, -1);
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    AreaCalculator<MockNoiseGenerator, TogglingSamplePointGenerator> area_calculator(
+    AreaCalculator<MockScalarField, TogglingSamplePointGenerator> area_calculator(
         spherical_polygon,
         mock_noise_generator,
         TogglingSamplePointGenerator(outside_point, inside_point),
@@ -126,7 +126,7 @@ TEST(AreaCalculatorTest, HandlesSamplesOutsideBeforeInside) {
 }
 
 TEST(AreaCalculatorTest, AppliesNoiseDensityWeighting) {
-    MockNoiseGenerator mock_noise_generator;
+    MockScalarField mock_noise_generator;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
 
@@ -135,7 +135,7 @@ TEST(AreaCalculatorTest, AppliesNoiseDensityWeighting) {
         .WillOnce(Return(3.0))
         .WillRepeatedly(Return(2.0));
 
-    AreaCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> area_calculator(
+    AreaCalculator<MockScalarField, ConstantSamplePointGenerator> area_calculator(
         spherical_polygon,
         mock_noise_generator,
         ConstantSamplePointGenerator(inside_point),

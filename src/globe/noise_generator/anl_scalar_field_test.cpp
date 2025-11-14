@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
-#include "anl_noise_generator.hpp"
+#include "anl_scalar_field.hpp"
 
 using namespace globe;
 
 TEST(NoiseGeneratorTest, ValueMethodReturnsDouble) {
     Point3 location = {0.1, 0.2, 0.3};
-    AnlNoiseGenerator noise_generator;
+    AnlScalarField noise_generator;
 
     double value = noise_generator.value(location);
 
@@ -19,7 +19,7 @@ TEST(NoiseGeneratorTest, ValueMethodReturnsConsistentResult) {
     points.emplace_back(location);
     points.emplace_back(0.4, 0.5, 0.6);
 
-    AnlNoiseGenerator noise_generator;
+    AnlScalarField noise_generator;
 
     double value1 = noise_generator.value(location);
     double value2 = noise_generator.value(location);
@@ -35,7 +35,7 @@ TEST(NoiseGeneratorTest, ValueMethodDifferentLocations) {
     points.emplace_back(location1);
     points.emplace_back(location2);
 
-    AnlNoiseGenerator noise_generator;
+    AnlScalarField noise_generator;
 
     double value1 = noise_generator.value(location1);
     double value2 = noise_generator.value(location2);
@@ -51,7 +51,7 @@ TEST(NoiseGeneratorTest, CanNormalizeOutputOverSamplePoints) {
 
     Interval output_range = Interval(-0.01, 0.02);
 
-    AnlNoiseGenerator noise_generator;
+    AnlScalarField noise_generator;
     noise_generator.normalize(sample_points, output_range);
 
     for (auto &point : sample_points) {

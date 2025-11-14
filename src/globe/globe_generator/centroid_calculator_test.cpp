@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "./centroid_calculator.hpp"
-#include "../noise_generator/mock_noise_generator.hpp"
+#include "../noise_generator/mock_scalar_field.hpp"
 #include "../geometry/helpers.hpp"
 #include <cmath>
 #include <vector>
@@ -87,13 +87,13 @@ class AlternatingSamplePointGenerator {
 } // namespace
 
 TEST(CentroidCalculatorTest, ComputesHemisphereCentroidWithUniformDensity) {
-    MockNoiseGenerator mock_noise_generator;
+    MockScalarField mock_noise_generator;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    CentroidCalculator<MockNoiseGenerator, ConstantSamplePointGenerator> centroid_calculator(
+    CentroidCalculator<MockScalarField, ConstantSamplePointGenerator> centroid_calculator(
         spherical_polygon,
         mock_noise_generator,
         ConstantSamplePointGenerator(inside_point),
@@ -110,14 +110,14 @@ TEST(CentroidCalculatorTest, ComputesHemisphereCentroidWithUniformDensity) {
 }
 
 TEST(CentroidCalculatorTest, HandlesSamplesOutsideBeforeInside) {
-    MockNoiseGenerator mock_noise_generator;
+    MockScalarField mock_noise_generator;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
     const Point3 outside_point(0, 0, -1);
 
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
-    CentroidCalculator<MockNoiseGenerator, TogglingSamplePointGenerator> centroid_calculator(
+    CentroidCalculator<MockScalarField, TogglingSamplePointGenerator> centroid_calculator(
         spherical_polygon,
         mock_noise_generator,
         TogglingSamplePointGenerator(outside_point, inside_point),
@@ -134,7 +134,7 @@ TEST(CentroidCalculatorTest, HandlesSamplesOutsideBeforeInside) {
 }
 
 TEST(CentroidCalculatorTest, AppliesNoiseWeighting) {
-    MockNoiseGenerator mock_noise_generator;
+    MockScalarField mock_noise_generator;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
 
     const Point3 north_pole(0, 0, 1);
@@ -145,7 +145,7 @@ TEST(CentroidCalculatorTest, AppliesNoiseWeighting) {
             return std::abs(point.z() - north_pole.z()) < 1e-9 ? 1.0 : 3.0;
         }));
 
-    CentroidCalculator<MockNoiseGenerator, AlternatingSamplePointGenerator> centroid_calculator(
+    CentroidCalculator<MockScalarField, AlternatingSamplePointGenerator> centroid_calculator(
         spherical_polygon,
         mock_noise_generator,
         AlternatingSamplePointGenerator(north_pole, equator_point),

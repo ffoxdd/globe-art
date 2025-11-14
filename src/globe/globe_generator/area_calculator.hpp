@@ -6,20 +6,20 @@
 #include "spherical_bounding_box.hpp"
 #include "sample_point_generator/sample_point_generator.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
-#include "../noise_generator/noise_generator.hpp"
-#include "../noise_generator/anl_noise_generator.hpp"
+#include "../noise_generator/scalar_field.hpp"
+#include "../noise_generator/anl_scalar_field.hpp"
 #include <cmath>
 #include <optional>
 #include <utility>
 
 namespace globe {
 
-template<NoiseGenerator NG = AnlNoiseGenerator, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
+template<ScalarField DF = AnlScalarField, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
 class AreaCalculator {
  public:
     AreaCalculator(
         const SphericalPolygon &spherical_polygon,
-        NG &noise_generator,
+        DF &density_field,
         SPG sample_point_generator,
         double error_threshold = 1e-6,
         int consecutive_stable_iterations_threshold = 10,
@@ -30,7 +30,7 @@ class AreaCalculator {
 
  private:
     const SphericalPolygon &_spherical_polygon;
-    NG &_noise_generator;
+    DF &_density_field;
     const SphericalBoundingBox _bounding_box;
     double _error_threshold;
     int _consecutive_stable_iterations_threshold;
@@ -40,17 +40,17 @@ class AreaCalculator {
     Point3 sample_point();
 };
 
-template<NoiseGenerator NG, SamplePointGenerator SPG>
-inline AreaCalculator<NG, SPG>::AreaCalculator(
+template<ScalarField DF, SamplePointGenerator SPG>
+inline AreaCalculator<DF, SPG>::AreaCalculator(
     const SphericalPolygon &spherical_polygon,
-    NG &noise_generator,
+    DF &density_field,
     SPG sample_point_generator,
     double error_threshold,
     int consecutive_stable_iterations_threshold,
     std::optional<SphericalBoundingBox> bounding_box_override
 ):
     _spherical_polygon(spherical_polygon),
-    _noise_generator(noise_generator),
+    _density_field(density_field),
     _bounding_box(bounding_box_override.has_value()
         ? *bounding_box_override
         : _spherical_polygon.bounding_box()),
@@ -59,8 +59,8 @@ inline AreaCalculator<NG, SPG>::AreaCalculator(
     _sample_point_generator(std::move(sample_point_generator)) {
 }
 
-template<NoiseGenerator NG, SamplePointGenerator SPG>
-inline double AreaCalculator<NG, SPG>::area() {
+template<ScalarField DF, SamplePointGenerator SPG>
+inline double AreaCalculator<DF, SPG>::area() {
 
     int points_inside_polygon = 0;
     int total_points_sampled = 0;
@@ -102,13 +102,13 @@ inline double AreaCalculator<NG, SPG>::area() {
     }
 }
 
-template<NoiseGenerator NG, SamplePointGenerator SPG>
-inline double AreaCalculator<NG, SPG>::density_at(const Point3 &point) {
-    return _noise_generator.value(point);
+template<ScalarField DF, SamplePointGenerator SPG>
+inline double AreaCalculator<DF, SPG>::density_at(const Point3 &point) {
+    return _density_field.value(point);
 }
 
-template<NoiseGenerator NG, SamplePointGenerator SPG>
-inline Point3 AreaCalculator<NG, SPG>::sample_point() {
+template<ScalarField DF, SamplePointGenerator SPG>
+inline Point3 AreaCalculator<DF, SPG>::sample_point() {
     return _sample_point_generator.generate();
 }
 

@@ -6,19 +6,19 @@
 #include "spherical_bounding_box.hpp"
 #include "sample_point_generator/sample_point_generator.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
-#include "../noise_generator/noise_generator.hpp"
-#include "../noise_generator/anl_noise_generator.hpp"
+#include "../noise_generator/scalar_field.hpp"
+#include "../noise_generator/anl_scalar_field.hpp"
 #include <optional>
 #include <utility>
 
 namespace globe {
 
-template<NoiseGenerator NG = AnlNoiseGenerator, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
+template<ScalarField SF = AnlScalarField, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
 class CentroidCalculator {
  public:
     CentroidCalculator(
         const SphericalPolygon &spherical_polygon,
-        NG &noise_generator,
+        SF &density_field,
         SPG sample_point_generator,
         double error_threshold = 1e-6,
         int consecutive_stable_iterations_threshold = 10,
@@ -29,7 +29,7 @@ class CentroidCalculator {
 
  private:
     const SphericalPolygon &_spherical_polygon;
-    NG &_noise_generator;
+    SF &_density_field;
     const SphericalBoundingBox _bounding_box;
     double _error_threshold;
     int _consecutive_stable_iterations_threshold;
@@ -39,17 +39,17 @@ class CentroidCalculator {
     Point3 sample_point();
 };
 
-template<NoiseGenerator NG, SamplePointGenerator SPG>
-inline CentroidCalculator<NG, SPG>::CentroidCalculator(
+template<ScalarField SF, SamplePointGenerator SPG>
+inline CentroidCalculator<SF, SPG>::CentroidCalculator(
     const SphericalPolygon &spherical_polygon,
-    NG &noise_generator,
+    SF &density_field,
     SPG sample_point_generator,
     double error_threshold,
     int consecutive_stable_iterations_threshold,
     std::optional<SphericalBoundingBox> bounding_box_override
 ):
     _spherical_polygon(spherical_polygon),
-    _noise_generator(noise_generator),
+    _density_field(density_field),
     _bounding_box(bounding_box_override.has_value()
         ? *bounding_box_override
         : _spherical_polygon.bounding_box()),
@@ -58,8 +58,8 @@ inline CentroidCalculator<NG, SPG>::CentroidCalculator(
     _sample_point_generator(std::move(sample_point_generator)) {
 }
 
-template<NoiseGenerator NG, SamplePointGenerator SPG>
-inline Point3 CentroidCalculator<NG, SPG>::centroid() {
+template<ScalarField SF, SamplePointGenerator SPG>
+inline Point3 CentroidCalculator<SF, SPG>::centroid() {
     double total_weight = 0;
     Vector3 total_position(0, 0, 0);
     Vector3 previous_centroid(0, 0, 0);
@@ -96,13 +96,13 @@ inline Point3 CentroidCalculator<NG, SPG>::centroid() {
     }
 }
 
-template<NoiseGenerator NG, SamplePointGenerator SPG>
-inline double CentroidCalculator<NG, SPG>::density_at(const Point3 &point) {
-    return _noise_generator.value(point);
+template<ScalarField SF, SamplePointGenerator SPG>
+inline double CentroidCalculator<SF, SPG>::density_at(const Point3 &point) {
+    return _density_field.value(point);
 }
 
-template<NoiseGenerator NG, SamplePointGenerator SPG>
-inline Point3 CentroidCalculator<NG, SPG>::sample_point() {
+template<ScalarField SF, SamplePointGenerator SPG>
+inline Point3 CentroidCalculator<SF, SPG>::sample_point() {
     return _sample_point_generator.generate();
 }
 
