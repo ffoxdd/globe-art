@@ -6,7 +6,7 @@
 #include "../point_generator/random_sphere_point_generator.hpp"
 #include "../points_collection/points_collection.hpp"
 #include "../noise_generator/scalar_field.hpp"
-#include "../noise_generator/anl_scalar_field.hpp"
+#include "../noise_generator/noise_field.hpp"
 #include "spherical_polygon.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "centroid_calculator.hpp"
@@ -30,14 +30,14 @@ const int POINT_COUNT = 250;
 
 template<
     PointGenerator PG = RandomSpherePointGenerator,
-    ScalarField DF = AnlScalarField
+    ScalarField DF = NoiseField
 >
 class GlobeGenerator {
  public:
     GlobeGenerator(
         PG point_generator = PG(RandomSpherePointGenerator(1.0)),
         PointsCollection points_collection = PointsCollection(),
-        DF density_field = DF(AnlScalarField())
+        DF density_field = DF(NoiseField())
     );
 
     void build();
@@ -295,7 +295,7 @@ void GlobeGenerator<PG, DF>::save_mesh_ply(
     }
 }
 
-GlobeGenerator() -> GlobeGenerator<RandomSpherePointGenerator, AnlScalarField>;
+GlobeGenerator() -> GlobeGenerator<RandomSpherePointGenerator, NoiseField>;
 
 } // namespace globe
 

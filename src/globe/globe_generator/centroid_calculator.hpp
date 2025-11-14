@@ -7,18 +7,18 @@
 #include "sample_point_generator/sample_point_generator.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "../noise_generator/scalar_field.hpp"
-#include "../noise_generator/anl_scalar_field.hpp"
+#include "../noise_generator/noise_field.hpp"
 #include <optional>
 #include <utility>
 
 namespace globe {
 
-template<ScalarField SF = AnlScalarField, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
+template<ScalarField DF = NoiseField, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
 class CentroidCalculator {
  public:
     CentroidCalculator(
         const SphericalPolygon &spherical_polygon,
-        SF &density_field,
+        DF &density_field,
         SPG sample_point_generator,
         double error_threshold = 1e-6,
         int consecutive_stable_iterations_threshold = 10,
@@ -29,7 +29,7 @@ class CentroidCalculator {
 
  private:
     const SphericalPolygon &_spherical_polygon;
-    SF &_density_field;
+    DF &_density_field;
     const SphericalBoundingBox _bounding_box;
     double _error_threshold;
     int _consecutive_stable_iterations_threshold;
@@ -39,10 +39,10 @@ class CentroidCalculator {
     Point3 sample_point();
 };
 
-template<ScalarField SF, SamplePointGenerator SPG>
-inline CentroidCalculator<SF, SPG>::CentroidCalculator(
+template<ScalarField DF, SamplePointGenerator SPG>
+inline CentroidCalculator<DF, SPG>::CentroidCalculator(
     const SphericalPolygon &spherical_polygon,
-    SF &density_field,
+    DF &density_field,
     SPG sample_point_generator,
     double error_threshold,
     int consecutive_stable_iterations_threshold,
@@ -58,8 +58,8 @@ inline CentroidCalculator<SF, SPG>::CentroidCalculator(
     _sample_point_generator(std::move(sample_point_generator)) {
 }
 
-template<ScalarField SF, SamplePointGenerator SPG>
-inline Point3 CentroidCalculator<SF, SPG>::centroid() {
+template<ScalarField DF, SamplePointGenerator SPG>
+inline Point3 CentroidCalculator<DF, SPG>::centroid() {
     double total_weight = 0;
     Vector3 total_position(0, 0, 0);
     Vector3 previous_centroid(0, 0, 0);
@@ -96,13 +96,13 @@ inline Point3 CentroidCalculator<SF, SPG>::centroid() {
     }
 }
 
-template<ScalarField SF, SamplePointGenerator SPG>
-inline double CentroidCalculator<SF, SPG>::density_at(const Point3 &point) {
+template<ScalarField DF, SamplePointGenerator SPG>
+inline double CentroidCalculator<DF, SPG>::density_at(const Point3 &point) {
     return _density_field.value(point);
 }
 
-template<ScalarField SF, SamplePointGenerator SPG>
-inline Point3 CentroidCalculator<SF, SPG>::sample_point() {
+template<ScalarField DF, SamplePointGenerator SPG>
+inline Point3 CentroidCalculator<DF, SPG>::sample_point() {
     return _sample_point_generator.generate();
 }
 

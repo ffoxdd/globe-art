@@ -1,15 +1,18 @@
-#ifndef GLOBEART_SRC_GLOBE_NOISE_GENERATOR_ANL_SCALAR_FIELD_H_
-#define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_ANL_SCALAR_FIELD_H_
+#ifndef GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_FIELD_H_
+#define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_FIELD_H_
 
 #include "../types.hpp"
 #include "interval.hpp"
 #include <anl/anl.h>
+#include <memory>
+#include <ranges>
+#include <vector>
 
 namespace globe {
 
-class AnlScalarField {
+class NoiseField {
  public:
-    AnlScalarField();
+    NoiseField();
 
     void normalize(const std::vector<Point3> &sample_points, Interval output_interval);
     double value(const Point3 &location);
@@ -25,14 +28,14 @@ class AnlScalarField {
     Interval _output_interval;
 };
 
-inline AnlScalarField::AnlScalarField() :
+inline NoiseField::NoiseField() :
     _kernel(std::make_unique<anl::CKernel>()),
     _instruction_index(std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel))),
     _noise_interval(Interval(0.0, 1.0)),
     _output_interval(Interval(0.0, 1.0)) {
 }
 
-inline void AnlScalarField::normalize(const std::vector<Point3> &sample_points, Interval output_interval) {
+inline void NoiseField::normalize(const std::vector<Point3> &sample_points, Interval output_interval) {
     auto noise_samples = sample_points | std::views::transform(
         [this](const Point3 &point) {
             return noise_value(point);
@@ -43,17 +46,17 @@ inline void AnlScalarField::normalize(const std::vector<Point3> &sample_points, 
     _output_interval = output_interval;
 }
 
-inline double AnlScalarField::value(const Point3 &location) {
+inline double NoiseField::value(const Point3 &location) {
     return Interval::map(_noise_interval, _output_interval, noise_value(location));
 }
 
-inline double AnlScalarField::noise_value(const Point3 &location) {
+inline double NoiseField::noise_value(const Point3 &location) {
     return anl::CNoiseExecutor(*_kernel).evaluateScalar(
         location.x(), location.y(), location.z(), *_instruction_index
     );
 }
 
-inline anl::CInstructionIndex AnlScalarField::initialize_kernel(anl::CKernel &kernel) {
+inline anl::CInstructionIndex NoiseField::initialize_kernel(anl::CKernel &kernel) {
     const double persistence = 0.5;
     const double lacunarity = 2.0;
     const double octaves = 2;
@@ -78,4 +81,5 @@ inline anl::CInstructionIndex AnlScalarField::initialize_kernel(anl::CKernel &ke
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_NOISE_GENERATOR_ANL_SCALAR_FIELD_H_
+#endif //GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_FIELD_H_
+

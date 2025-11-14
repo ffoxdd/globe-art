@@ -7,14 +7,14 @@
 #include "sample_point_generator/sample_point_generator.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "../noise_generator/scalar_field.hpp"
-#include "../noise_generator/anl_scalar_field.hpp"
+#include "../noise_generator/noise_field.hpp"
 #include <cmath>
 #include <optional>
 #include <utility>
 
 namespace globe {
 
-template<ScalarField DF = AnlScalarField, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
+template<ScalarField DF = NoiseField, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
 class AreaCalculator {
  public:
     AreaCalculator(
