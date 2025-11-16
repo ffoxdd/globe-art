@@ -6,7 +6,6 @@
 #include "handle_iterator.hpp"
 #include "handle_circulator_iterator.hpp"
 #include "circulator_iterator.hpp"
-#include "../geometry/helpers.hpp"
 #include <ranges>
 
 namespace globe {
@@ -41,8 +40,14 @@ class PointsCollection {
     auto dual_face_neighborhood(VertexHandle vertex_handle);
     std::vector<Arc> dual_cell_arcs(VertexHandle vertex_handle);
 
+    Point3 site(size_t index) const;
+    std::vector<Arc> dual_cell_arcs(size_t index) const;
+    void update_site(size_t index, Point3 new_position);
+
  private:
     Triangulation _triangulation;
+    std::vector<Point3> _sites;
+    std::vector<VertexHandle> _handles;
 
     std::function<void(const DualNeighborhood &)> _dual_neighborhood_callback;
 
@@ -62,7 +67,9 @@ inline PointsCollection::PointsCollection(
 }
 
 inline void PointsCollection::insert(Point3 point) {
-    _triangulation.insert(point);
+    VertexHandle handle = _triangulation.insert(point);
+    _sites.push_back(point);
+    _handles.push_back(handle);
 }
 
 template<Point3Range PR>
@@ -70,7 +77,9 @@ inline void PointsCollection::reset(PR new_points) {
     clear();
 
     for (auto point : new_points) {
-        insert(point);
+        VertexHandle handle = _triangulation.insert(point);
+        _sites.push_back(point);
+        _handles.push_back(handle);
     }
 }
 
@@ -151,6 +160,8 @@ inline auto PointsCollection::dual_face_neighborhood(VertexHandle vertex_handle)
 
 inline void PointsCollection::clear() {
     _triangulation.clear();
+    _sites.clear();
+    _handles.clear();
 }
 
 inline auto PointsCollection::dual_arcs() const {
@@ -184,6 +195,26 @@ inline std::vector<Arc> PointsCollection::dual_cell_arcs(VertexHandle vertex_han
     );
 
     return {range.begin(), range.end()};
+}
+
+inline Point3 PointsCollection::site(size_t index) const {
+    return _sites[index];
+}
+
+inline std::vector<Arc> PointsCollection::dual_cell_arcs(size_t index) const {
+    VertexHandle vertex_handle = _handles[index];
+    auto range = incident_edges_range(vertex_handle) | std::views::transform(
+        [this](Edge edge) {
+            return this->_triangulation.dual_on_sphere(edge);
+        }
+    );
+    return {range.begin(), range.end()};
+}
+
+inline void PointsCollection::update_site(size_t index, Point3 new_position) {
+    _triangulation.remove(_handles[index]);
+    _handles[index] = _triangulation.insert(new_position);
+    _sites[index] = new_position;
 }
 
 } // namespace globe

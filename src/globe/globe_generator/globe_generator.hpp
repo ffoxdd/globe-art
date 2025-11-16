@@ -79,6 +79,7 @@ class GlobeGenerator {
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
+    Point3 optimize_vertex_position(size_t index, double target_mass);
     void adjust_mass();
     void adjust_centroids();
 };
@@ -149,7 +150,7 @@ void GlobeGenerator<PG, DF>::relax(int count) {
 }
 
 struct VoronoiCell {
-    VertexHandle vertex;
+    size_t index;
     double mass{};
 };
 
@@ -162,36 +163,20 @@ struct MinMassComparator {
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::adjust_mass() {
     double target_mass = average_mass();
-    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> min_mass_heap;
 
-    for (const auto &vertex : _points_collection.vertices()) {
-        const SphericalPolygon spherical_polygon(_points_collection.dual_cell_arcs(vertex));
-        double cell_mass = mass(spherical_polygon);
-        VoronoiCell voronoi_cell{vertex, cell_mass};
-        min_mass_heap.push(voronoi_cell);
+    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> heap;
+    for (size_t i = 0; i < _points_collection.size(); i++) {
+        double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
+        heap.push({i, cell_mass});
     }
 
-    const VoronoiCell &min_cell = min_mass_heap.top();
+    while (!heap.empty()) {
+        size_t i = heap.top().index;
+        heap.pop();
 
-    auto min_cell_arcs = _points_collection.dual_cell_arcs(min_cell.vertex);
-
-    // !!!!!!!!
-
-    // ok, now we need to move the cell's vertex, minimizing the mass error
-
-    // an optimization is to search only the faces that have changed after each vertex movement
-
-    // algorithm:
-
-    // calculate the global mass
-    // determine the optimal mass per cell
-    // initialize a min-heap with all vertices keyed on their mass difference
-    // take the vertex whose dual cell has the minimal mass difference
-    // minimize the mass error w/ the downhill simplex method
-    // move the vertex around, within the area of its dual face neighborhood
-    // recalculate the capacities of adjacent cells
-    // you can just do a few minimization steps as opposed to finding the true minimum
-    // repeat until no vertices move
+        Point3 optimized_position = optimize_vertex_position(i, target_mass);
+        _points_collection.update_site(i, optimized_position);
+    }
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -256,6 +241,22 @@ double GlobeGenerator<PG, DF>::total_mass() {
 template<PointGenerator PG, ScalarField DF>
 double GlobeGenerator<PG, DF>::average_mass() {
     return total_mass() / _points_collection.size();
+}
+
+template<PointGenerator PG, ScalarField DF>
+Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double target_mass) {
+    auto objective = [&](const Point3& candidate) {
+        _points_collection.update_site(index, candidate);
+        double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(index)));
+        return std::pow(cell_mass - target_mass, 2);
+    };
+
+    // TODO: Implement proper Nelder-Mead
+    // For now, just evaluate current position and return it
+    Point3 current_position = _points_collection.site(index);
+    double current_error = objective(current_position);
+
+    return current_position;
 }
 
 template<PointGenerator PG, ScalarField DF>
