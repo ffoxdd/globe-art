@@ -93,7 +93,7 @@ TEST(MassCalculatorTest, EstimatesHemisphereMassWithUniformDensity) {
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
     MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
-        spherical_polygon,
+        std::ref(spherical_polygon),
         mock_noise_generator,
         ConstantSamplePointGenerator(inside_point),
         1e-12,
@@ -113,7 +113,7 @@ TEST(MassCalculatorTest, HandlesSamplesOutsideBeforeInside) {
     EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
 
     MassCalculator<MockScalarField, TogglingSamplePointGenerator> mass_calculator(
-        spherical_polygon,
+        std::ref(spherical_polygon),
         mock_noise_generator,
         TogglingSamplePointGenerator(outside_point, inside_point),
         1e-6,
@@ -136,7 +136,7 @@ TEST(MassCalculatorTest, AppliesNoiseDensityWeighting) {
         .WillRepeatedly(Return(2.0));
 
     MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
-        spherical_polygon,
+        std::ref(spherical_polygon),
         mock_noise_generator,
         ConstantSamplePointGenerator(inside_point),
         1e-12,
@@ -145,4 +145,41 @@ TEST(MassCalculatorTest, AppliesNoiseDensityWeighting) {
     );
 
     EXPECT_NEAR(mass_calculator.mass(), 4 * M_PI, 1e-6);
+}
+
+TEST(MassCalculatorTest, CalculatesTotalSphereMassWithUniformDensity) {
+    MockScalarField mock_noise_generator;
+    const Point3 arbitrary_point(0, 0, 1);
+
+    EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
+
+    MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
+        std::nullopt,
+        mock_noise_generator,
+        ConstantSamplePointGenerator(arbitrary_point),
+        1e-12,
+        3
+    );
+
+    EXPECT_NEAR(mass_calculator.mass(), 4 * M_PI, 1e-6);
+}
+
+TEST(MassCalculatorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
+    MockScalarField mock_noise_generator;
+    const Point3 arbitrary_point(0, 0, 1);
+
+    EXPECT_CALL(mock_noise_generator, value(_))
+        .WillOnce(Return(2.0))
+        .WillOnce(Return(4.0))
+        .WillRepeatedly(Return(3.0));
+
+    MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
+        std::nullopt,
+        mock_noise_generator,
+        ConstantSamplePointGenerator(arbitrary_point),
+        1e-12,
+        3
+    );
+
+    EXPECT_NEAR(mass_calculator.mass(), 12 * M_PI, 1e-6);
 }

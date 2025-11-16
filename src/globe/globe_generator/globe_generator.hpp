@@ -77,6 +77,7 @@ class GlobeGenerator {
     static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
     Point3 centroid(const SphericalPolygon &spherical_polygon);
     double mass(const SphericalPolygon &spherical_polygon);
+    double total_mass();
     void adjust_mass();
     void adjust_centroids();
 };
@@ -163,12 +164,8 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
 
     for (const auto &vertex : _points_collection.vertices()) {
         const SphericalPolygon spherical_polygon(_points_collection.dual_cell_arcs(vertex));
-
         double cell_mass = mass(spherical_polygon);
-        // std::cout << "mass: " << cell_mass << std::endl;
-
         VoronoiCell voronoi_cell{vertex, cell_mass};
-
         min_mass_heap.push(voronoi_cell);
     }
 
@@ -266,7 +263,19 @@ double GlobeGenerator<PG, DF>::mass(const SphericalPolygon &spherical_polygon) {
     auto generator = BoundingBoxSamplePointGenerator(bounding_box);
 
     return MassCalculator<DF, BoundingBoxSamplePointGenerator>(
-        spherical_polygon,
+        std::ref(spherical_polygon),
+        _density_field,
+        std::move(generator)
+    ).mass();
+}
+
+template<PointGenerator PG, ScalarField DF>
+double GlobeGenerator<PG, DF>::total_mass() {
+    auto bounding_box = SphericalBoundingBox(Interval(0, 2 * M_PI), Interval(-1, 1));
+    auto generator = BoundingBoxSamplePointGenerator(bounding_box);
+
+    return MassCalculator<DF, BoundingBoxSamplePointGenerator>(
+        std::nullopt,
         _density_field,
         std::move(generator)
     ).mass();

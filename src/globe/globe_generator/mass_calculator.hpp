@@ -18,42 +18,54 @@ template<ScalarField DF = NoiseField, SamplePointGenerator SPG = BoundingBoxSamp
 class MassCalculator {
  public:
     MassCalculator(
-        const SphericalPolygon &spherical_polygon,
+        std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
         DF &density_field,
         SPG sample_point_generator,
         double error_threshold = 1e-6,
         int consecutive_stable_iterations_threshold = 10,
-        std::optional<SphericalBoundingBox> bounding_box_override = std::nullopt
+        std::optional<SphericalBoundingBox> bounding_box = std::nullopt
     );
 
     [[nodiscard]] double mass();
 
  private:
-    const SphericalPolygon &_spherical_polygon;
+    std::optional<std::reference_wrapper<const SphericalPolygon>> _spherical_polygon;
     DF &_density_field;
     const SphericalBoundingBox _bounding_box;
     double _error_threshold;
     int _consecutive_stable_iterations_threshold;
     SPG _sample_point_generator;
 
+    bool contains(const Point3 &point);
     double density_at(const Point3 &point);
     Point3 sample_point();
+
+    static SphericalBoundingBox unit_sphere_bounding_box() {
+        return SphericalBoundingBox(
+            Interval(0, 2 * M_PI), Interval(-1, 1)
+        );
+    }
 };
 
 template<ScalarField DF, SamplePointGenerator SPG>
 inline MassCalculator<DF, SPG>::MassCalculator(
-    const SphericalPolygon &spherical_polygon,
+    std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
     DF &density_field,
     SPG sample_point_generator,
     double error_threshold,
     int consecutive_stable_iterations_threshold,
-    std::optional<SphericalBoundingBox> bounding_box_override
+    std::optional<SphericalBoundingBox> bounding_box
 ):
     _spherical_polygon(spherical_polygon),
     _density_field(density_field),
-    _bounding_box(bounding_box_override.has_value()
-        ? *bounding_box_override
-        : _spherical_polygon.bounding_box()),
+    _bounding_box(
+        bounding_box.has_value() ?
+        *bounding_box :
+        (
+            spherical_polygon.has_value() ? spherical_polygon->get().bounding_box()
+            : unit_sphere_bounding_box()
+        )
+    ),
     _error_threshold(error_threshold),
     _consecutive_stable_iterations_threshold(consecutive_stable_iterations_threshold),
     _sample_point_generator(std::move(sample_point_generator)) {
@@ -61,7 +73,6 @@ inline MassCalculator<DF, SPG>::MassCalculator(
 
 template<ScalarField DF, SamplePointGenerator SPG>
 inline double MassCalculator<DF, SPG>::mass() {
-
     int points_inside_polygon = 0;
     int total_points_sampled = 0;
     double total_mass = 0;
@@ -72,7 +83,7 @@ inline double MassCalculator<DF, SPG>::mass() {
         Point3 sampled_point = sample_point();
         total_points_sampled++;
 
-        if (_spherical_polygon.contains(sampled_point)) {
+        if (contains(sampled_point)) {
             points_inside_polygon++;
             total_mass += density_at(sampled_point);
         }
@@ -100,6 +111,15 @@ inline double MassCalculator<DF, SPG>::mass() {
             return weighted_area_estimate;
         }
     }
+}
+
+template<ScalarField DF, SamplePointGenerator SPG>
+inline bool MassCalculator<DF, SPG>::contains(const Point3 &point) {
+    if (!_spherical_polygon) {
+        return true;
+    }
+
+    return _spherical_polygon->get().contains(point);
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
