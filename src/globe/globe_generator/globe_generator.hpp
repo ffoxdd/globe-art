@@ -23,6 +23,7 @@
 #include <iostream>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
+#include <dlib/optimization.h>
 
 namespace globe {
 
@@ -245,18 +246,55 @@ double GlobeGenerator<PG, DF>::average_mass() {
 
 template<PointGenerator PG, ScalarField DF>
 Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double target_mass) {
-    auto objective = [&](const Point3& candidate) {
-        _points_collection.update_site(index, candidate);
+    Point3 current_position = _points_collection.site(index);
+
+    using column_vector = dlib::matrix<double, 3, 1>;
+
+    auto objective = [&](const column_vector& pos) -> double {
+        Point3 candidate(pos(0), pos(1), pos(2));
+
+        double length = std::sqrt(
+            candidate.x() * candidate.x() +
+            candidate.y() * candidate.y() +
+            candidate.z() * candidate.z()
+        );
+
+        Point3 normalized(
+            candidate.x() / length,
+            candidate.y() / length,
+            candidate.z() / length
+        );
+
+        _points_collection.update_site(index, normalized);
         double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(index)));
         return std::pow(cell_mass - target_mass, 2);
     };
 
-    // TODO: Implement proper Nelder-Mead
-    // For now, just evaluate current position and return it
-    Point3 current_position = _points_collection.site(index);
-    double current_error = objective(current_position);
+    column_vector starting_point;
+    starting_point = current_position.x(), current_position.y(), current_position.z();
 
-    return current_position;
+    try {
+        dlib::find_min_using_approximate_derivatives(
+            dlib::bfgs_search_strategy(),
+            dlib::objective_delta_stop_strategy(1e-7),
+            objective,
+            starting_point,
+            -1
+        );
+    } catch (...) {
+    }
+
+    double length = std::sqrt(
+        starting_point(0) * starting_point(0) +
+        starting_point(1) * starting_point(1) +
+        starting_point(2) * starting_point(2)
+    );
+
+    return Point3(
+        starting_point(0) / length,
+        starting_point(1) / length,
+        starting_point(2) / length
+    );
 }
 
 template<PointGenerator PG, ScalarField DF>
