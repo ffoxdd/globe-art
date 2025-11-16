@@ -33,6 +33,7 @@ class PointsCollection {
     VertexHandle move_vertex(VertexHandle vertex_handle, Point3 new_point);
 
     auto vertices() const;
+    std::size_t size() const;
     auto points() const;
     auto dual_arcs() const;
     auto dual_neighborhoods();
@@ -112,6 +113,10 @@ inline auto PointsCollection::vertices() const {
         VertexHandleIterator(_triangulation.finite_vertices_begin()),
         VertexHandleIterator(_triangulation.finite_vertices_end())
     );
+}
+
+inline std::size_t PointsCollection::size() const {
+    return _triangulation.number_of_vertices();
 }
 
 inline auto PointsCollection::points() const {

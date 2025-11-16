@@ -78,6 +78,7 @@ class GlobeGenerator {
     Point3 centroid(const SphericalPolygon &spherical_polygon);
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
+    double average_mass();
     void adjust_mass();
     void adjust_centroids();
 };
@@ -150,22 +151,25 @@ void GlobeGenerator<PG, DF>::relax(int count) {
 struct VoronoiCell {
     VertexHandle vertex;
     double mass{};
+    double mass_error{};
 };
 
-struct MinMassComparator {
+struct MinMassErrorComparator {
     bool operator()(const VoronoiCell &a, const VoronoiCell &b) const {
-        return a.mass > b.mass;
+        return a.mass_error > b.mass_error;
     }
 };
 
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::adjust_mass() {
-    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> min_mass_heap;
+    double target_mass = average_mass();
+    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassErrorComparator> min_mass_heap;
 
     for (const auto &vertex : _points_collection.vertices()) {
         const SphericalPolygon spherical_polygon(_points_collection.dual_cell_arcs(vertex));
         double cell_mass = mass(spherical_polygon);
-        VoronoiCell voronoi_cell{vertex, cell_mass};
+        double mass_error = std::abs(cell_mass - target_mass);
+        VoronoiCell voronoi_cell{vertex, cell_mass, mass_error};
         min_mass_heap.push(voronoi_cell);
     }
 
@@ -279,6 +283,11 @@ double GlobeGenerator<PG, DF>::total_mass() {
         _density_field,
         std::move(generator)
     ).mass();
+}
+
+template<PointGenerator PG, ScalarField DF>
+double GlobeGenerator<PG, DF>::average_mass() {
+    return total_mass() / _points_collection.size();
 }
 
 template<PointGenerator PG, ScalarField DF>
