@@ -151,63 +151,37 @@ void GlobeGenerator<PG, DF>::relax(int count) {
 struct VoronoiCell {
     VertexHandle vertex;
     double mass{};
-    double mass_error{};
 };
 
-struct MinMassErrorComparator {
+struct MinMassComparator {
     bool operator()(const VoronoiCell &a, const VoronoiCell &b) const {
-        return a.mass_error > b.mass_error;
+        return a.mass > b.mass;
     }
 };
 
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::adjust_mass() {
     double target_mass = average_mass();
-    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassErrorComparator> min_mass_heap;
+    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> min_mass_heap;
 
     for (const auto &vertex : _points_collection.vertices()) {
         const SphericalPolygon spherical_polygon(_points_collection.dual_cell_arcs(vertex));
         double cell_mass = mass(spherical_polygon);
-        double mass_error = std::abs(cell_mass - target_mass);
-        VoronoiCell voronoi_cell{vertex, cell_mass, mass_error};
+        VoronoiCell voronoi_cell{vertex, cell_mass};
         min_mass_heap.push(voronoi_cell);
     }
 
     const VoronoiCell &min_cell = min_mass_heap.top();
 
     auto min_cell_arcs = _points_collection.dual_cell_arcs(min_cell.vertex);
-    if (!min_cell_arcs.empty()) {
-        SphericalPolygon polygon(min_cell_arcs);
-        auto polygon_centroid = centroid(polygon);
-        auto bbox = polygon.bounding_box();
 
-        const Point3 &site = min_cell.vertex->point();
-        std::cout << "---- Min Mass Cell Debug ----" << std::endl;
-        std::cout << "Mass          : " << min_cell.mass << std::endl;
-        std::cout << "Site          : (" << site.x() << ", " << site.y() << ", " << site.z() << ")" << std::endl;
-        std::cout << "Centroid      : (" << polygon_centroid.x() << ", " << polygon_centroid.y() << ", "
-                  << polygon_centroid.z() << ")" << std::endl;
-        std::cout << "Arc Count     : " << min_cell_arcs.size() << std::endl;
-        std::cout << "Theta Interval: [" << bbox.theta_interval().low() << ", " << bbox.theta_interval().high() << "]"
-                  << std::endl;
-        std::cout << "Z Interval    : [" << bbox.z_interval().low() << ", " << bbox.z_interval().high() << "]"
-                  << std::endl;
-
-        for (std::size_t i = 0; i < min_cell_arcs.size(); ++i) {
-            auto source = to_point(min_cell_arcs[i].source());
-            auto target = to_point(min_cell_arcs[i].target());
-            std::cout << "  Arc " << i << ": source(" << source.x() << ", " << source.y() << ", " << source.z()
-                      << ") -> target(" << target.x() << ", " << target.y() << ", " << target.z() << ")"
-                      << std::endl;
-        }
-        std::cout << "---------------------------------" << std::endl;
-    }
+    // !!!!!!!!
 
     // ok, now we need to move the cell's vertex, minimizing the mass error
-    // for now we'll calculate the error globally
+
     // an optimization is to search only the faces that have changed after each vertex movement
 
-    // steps
+    // algorithm:
 
     // calculate the global mass
     // determine the optimal mass per cell
@@ -218,12 +192,6 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
     // recalculate the capacities of adjacent cells
     // you can just do a few minimization steps as opposed to finding the true minimum
     // repeat until no vertices move
-
-    // need:
-    // min-heap
-    // * vertex accessor
-    // downhill simplex algorithm
-    // * ability to move a vertex
 }
 
 template<PointGenerator PG, ScalarField DF>
