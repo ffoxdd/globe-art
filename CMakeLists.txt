@@ -33,6 +33,10 @@ target_include_directories(generate_globe PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DI
 target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib)
 target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER CGAL_USE_BASIC_VIEWER_QT QT_NO_KEYWORDS)
 
+add_executable(test_adaptive_cache src/test_adaptive_cache.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
+target_include_directories(test_adaptive_cache PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
+target_link_libraries(test_adaptive_cache PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib)
+
 # Tests
 
 pkg_search_module(GTEST REQUIRED gtest_main)
