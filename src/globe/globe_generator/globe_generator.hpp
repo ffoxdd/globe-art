@@ -189,6 +189,20 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
         vertex_count++;
     }
     std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
+
+    std::cout << std::endl;
+    std::cout << "Final cell masses after optimization:" << std::endl;
+    double total_error = 0.0;
+    double max_error = 0.0;
+    for (size_t i = 0; i < _points_collection.size(); i++) {
+        double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
+        double error = std::abs(cell_mass - target_mass);
+        total_error += error;
+        max_error = std::max(max_error, error);
+        std::cout << "  Cell " << i << " mass: " << cell_mass << ", error: " << error << std::endl;
+    }
+    std::cout << "Average error: " << (total_error / _points_collection.size()) << std::endl;
+    std::cout << "Max error: " << max_error << std::endl;
 }
 
 template<PointGenerator PG, ScalarField DF>

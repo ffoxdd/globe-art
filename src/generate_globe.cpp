@@ -181,19 +181,31 @@ void log_debug_info(const typename GG::CellDebugInfo &info, std::size_t index, s
     std::cout << "---- Debugging polygon " << index + 1 << " / " << total << " ----" << std::endl;
     std::cout << "Site: (" << info.site.x() << ", " << info.site.y() << ", " << info.site.z() << ")" << std::endl;
     std::cout << "Mass (Monte Carlo): " << info.mass << std::endl;
-    std::cout << "Centroid: (" << info.centroid.x() << ", " << info.centroid.y() << ", " << info.centroid.z() << ")"
-              << std::endl;
-    std::cout << "Bounding box theta: [" << info.theta_low << ", "
-              << info.theta_high << "]" << std::endl;
-    std::cout << "Bounding box z: [" << info.z_low << ", "
-              << info.z_high << "]" << std::endl;
+
+    std::cout << "Centroid: (" <<
+        info.centroid.x() << ", " << info.centroid.y() << ", " << info.centroid.z() <<
+        ")" << std::endl;
+
+    std::cout << "Bounding box theta: [" <<
+        info.theta_low << ", " << info.theta_high <<
+        "]" << std::endl;
+
+    std::cout << "Bounding box z: [" <<
+        info.z_low << ", " << info.z_high <<
+        "]" << std::endl;
+
     std::cout << "Arc count: " << info.dual_cell_arcs.size() << std::endl;
+
     for (std::size_t i = 0; i < info.dual_cell_arcs.size(); ++i) {
         const auto &arc = info.dual_cell_arcs[i];
         auto source = to_point(arc.source());
         auto target = to_point(arc.target());
-        std::cout << "  Arc " << i << ": source(" << source.x() << ", " << source.y() << ", " << source.z() << ")"
-                  << " -> target(" << target.x() << ", " << target.y() << ", " << target.z() << ")" << std::endl;
+
+        std::cout << "  Arc " << i << ": " <<
+            "source(" << source.x() << ", " << source.y() << ", " << source.z() << ")" << " -> " <<
+            "target(" << target.x() << ", " << target.y() << ", " << target.z() << ")" <<
+            std::endl;
     }
+
     std::cout << "----------------------------------------" << std::endl;
 }

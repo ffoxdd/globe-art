@@ -36,11 +36,12 @@ Examples:
 - Keep main functions flat and linear when possible
 
 ### Formatting Multi-line Expressions
-- Opening parenthesis stays at end of line
-- Arguments on new lines, indented once (not aligned with previous line)
-- Closing parenthesis on its own line for symmetry
+- Continuation operators (like `<<`) go at the end of the line, not the beginning
+- Opening elements (parenthesis, bracket, etc.) stay at end of line
+- Arguments/content on new lines, indented once (not aligned with previous line)
+- Closing elements (parenthesis, bracket, etc.) on their own line for nested structures
 - Never align with elements from previous lines
-- Separate consecutive multi-line expressions with a blank line
+- Separate consecutive multi-line blocks with a blank line before and after
 - This applies to all multi-line expressions including chained stream operations (`<<`)
 
 Examples:
@@ -58,10 +59,15 @@ Point3 normalized(
     candidate.z() / length
 );
 
-// Stream operations
+// Stream operations - simple case (no nested structure)
 std::cout << "Usage: " << program_name << " [options]\n"
     << "Options:\n"
     << "  --points <N>  Number of points\n"
     << "  --help        Show help\n"
     << std::endl;
+
+// Stream operations - with nested structure (opening/closing on own lines)
+std::cout << "Centroid: (" <<
+    info.centroid.x() << ", " << info.centroid.y() << ", " << info.centroid.z() <<
+    ")" << std::endl;
 ```
