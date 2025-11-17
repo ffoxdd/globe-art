@@ -4,7 +4,7 @@
 #include "spherical_bounding_box.hpp"
 #include "../points_collection/types.hpp" // TODO: consider moving spherical_polygon closer to points_collection
 #include "../geometry/helpers.hpp"
-#include "../noise_generator/interval.hpp" // TODO: move interval out of noise_generator
+#include "../scalar_field/interval.hpp" // TODO: move interval out of scalar_field
 #include <CGAL/assertions.h>
 #include <utility>
 #include <stdexcept>

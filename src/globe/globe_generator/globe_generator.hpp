@@ -5,13 +5,13 @@
 #include "../point_generator/point_generator.hpp"
 #include "../point_generator/random_sphere_point_generator.hpp"
 #include "../points_collection/points_collection.hpp"
-#include "../noise_generator/scalar_field.hpp"
-#include "../noise_generator/noise_field.hpp"
+#include "../scalar_field/scalar_field.hpp"
+#include "../scalar_field/noise_field.hpp"
 #include "spherical_polygon.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "centroid_calculator.hpp"
 #include "mass_calculator.hpp"
-#include "../noise_generator/interval.hpp"
+#include "../scalar_field/interval.hpp"
 #include <queue>
 #include <vector>
 #include <map>

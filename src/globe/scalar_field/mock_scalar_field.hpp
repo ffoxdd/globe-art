@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_NOISE_GENERATOR_MOCK_SCALAR_FIELD_HPP_
 #define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_MOCK_SCALAR_FIELD_HPP_
 
-#include "../noise_generator/scalar_field.hpp"
+#include "../scalar_field/scalar_field.hpp"
 #include <gmock/gmock.h>
 #include <vector>
 

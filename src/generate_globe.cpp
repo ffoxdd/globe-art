@@ -1,7 +1,7 @@
 #include "globe/globe_generator/globe_generator.hpp"
 #include "globe/geometry_viewer/geometry_viewer.hpp"
-#include "globe/noise_generator/constant_scalar_field.hpp"
-#include "globe/noise_generator/noise_field.hpp"
+#include "globe/scalar_field/constant_scalar_field.hpp"
+#include "globe/scalar_field/noise_field.hpp"
 #include <QtWidgets/QApplication>
 #include <QtCore/Qt>
 #include <CGAL/Qt/init_ogl_context.h>

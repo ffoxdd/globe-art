@@ -6,8 +6,8 @@
 #include "spherical_bounding_box.hpp"
 #include "sample_point_generator/sample_point_generator.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
-#include "../noise_generator/scalar_field.hpp"
-#include "../noise_generator/noise_field.hpp"
+#include "../scalar_field/scalar_field.hpp"
+#include "../scalar_field/noise_field.hpp"
 #include <optional>
 #include <utility>
 

@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_HPP_
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_HPP_
 
-#include "../noise_generator/interval.hpp"
+#include "../scalar_field/interval.hpp"
 #include <cmath>
 
 namespace globe {

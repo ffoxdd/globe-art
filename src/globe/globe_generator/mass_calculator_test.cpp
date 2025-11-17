@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "./mass_calculator.hpp"
-#include "../noise_generator/mock_scalar_field.hpp"
+#include "../scalar_field/mock_scalar_field.hpp"
 #include <utility>
 #include <vector>
 
@@ -86,15 +86,15 @@ class SequenceSamplePointGenerator {
 } // namespace
 
 TEST(MassCalculatorTest, EstimatesHemisphereMassWithUniformDensity) {
-    MockScalarField mock_noise_generator;
+    MockScalarField mock_scalar_field;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
 
-    EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
+    EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
     MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
         std::ref(spherical_polygon),
-        mock_noise_generator,
+        mock_scalar_field,
         ConstantSamplePointGenerator(inside_point),
         1e-12,
         3,
@@ -105,16 +105,16 @@ TEST(MassCalculatorTest, EstimatesHemisphereMassWithUniformDensity) {
 }
 
 TEST(MassCalculatorTest, HandlesSamplesOutsideBeforeInside) {
-    MockScalarField mock_noise_generator;
+    MockScalarField mock_scalar_field;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
     const Point3 outside_point(0, 0, -1);
 
-    EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
+    EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
     MassCalculator<MockScalarField, TogglingSamplePointGenerator> mass_calculator(
         std::ref(spherical_polygon),
-        mock_noise_generator,
+        mock_scalar_field,
         TogglingSamplePointGenerator(outside_point, inside_point),
         1e-6,
         5,
@@ -126,18 +126,18 @@ TEST(MassCalculatorTest, HandlesSamplesOutsideBeforeInside) {
 }
 
 TEST(MassCalculatorTest, AppliesNoiseDensityWeighting) {
-    MockScalarField mock_noise_generator;
+    MockScalarField mock_scalar_field;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
 
-    EXPECT_CALL(mock_noise_generator, value(_))
+    EXPECT_CALL(mock_scalar_field, value(_))
         .WillOnce(Return(1.0))
         .WillOnce(Return(3.0))
         .WillRepeatedly(Return(2.0));
 
     MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
         std::ref(spherical_polygon),
-        mock_noise_generator,
+        mock_scalar_field,
         ConstantSamplePointGenerator(inside_point),
         1e-12,
         3,
@@ -148,14 +148,14 @@ TEST(MassCalculatorTest, AppliesNoiseDensityWeighting) {
 }
 
 TEST(MassCalculatorTest, CalculatesTotalSphereMassWithUniformDensity) {
-    MockScalarField mock_noise_generator;
+    MockScalarField mock_scalar_field;
     const Point3 arbitrary_point(0, 0, 1);
 
-    EXPECT_CALL(mock_noise_generator, value(_)).WillRepeatedly(Return(1.0));
+    EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
     MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
         std::nullopt,
-        mock_noise_generator,
+        mock_scalar_field,
         ConstantSamplePointGenerator(arbitrary_point),
         1e-12,
         3
@@ -165,17 +165,17 @@ TEST(MassCalculatorTest, CalculatesTotalSphereMassWithUniformDensity) {
 }
 
 TEST(MassCalculatorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
-    MockScalarField mock_noise_generator;
+    MockScalarField mock_scalar_field;
     const Point3 arbitrary_point(0, 0, 1);
 
-    EXPECT_CALL(mock_noise_generator, value(_))
+    EXPECT_CALL(mock_scalar_field, value(_))
         .WillOnce(Return(2.0))
         .WillOnce(Return(4.0))
         .WillRepeatedly(Return(3.0));
 
     MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
         std::nullopt,
-        mock_noise_generator,
+        mock_scalar_field,
         ConstantSamplePointGenerator(arbitrary_point),
         1e-12,
         3

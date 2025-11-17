@@ -19,6 +19,8 @@ class Interval {
     [[nodiscard]] double low() const;
     [[nodiscard]] double high() const;
     [[nodiscard]] double measure() const;
+    [[nodiscard]] Interval lower_half() const;
+    [[nodiscard]] Interval upper_half() const;
 
     static double map(Interval &input_range, Interval &output_range, double value);
 
@@ -30,6 +32,7 @@ class Interval {
 
     [[nodiscard]] double t(double value) const;
     [[nodiscard]] double at(double t) const;
+    [[nodiscard]] double midpoint() const;
 
     template<DoubleRange DR> static std::pair<double, double> min_max(const DR &range);
 };
@@ -84,6 +87,18 @@ inline double Interval::measure() const {
 
 inline double Interval::at(double t) const {
     return _low + (measure() * t);
+}
+
+inline double Interval::midpoint() const {
+    return (_low + _high) / 2.0;
+}
+
+inline Interval Interval::lower_half() const {
+    return Interval(_low, midpoint());
+}
+
+inline Interval Interval::upper_half() const {
+    return Interval(midpoint(), _high);
 }
 
 } // namespace globe
