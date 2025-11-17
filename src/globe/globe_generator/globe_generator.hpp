@@ -28,7 +28,7 @@
 namespace globe {
 
 const Interval DENSITY_FIELD_INTERVAL = Interval(1, 100);
-const int POINT_COUNT = 250;
+const int POINT_COUNT = 10;
 
 template<
     PointGenerator PG = RandomSpherePointGenerator,
@@ -163,21 +163,32 @@ struct MinMassComparator {
 
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::adjust_mass() {
+    std::cout << "Calculating total mass..." << std::endl;
     double target_mass = average_mass();
+    std::cout << "Target mass per cell: " << target_mass << std::endl;
 
+    std::cout << "Calculating initial cell masses..." << std::endl;
     std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> heap;
     for (size_t i = 0; i < _points_collection.size(); i++) {
         double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
+        std::cout << "  Cell " << i << " mass: " << cell_mass << std::endl;
         heap.push({i, cell_mass});
     }
 
+    std::cout << "Optimizing vertices..." << std::endl;
+    size_t vertex_count = 0;
     while (!heap.empty()) {
         size_t i = heap.top().index;
+        double current_mass = heap.top().mass;
         heap.pop();
 
+        std::cout << "  Optimizing vertex " << i << " (mass: " << current_mass << ")" << std::endl;
         Point3 optimized_position = optimize_vertex_position(i, target_mass);
         _points_collection.update_site(i, optimized_position);
+        std::cout << "    Vertex " << i << " optimized" << std::endl;
+        vertex_count++;
     }
+    std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -274,12 +285,15 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
     starting_point = current_position.x(), current_position.y(), current_position.z();
 
     try {
-        dlib::find_min_using_approximate_derivatives(
-            dlib::bfgs_search_strategy(),
-            dlib::objective_delta_stop_strategy(1e-7),
+        dlib::find_min_bobyqa(
             objective,
             starting_point,
-            -1
+            9,
+            dlib::uniform_matrix<double>(3, 1, -2.0),
+            dlib::uniform_matrix<double>(3, 1, 2.0),
+            0.1,
+            1e-7,
+            100
         );
     } catch (...) {
     }
