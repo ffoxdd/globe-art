@@ -1,5 +1,9 @@
 # Cursor AI Rules
 
+## Meta
+- When adding or modifying style rules in this file, also update `CLAUDE.md` to mirror the changes
+- Keep both files synchronized
+
 ## Code Style
 
 ### Comments
