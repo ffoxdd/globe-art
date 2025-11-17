@@ -42,9 +42,9 @@ class GlobeGenerator {
         DF density_field = DF(NoiseField())
     );
 
-    void build();
+    void build(int point_count = POINT_COUNT);
     void initialize();
-    void add_points();
+    void add_points(int count = POINT_COUNT);
     void relax(int count = 1);
 
     void save_ply(const std::string &filename) const;
@@ -97,9 +97,9 @@ GlobeGenerator<PG, DF>::GlobeGenerator(
 }
 
 template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::build() {
+void GlobeGenerator<PG, DF>::build(int point_count) {
     initialize();
-    add_points();
+    add_points(point_count);
     relax();
 }
 
@@ -136,8 +136,8 @@ void GlobeGenerator<PG, DF>::calculate_target_mass() {
 }
 
 template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::add_points() {
-    for (int i = 0; i < POINT_COUNT; i++) {
+void GlobeGenerator<PG, DF>::add_points(int count) {
+    for (int i = 0; i < count; i++) {
         add_point();
     }
 }
@@ -259,56 +259,94 @@ template<PointGenerator PG, ScalarField DF>
 Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double target_mass) {
     Point3 current_position = _points_collection.site(index);
 
-    using column_vector = dlib::matrix<double, 3, 1>;
+    Point3 north(current_position.x(), current_position.y(), current_position.z());
+    Point3 south(-current_position.x(), -current_position.y(), -current_position.z());
 
-    auto objective = [&](const column_vector& pos) -> double {
-        Point3 candidate(pos(0), pos(1), pos(2));
+    Point3 tangent_u, tangent_v;
+    if (std::abs(north.z()) < 0.9) {
+        tangent_u = Point3(north.y(), -north.x(), 0.0);
+    } else {
+        tangent_u = Point3(0.0, north.z(), -north.y());
+    }
 
-        double length = std::sqrt(
-            candidate.x() * candidate.x() +
-            candidate.y() * candidate.y() +
-            candidate.z() * candidate.z()
+    double tu_len = std::sqrt(
+        tangent_u.x() * tangent_u.x() +
+        tangent_u.y() * tangent_u.y() +
+        tangent_u.z() * tangent_u.z()
+    );
+
+    tangent_u = Point3(
+        tangent_u.x() / tu_len,
+        tangent_u.y() / tu_len,
+        tangent_u.z() / tu_len
+    );
+
+    tangent_v = Point3(
+        north.y() * tangent_u.z() - north.z() * tangent_u.y(),
+        north.z() * tangent_u.x() - north.x() * tangent_u.z(),
+        north.x() * tangent_u.y() - north.y() * tangent_u.x()
+    );
+
+    auto plane_to_sphere = [&](double u, double v) -> Point3 {
+        double r_squared = u * u + v * v;
+        double scale = 4.0 / (4.0 + r_squared);
+
+        Point3 result(
+            south.x() + scale * (u * tangent_u.x() + v * tangent_v.x() - south.x() * r_squared / 4.0),
+            south.y() + scale * (u * tangent_u.y() + v * tangent_v.y() - south.y() * r_squared / 4.0),
+            south.z() + scale * (u * tangent_u.z() + v * tangent_v.z() - south.z() * r_squared / 4.0)
         );
 
-        Point3 normalized(
-            candidate.x() / length,
-            candidate.y() / length,
-            candidate.z() / length
+        double len = std::sqrt(
+            result.x() * result.x() +
+            result.y() * result.y() +
+            result.z() * result.z()
         );
 
-        _points_collection.update_site(index, normalized);
+        return Point3(result.x() / len, result.y() / len, result.z() / len);
+    };
+
+    using column_vector = dlib::matrix<double, 2, 1>;
+
+    int objective_call_count = 0;
+    auto objective = [&](const column_vector& params) -> double {
+        objective_call_count++;
+
+        Point3 candidate = plane_to_sphere(params(0), params(1));
+
+        _points_collection.update_site(index, candidate);
         double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(index)));
-        return std::pow(cell_mass - target_mass, 2);
+        double error = std::pow(cell_mass - target_mass, 2);
+
+        if (objective_call_count % 10 == 0) {
+            std::cout << "      Objective call " << objective_call_count
+                      << ": mass = " << cell_mass
+                      << ", error = " << error << std::endl;
+        }
+
+        return error;
     };
 
     column_vector starting_point;
-    starting_point = current_position.x(), current_position.y(), current_position.z();
+    starting_point = 0.0, 0.0;
 
+    std::cout << "    Starting optimization (target mass: " << target_mass << ")" << std::endl;
     try {
         dlib::find_min_bobyqa(
             objective,
             starting_point,
-            9,
-            dlib::uniform_matrix<double>(3, 1, -2.0),
-            dlib::uniform_matrix<double>(3, 1, 2.0),
-            0.1,
+            5,
+            dlib::uniform_matrix<double>(2, 1, -10.0),
+            dlib::uniform_matrix<double>(2, 1, 10.0),
+            0.5,
             1e-7,
             100
         );
     } catch (...) {
     }
+    std::cout << "    Optimization completed after " << objective_call_count << " objective calls" << std::endl;
 
-    double length = std::sqrt(
-        starting_point(0) * starting_point(0) +
-        starting_point(1) * starting_point(1) +
-        starting_point(2) * starting_point(2)
-    );
-
-    return Point3(
-        starting_point(0) / length,
-        starting_point(1) / length,
-        starting_point(2) / length
-    );
+    return plane_to_sphere(starting_point(0), starting_point(1));
 }
 
 template<PointGenerator PG, ScalarField DF>

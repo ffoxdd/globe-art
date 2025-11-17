@@ -1,27 +1,6 @@
-# Claude Notes
+# Cursor AI Rules
 
-## Meta
-- When the user says "take a note" or similar, update this file (CLAUDE.md)
-- Only record higher-order ideas and principles
-- Never include specific code details or implementation specifics
-- Never include historically contingent information (e.g., "X was renamed to Y")
-- When adding or modifying style rules in this file, also update `.cursorrules` to mirror the changes
-
-## Testing and Development
-
-### Terminal Testing Flags
-The `generate_globe` executable supports command-line flags for terminal/AI-assisted testing:
-- `--points <N>`: Number of points to generate (default: 10)
-- `--density-function <type>`: Density function type - 'constant' or 'noise' (default: noise)
-- `--no-render`: Run without Qt rendering for terminal-only testing
-- `--help`: Show usage information
-
-Examples:
-- Fast terminal test with constant density: `./generate_globe --no-render --density-function constant --points 10`
-- Test with more points and noise: `./generate_globe --no-render --points 50`
-- Visual debugging with fewer points: `./generate_globe --points 10`
-
-## Code Style Preferences
+## Code Style
 
 ### Comments
 - Do not use verbose documentation comments
@@ -65,3 +44,17 @@ std::cout << "Usage: " << program_name << " [options]\n"
     << "  --help        Show help\n"
     << std::endl;
 ```
+
+## Testing and Development
+
+### Terminal Testing Flags
+The `generate_globe` executable supports command-line flags for terminal/AI-assisted testing:
+- `--points <N>`: Number of points to generate (default: 10)
+- `--density-function <type>`: Density function type - 'constant' or 'noise' (default: noise)
+- `--no-render`: Run without Qt rendering for terminal-only testing
+- `--help`: Show usage information
+
+Examples:
+- Fast terminal test with constant density: `./generate_globe --no-render --density-function constant --points 10`
+- Test with more points and noise: `./generate_globe --no-render --points 50`
+- Visual debugging with fewer points: `./generate_globe --points 10`
