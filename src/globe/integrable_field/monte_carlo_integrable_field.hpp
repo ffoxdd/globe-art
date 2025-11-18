@@ -5,7 +5,7 @@
 #include "../scalar_field/scalar_field.hpp"
 #include "../globe_generator/spherical_polygon.hpp"
 #include "../globe_generator/spherical_bounding_box.hpp"
-#include "../globe_generator/mass_calculator.hpp"
+#include "../globe_generator/monte_carlo_integrator.hpp"
 #include "../globe_generator/sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "../scalar_field/interval.hpp"
 #include "../types.hpp"
@@ -31,7 +31,7 @@ template<ScalarField SF>
 double MonteCarloIntegrableField<SF>::integrate(const SphericalPolygon &polygon) {
     SphericalBoundingBox bbox = polygon.bounding_box();
 
-    MassCalculator<SF, BoundingBoxSamplePointGenerator> calculator(
+    MonteCarloIntegrator<SF, BoundingBoxSamplePointGenerator> calculator(
         std::ref(polygon),
         _scalar_field,
         BoundingBoxSamplePointGenerator(bbox),

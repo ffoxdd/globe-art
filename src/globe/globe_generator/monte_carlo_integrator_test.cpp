@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "./mass_calculator.hpp"
+#include "./monte_carlo_integrator.hpp"
 #include "../scalar_field/mock_scalar_field.hpp"
 #include <utility>
 #include <vector>
@@ -85,14 +85,14 @@ class SequenceSamplePointGenerator {
 
 } // namespace
 
-TEST(MassCalculatorTest, EstimatesHemisphereMassWithUniformDensity) {
+TEST(MonteCarloIntegratorTest, EstimatesHemisphereMassWithUniformDensity) {
     MockScalarField mock_scalar_field;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
-    MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
+    MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
         ConstantSamplePointGenerator(inside_point),
@@ -101,10 +101,10 @@ TEST(MassCalculatorTest, EstimatesHemisphereMassWithUniformDensity) {
         hemisphere_bounding_box()
     );
 
-    EXPECT_NEAR(mass_calculator.mass(), 2 * M_PI, 1e-6);
+    EXPECT_NEAR(monte_carlo_integrator.mass(), 2 * M_PI, 1e-6);
 }
 
-TEST(MassCalculatorTest, HandlesSamplesOutsideBeforeInside) {
+TEST(MonteCarloIntegratorTest, HandlesSamplesOutsideBeforeInside) {
     MockScalarField mock_scalar_field;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
@@ -112,7 +112,7 @@ TEST(MassCalculatorTest, HandlesSamplesOutsideBeforeInside) {
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
-    MassCalculator<MockScalarField, TogglingSamplePointGenerator> mass_calculator(
+    MonteCarloIntegrator<MockScalarField, TogglingSamplePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
         TogglingSamplePointGenerator(outside_point, inside_point),
@@ -121,11 +121,11 @@ TEST(MassCalculatorTest, HandlesSamplesOutsideBeforeInside) {
         hemisphere_bounding_box()
     );
 
-    double cell_mass = mass_calculator.mass();
+    double cell_mass = monte_carlo_integrator.mass();
     EXPECT_NEAR(cell_mass / (2 * M_PI), 1.0, 0.1);
 }
 
-TEST(MassCalculatorTest, AppliesNoiseDensityWeighting) {
+TEST(MonteCarloIntegratorTest, AppliesNoiseDensityWeighting) {
     MockScalarField mock_scalar_field;
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
     const Point3 inside_point(0, 0, 1);
@@ -135,7 +135,7 @@ TEST(MassCalculatorTest, AppliesNoiseDensityWeighting) {
         .WillOnce(Return(3.0))
         .WillRepeatedly(Return(2.0));
 
-    MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
+    MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
         ConstantSamplePointGenerator(inside_point),
@@ -144,16 +144,16 @@ TEST(MassCalculatorTest, AppliesNoiseDensityWeighting) {
         hemisphere_bounding_box()
     );
 
-    EXPECT_NEAR(mass_calculator.mass(), 4 * M_PI, 1e-6);
+    EXPECT_NEAR(monte_carlo_integrator.mass(), 4 * M_PI, 1e-6);
 }
 
-TEST(MassCalculatorTest, CalculatesTotalSphereMassWithUniformDensity) {
+TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithUniformDensity) {
     MockScalarField mock_scalar_field;
     const Point3 arbitrary_point(0, 0, 1);
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
-    MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
+    MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::nullopt,
         mock_scalar_field,
         ConstantSamplePointGenerator(arbitrary_point),
@@ -161,10 +161,10 @@ TEST(MassCalculatorTest, CalculatesTotalSphereMassWithUniformDensity) {
         3
     );
 
-    EXPECT_NEAR(mass_calculator.mass(), 4 * M_PI, 1e-6);
+    EXPECT_NEAR(monte_carlo_integrator.mass(), 4 * M_PI, 1e-6);
 }
 
-TEST(MassCalculatorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
+TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
     MockScalarField mock_scalar_field;
     const Point3 arbitrary_point(0, 0, 1);
 
@@ -173,7 +173,7 @@ TEST(MassCalculatorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
         .WillOnce(Return(4.0))
         .WillRepeatedly(Return(3.0));
 
-    MassCalculator<MockScalarField, ConstantSamplePointGenerator> mass_calculator(
+    MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::nullopt,
         mock_scalar_field,
         ConstantSamplePointGenerator(arbitrary_point),
@@ -181,5 +181,5 @@ TEST(MassCalculatorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
         3
     );
 
-    EXPECT_NEAR(mass_calculator.mass(), 12 * M_PI, 1e-6);
+    EXPECT_NEAR(monte_carlo_integrator.mass(), 12 * M_PI, 1e-6);
 }

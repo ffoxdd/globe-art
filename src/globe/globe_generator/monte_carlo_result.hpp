@@ -1,6 +1,8 @@
 #ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MONTE_CARLO_RESULT_HPP_
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MONTE_CARLO_RESULT_HPP_
 
+#include <cstddef>
+
 namespace globe {
 
 struct MonteCarloResult {

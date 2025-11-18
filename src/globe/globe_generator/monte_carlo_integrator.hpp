@@ -1,5 +1,5 @@
-#ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MASS_CALCULATOR_HPP_
-#define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MASS_CALCULATOR_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MONTE_CARLO_INTEGRATOR_HPP_
+#define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MONTE_CARLO_INTEGRATOR_HPP_
 
 #include "../types.hpp"
 #include "spherical_polygon.hpp"
@@ -12,13 +12,14 @@
 #include <cmath>
 #include <optional>
 #include <utility>
+#include <cstddef>
 
 namespace globe {
 
 template<ScalarField DF = NoiseField, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
-class MassCalculator {
+class MonteCarloIntegrator {
  public:
-    MassCalculator(
+    MonteCarloIntegrator(
         std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
         DF &density_field,
         SPG sample_point_generator,
@@ -29,7 +30,7 @@ class MassCalculator {
     );
 
     [[nodiscard]] double mass();
-    [[nodiscard]] MonteCarloResult compute();
+    [[nodiscard]] MonteCarloResult result();
 
  private:
     std::optional<std::reference_wrapper<const SphericalPolygon>> _spherical_polygon;
@@ -52,7 +53,7 @@ class MassCalculator {
 };
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline MassCalculator<DF, SPG>::MassCalculator(
+inline MonteCarloIntegrator<DF, SPG>::MonteCarloIntegrator(
     std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
     DF &density_field,
     SPG sample_point_generator,
@@ -78,7 +79,7 @@ inline MassCalculator<DF, SPG>::MassCalculator(
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline double MassCalculator<DF, SPG>::mass() {
+inline double MonteCarloIntegrator<DF, SPG>::mass() {
     int points_inside_polygon = 0;
     int total_points_sampled = 0;
     double total_mass = 0;
@@ -129,7 +130,7 @@ inline double MassCalculator<DF, SPG>::mass() {
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline MonteCarloResult MassCalculator<DF, SPG>::compute() {
+inline MonteCarloResult MonteCarloIntegrator<DF, SPG>::result() {
     int points_inside_polygon = 0;
     int total_points_sampled = 0;
     double sum_density = 0;
@@ -201,7 +202,7 @@ inline MonteCarloResult MassCalculator<DF, SPG>::compute() {
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline bool MassCalculator<DF, SPG>::contains(const Point3 &point) {
+inline bool MonteCarloIntegrator<DF, SPG>::contains(const Point3 &point) {
     if (!_spherical_polygon) {
         return true;
     }
@@ -210,15 +211,15 @@ inline bool MassCalculator<DF, SPG>::contains(const Point3 &point) {
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline double MassCalculator<DF, SPG>::density_at(const Point3 &point) {
+inline double MonteCarloIntegrator<DF, SPG>::density_at(const Point3 &point) {
     return _density_field.value(point);
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline Point3 MassCalculator<DF, SPG>::sample_point() {
+inline Point3 MonteCarloIntegrator<DF, SPG>::sample_point() {
     return _sample_point_generator.generate();
 }
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MASS_CALCULATOR_HPP_
+#endif //GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MONTE_CARLO_INTEGRATOR_HPP_

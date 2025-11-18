@@ -9,7 +9,7 @@
 #include "../scalar_field/noise_field.hpp"
 #include "spherical_polygon.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
-#include "mass_calculator.hpp"
+#include "monte_carlo_integrator.hpp"
 #include "../integrable_field/monte_carlo_integrable_field.hpp"
 #include "../scalar_field/interval.hpp"
 #include <queue>
@@ -20,6 +20,7 @@
 #include <format>
 #include <string>
 #include <utility>
+#include <cstddef>
 #include <iostream>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
@@ -226,7 +227,7 @@ double GlobeGenerator<PG, DF>::total_mass() {
     auto bounding_box = SphericalBoundingBox(Interval(0, 2 * M_PI), Interval(-1, 1));
     auto generator = BoundingBoxSamplePointGenerator(bounding_box);
 
-    return MassCalculator<DF, BoundingBoxSamplePointGenerator>(
+    return MonteCarloIntegrator<DF, BoundingBoxSamplePointGenerator>(
         std::nullopt,
         _density_field,
         std::move(generator)

@@ -2,9 +2,9 @@
 
 ## Code Quality & Refactoring
 
-- Inject the random number stuff into mass_calculator and centroid_calculator to avoid reinitializing
-- Make type aliases for the spherical types in mass_calculator_test, test_spherical_polygon, etc.
-- Combine MassCalculator and CentroidCalculator
+- Inject the random number stuff into MonteCarloIntegrator and centroid_calculator to avoid reinitializing
+- Make type aliases for the spherical types in monte_carlo_integrator_test, test_spherical_polygon, etc.
+- Combine MonteCarloIntegrator and CentroidCalculator
 - Stop using the underscore prefix convention for private data members
 - Use the term "density" instead of "noise" where appropriate
 

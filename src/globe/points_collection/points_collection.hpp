@@ -6,6 +6,7 @@
 #include "handle_iterator.hpp"
 #include "handle_circulator_iterator.hpp"
 #include "circulator_iterator.hpp"
+#include <cstddef>
 #include <ranges>
 
 namespace globe {

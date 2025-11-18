@@ -9,6 +9,7 @@
 #include <vector>
 #include <cmath>
 #include <unordered_map>
+#include <cstddef>
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Orthogonal_k_neighbor_search.h>
