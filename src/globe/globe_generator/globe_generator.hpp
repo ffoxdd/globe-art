@@ -84,6 +84,7 @@ template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::generate(int point_count) {
     initialize();
     add_points(point_count);
+    adjust_mass();
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -155,9 +156,6 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
             heap.push({i, cell_mass});
         }
 
-        if (pass == 0) {
-            _integrable_field.print_stats();
-        }
 
         std::cout << "Optimizing vertices..." << std::endl;
         size_t vertex_count = 0;
@@ -203,7 +201,7 @@ double GlobeGenerator<PG, DF>::total_mass() {
         std::nullopt,
         _density_field,
         std::move(generator)
-    ).mass();
+    ).result().mass;
 }
 
 template<PointGenerator PG, ScalarField DF>
