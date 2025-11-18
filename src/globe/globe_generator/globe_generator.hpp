@@ -9,9 +9,8 @@
 #include "../scalar_field/noise_field.hpp"
 #include "spherical_polygon.hpp"
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
-#include "centroid_calculator.hpp"
 #include "mass_calculator.hpp"
-#include "../integrable_field/variance_adaptive_integrable_field.hpp"
+#include "../integrable_field/monte_carlo_integrable_field.hpp"
 #include "../scalar_field/interval.hpp"
 #include <queue>
 #include <vector>
@@ -46,31 +45,17 @@ class GlobeGenerator {
     void build(int point_count = POINT_COUNT);
     void initialize();
     void add_points(int count = POINT_COUNT);
-    void relax(int count = 1);
 
     void save_ply(const std::string &filename) const;
 
     auto dual_arcs();
     auto dual_neighborhoods();
 
-    struct CellDebugInfo {
-        Point3 site;
-        std::vector<Arc> dual_cell_arcs;
-        double mass;
-        Point3 centroid;
-        double theta_low;
-        double theta_high;
-        double z_low;
-        double z_high;
-    };
-
-    std::vector<CellDebugInfo> cell_debug_info();
-
  private:
     PG _point_generator;
     PointsCollection _points_collection;
     DF _density_field;
-    VarianceAdaptiveIntegrableField<DF&> _integrable_field;
+    MonteCarloIntegrableField<DF&> _integrable_field;
 
     void normalize_density_field();
     void calculate_target_mass();
@@ -78,7 +63,6 @@ class GlobeGenerator {
     std::vector<Point3> sample_points(size_t n);
     [[nodiscard]] SurfaceMesh triangulation_mesh() const;
     static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
-    Point3 centroid(const SphericalPolygon &spherical_polygon);
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
@@ -142,14 +126,6 @@ template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::add_points(int count) {
     for (int i = 0; i < count; i++) {
         add_point();
-    }
-}
-
-template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::relax(int count) {
-    for (int i = 0; i < count; i++) {
-        adjust_mass();
-//        adjust_centroids();
     }
 }
 
@@ -238,18 +214,6 @@ void GlobeGenerator<PG, DF>::adjust_centroids() {
     );
 
     _points_collection.reset(new_points);
-}
-
-template<PointGenerator PG, ScalarField DF>
-Point3 GlobeGenerator<PG, DF>::centroid(const SphericalPolygon &spherical_polygon) {
-    auto bounding_box = spherical_polygon.bounding_box();
-    auto generator = BoundingBoxSamplePointGenerator(bounding_box);
-
-    return CentroidCalculator<DF, BoundingBoxSamplePointGenerator>(
-        spherical_polygon,
-        _density_field,
-        std::move(generator)
-    ).centroid();
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -368,37 +332,6 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
     Point3 optimal_position = plane_to_sphere(starting_point(0), starting_point(1));
     _points_collection.update_site(index, optimal_position);
     return optimal_position;
-}
-
-template<PointGenerator PG, ScalarField DF>
-std::vector<typename GlobeGenerator<PG, DF>::CellDebugInfo> GlobeGenerator<PG, DF>::cell_debug_info() {
-    std::vector<CellDebugInfo> debug_info;
-
-    for (const auto &vertex : _points_collection.vertices()) {
-        auto dual_cell = _points_collection.dual_cell_arcs(vertex);
-
-        if (dual_cell.empty()) {
-            continue;
-        }
-
-        SphericalPolygon spherical_polygon(dual_cell);
-        double cell_mass = mass(spherical_polygon);
-        Point3 centroid_value = centroid(spherical_polygon);
-        auto bounding_box = spherical_polygon.bounding_box();
-
-        debug_info.push_back(CellDebugInfo{
-            .site = vertex->point(),
-            .dual_cell_arcs = std::move(dual_cell),
-            .mass = cell_mass,
-            .centroid = centroid_value,
-            .theta_low = bounding_box.theta_interval().low(),
-            .theta_high = bounding_box.theta_interval().high(),
-            .z_low = bounding_box.z_interval().low(),
-            .z_high = bounding_box.z_interval().high()
-        });
-    }
-
-    return debug_info;
 }
 
 template<PointGenerator PG, ScalarField DF>
