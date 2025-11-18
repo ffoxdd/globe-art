@@ -23,9 +23,7 @@ using FaceHandleCirculatorIterator = HandleCirculatorIterator<FaceCirculator, Fa
 
 class PointsCollection {
  public:
-    explicit PointsCollection(
-        std::function<void(const DualNeighborhood &)> dual_neighborhood_callback = [](const DualNeighborhood &) {}
-    );
+    explicit PointsCollection();
 
     void insert(Point3 point);
     template<Point3Range PR>
@@ -36,7 +34,6 @@ class PointsCollection {
     std::size_t size() const;
     auto points() const;
     auto dual_arcs() const;
-    auto dual_neighborhoods();
     auto faces() const;
     auto dual_face_neighborhood(VertexHandle vertex_handle);
     std::vector<Arc> dual_cell_arcs(VertexHandle vertex_handle);
@@ -50,8 +47,6 @@ class PointsCollection {
     std::vector<Point3> _sites;
     std::vector<VertexHandle> _handles;
 
-    std::function<void(const DualNeighborhood &)> _dual_neighborhood_callback;
-
     auto all_edges() const;
     auto static vertex_circulator_range(VertexCirculator vertex_circulator);
     auto static edge_circulator_range(EdgeCirculator edge_circulator);
@@ -61,10 +56,7 @@ class PointsCollection {
     void clear();
 };
 
-inline PointsCollection::PointsCollection(
-    std::function<void(const DualNeighborhood &)> dual_neighborhood_callback
-) :
-    _dual_neighborhood_callback(dual_neighborhood_callback) {
+inline PointsCollection::PointsCollection() {
 }
 
 inline void PointsCollection::insert(Point3 point) {
@@ -169,21 +161,6 @@ inline auto PointsCollection::dual_arcs() const {
     return all_edges() | std::views::transform(
         [this](Edge edge) {
             return this->_triangulation.dual_on_sphere(edge);
-        }
-    );
-}
-
-inline auto PointsCollection::dual_neighborhoods() {
-    return vertices() | std::views::transform(
-        [this](VertexHandleValue vertex_handle) {
-            auto dual_neighborhood = DualNeighborhood{
-                .point = vertex_handle->point(),
-                .dual_cell_arcs = dual_cell_arcs(vertex_handle)
-            };
-
-            _dual_neighborhood_callback(dual_neighborhood);
-
-            return dual_neighborhood;
         }
     );
 }

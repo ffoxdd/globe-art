@@ -48,7 +48,6 @@ class GlobeGenerator {
     void save_ply(const std::string &filename) const;
 
     auto dual_arcs();
-    auto dual_neighborhoods();
 
  private:
     PG _point_generator;
@@ -319,11 +318,6 @@ std::vector<Point3> GlobeGenerator<PG, DF>::sample_points(size_t n) {
 template<PointGenerator PG, ScalarField DF>
 auto GlobeGenerator<PG, DF>::dual_arcs() {
     return _points_collection.dual_arcs();
-}
-
-template<PointGenerator PG, ScalarField DF>
-auto GlobeGenerator<PG, DF>::dual_neighborhoods() {
-    return _points_collection.dual_neighborhoods();
 }
 
 template<PointGenerator PG, ScalarField DF>
