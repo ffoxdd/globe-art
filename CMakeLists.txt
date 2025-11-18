@@ -22,6 +22,7 @@ find_package(Boost REQUIRED CONFIG)
 find_package(anl REQUIRED)
 find_package(TBB REQUIRED CONFIG)
 find_package(dlib REQUIRED)
+find_package(CLI11 REQUIRED CONFIG)
 
 # Main Executable
 
@@ -30,7 +31,7 @@ set(GLOBE_SOURCES src/globe/scalar_field/anl_implementation.cpp)
 
 add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
 target_include_directories(generate_globe PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
-target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib)
+target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib CLI11::CLI11)
 target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER CGAL_USE_BASIC_VIEWER_QT QT_NO_KEYWORDS)
 
 add_executable(test_integration_performance src/test_integration_performance.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})

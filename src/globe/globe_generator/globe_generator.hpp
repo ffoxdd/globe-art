@@ -41,7 +41,7 @@ class GlobeGenerator {
         DF density_field = DF(NoiseField())
     );
 
-    void build(int point_count = POINT_COUNT);
+    void generate(int point_count = POINT_COUNT);
     void initialize();
     void add_points(int count = POINT_COUNT);
 
@@ -81,7 +81,7 @@ GlobeGenerator<PG, DF>::GlobeGenerator(
 }
 
 template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::build(int point_count) {
+void GlobeGenerator<PG, DF>::generate(int point_count) {
     initialize();
     add_points(point_count);
 }
