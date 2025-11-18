@@ -35,6 +35,11 @@ Examples:
 - Prefer private helper functions with early returns for exceptional cases
 - Keep main functions flat and linear when possible
 
+### Method Organization
+- Always organize methods with highest abstraction first, followed by lower abstraction methods
+- Public methods come before private methods
+- Within each section, order by abstraction level (high-level orchestration methods before low-level utility methods)
+
 ### Formatting Multi-line Expressions
 - Continuation operators (like `<<`) go at the end of the line, not the beginning
 - Opening elements (parenthesis, bracket, etc.) stay at end of line

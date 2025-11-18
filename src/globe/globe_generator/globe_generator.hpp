@@ -12,11 +12,8 @@
 #include "monte_carlo_integrator.hpp"
 #include "../integrable_field/monte_carlo_integrable_field.hpp"
 #include "../scalar_field/interval.hpp"
-#include "../io/mesh_exporter.hpp"
 #include <queue>
 #include <vector>
-#include <map>
-#include <string>
 #include <utility>
 #include <cstddef>
 #include <iostream>
@@ -45,8 +42,6 @@ class GlobeGenerator {
     void initialize();
     void add_points(int count = POINT_COUNT);
 
-    void save_ply(const std::string &filename) const;
-
     auto dual_arcs();
 
  private:
@@ -59,7 +54,6 @@ class GlobeGenerator {
     void calculate_target_mass();
     void add_point();
     std::vector<Point3> sample_points(size_t n);
-    [[nodiscard]] SurfaceMesh triangulation_mesh() const;
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
@@ -84,12 +78,6 @@ void GlobeGenerator<PG, DF>::generate(int point_count) {
     initialize();
     add_points(point_count);
     adjust_mass();
-}
-
-template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::save_ply(const std::string &filename) const {
-    SurfaceMesh mesh = triangulation_mesh();
-    MeshExporter::save_ply(mesh, filename);
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -318,27 +306,6 @@ std::vector<Point3> GlobeGenerator<PG, DF>::sample_points(size_t n) {
 template<PointGenerator PG, ScalarField DF>
 auto GlobeGenerator<PG, DF>::dual_arcs() {
     return _points_collection.dual_arcs();
-}
-
-template<PointGenerator PG, ScalarField DF>
-SurfaceMesh GlobeGenerator<PG, DF>::triangulation_mesh() const {
-    SurfaceMesh mesh;
-    std::map<Point3, SurfaceMesh::Vertex_index> vertices_by_point;
-
-    for (const auto &point : _points_collection.points()) {
-        SurfaceMesh::Vertex_index vertex = mesh.add_vertex(point);
-        vertices_by_point[point] = vertex;
-    }
-
-    for (const auto &face : _points_collection.faces()) {
-        SurfaceMesh::Vertex_index vertex0 = vertices_by_point[face->vertex(0)->point()];
-        SurfaceMesh::Vertex_index vertex1 = vertices_by_point[face->vertex(1)->point()];
-        SurfaceMesh::Vertex_index vertex2 = vertices_by_point[face->vertex(2)->point()];
-
-        mesh.add_face(vertex0, vertex1, vertex2);
-    }
-
-    return std::move(mesh);
 }
 
 template<PointGenerator PG, ScalarField DF>
