@@ -18,3 +18,50 @@ TEST(IntervalTest, MapDegenerateCase) {
 
     EXPECT_DOUBLE_EQ(Interval::map(input_range, output_range, 1.0), 0.0);
 }
+
+TEST(IntervalTest, OverlapsWhenIntervalsOverlap) {
+    Interval a(0.0, 10.0);
+    Interval b(5.0, 15.0);
+
+    EXPECT_TRUE(a.overlaps(b));
+    EXPECT_TRUE(b.overlaps(a));
+}
+
+TEST(IntervalTest, OverlapsWhenOneContainsOther) {
+    Interval a(0.0, 10.0);
+    Interval b(2.0, 8.0);
+
+    EXPECT_TRUE(a.overlaps(b));
+    EXPECT_TRUE(b.overlaps(a));
+}
+
+TEST(IntervalTest, OverlapsWhenIntervalsAreSame) {
+    Interval a(0.0, 10.0);
+    Interval b(0.0, 10.0);
+
+    EXPECT_TRUE(a.overlaps(b));
+}
+
+TEST(IntervalTest, OverlapsWhenIntervalsTouchAtBoundary) {
+    Interval a(0.0, 10.0);
+    Interval b(10.0, 20.0);
+
+    EXPECT_TRUE(a.overlaps(b));
+    EXPECT_TRUE(b.overlaps(a));
+}
+
+TEST(IntervalTest, DoesNotOverlapWhenIntervalsAreSeparated) {
+    Interval a(0.0, 10.0);
+    Interval b(15.0, 20.0);
+
+    EXPECT_FALSE(a.overlaps(b));
+    EXPECT_FALSE(b.overlaps(a));
+}
+
+TEST(IntervalTest, DoesNotOverlapWhenIntervalIsBeforeOther) {
+    Interval a(0.0, 5.0);
+    Interval b(10.0, 20.0);
+
+    EXPECT_FALSE(a.overlaps(b));
+    EXPECT_FALSE(b.overlaps(a));
+}

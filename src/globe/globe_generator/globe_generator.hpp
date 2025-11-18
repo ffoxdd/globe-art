@@ -11,6 +11,7 @@
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "centroid_calculator.hpp"
 #include "mass_calculator.hpp"
+#include "../integrable_field/variance_adaptive_integrable_field.hpp"
 #include "../scalar_field/interval.hpp"
 #include <queue>
 #include <vector>
@@ -69,6 +70,7 @@ class GlobeGenerator {
     PG _point_generator;
     PointsCollection _points_collection;
     DF _density_field;
+    VarianceAdaptiveIntegrableField<DF&> _integrable_field;
 
     void normalize_density_field();
     void calculate_target_mass();
@@ -93,7 +95,8 @@ GlobeGenerator<PG, DF>::GlobeGenerator(
 ) :
     _point_generator(std::move(point_generator)),
     _points_collection(std::move(points_collection)),
-    _density_field(std::move(density_field)) {
+    _density_field(std::move(density_field)),
+    _integrable_field(_density_field) {
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -180,6 +183,10 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
             heap.push({i, cell_mass});
         }
 
+        if (pass == 0) {
+            _integrable_field.print_stats();
+        }
+
         std::cout << "Optimizing vertices..." << std::endl;
         size_t vertex_count = 0;
         while (!heap.empty()) {
@@ -247,14 +254,7 @@ Point3 GlobeGenerator<PG, DF>::centroid(const SphericalPolygon &spherical_polygo
 
 template<PointGenerator PG, ScalarField DF>
 double GlobeGenerator<PG, DF>::mass(const SphericalPolygon &spherical_polygon) {
-    auto bounding_box = spherical_polygon.bounding_box();
-    auto generator = BoundingBoxSamplePointGenerator(bounding_box);
-
-    return MassCalculator<DF, BoundingBoxSamplePointGenerator>(
-        std::ref(spherical_polygon),
-        _density_field,
-        std::move(generator)
-    ).mass();
+    return _integrable_field.integrate(spherical_polygon);
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -358,8 +358,8 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
             dlib::uniform_matrix<double>(2, 1, -10.0),
             dlib::uniform_matrix<double>(2, 1, 10.0),
             0.5,
-            1e-7,
-            100
+            1e-5,
+            20
         );
     } catch (...) {
     }

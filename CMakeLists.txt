@@ -37,6 +37,14 @@ add_executable(test_adaptive_cache src/test_adaptive_cache.cpp ${GLOBE_HEADERS} 
 target_include_directories(test_adaptive_cache PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
 target_link_libraries(test_adaptive_cache PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib)
 
+add_executable(test_variance_adaptive src/test_variance_adaptive.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
+target_include_directories(test_variance_adaptive PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
+target_link_libraries(test_variance_adaptive PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib)
+
+add_executable(test_integration_performance src/test_integration_performance.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
+target_include_directories(test_integration_performance PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
+target_link_libraries(test_integration_performance PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib)
+
 # Tests
 
 pkg_search_module(GTEST REQUIRED gtest_main)
