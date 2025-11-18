@@ -2,7 +2,7 @@
 #include "globe/scalar_field/noise_field.hpp"
 #include "globe/scalar_field/constant_scalar_field.hpp"
 #include "globe/point_generator/random_sphere_point_generator.hpp"
-#include "globe/points_collection/points_collection.hpp"
+#include "globe/points_collection/voronoi_sphere.hpp"
 #include "globe/globe_generator/monte_carlo_integrator.hpp"
 #include <iostream>
 #include <chrono>
@@ -81,7 +81,7 @@ int main() {
     std::cout << "Generating test Voronoi diagram with 10 points..." << std::endl;
     ConstantScalarField field(1.0);
     RandomSpherePointGenerator point_gen(1.0);
-    PointsCollection points;
+    VoronoiSphere points;
 
     for (int i = 0; i < 10; i++) {
         points.insert(point_gen.generate());

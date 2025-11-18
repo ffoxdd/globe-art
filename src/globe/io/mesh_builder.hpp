@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_IO_MESH_BUILDER_HPP_
 
 #include "../types.hpp"
-#include "../points_collection/points_collection.hpp"
+#include "../points_collection/voronoi_sphere.hpp"
 #include "../geometry/helpers.hpp"
 #include <map>
 
@@ -11,7 +11,7 @@ namespace globe {
 class MeshBuilder {
 public:
     MeshBuilder(int samples_per_arc = 20, double arc_thickness = 0.001);
-    SurfaceMesh build(const PointsCollection &points_collection);
+    SurfaceMesh build(const VoronoiSphere &points_collection);
 
 private:
     void process_arc(SurfaceMesh &mesh, const Point3 &source, const Point3 &target);
@@ -61,7 +61,7 @@ inline MeshBuilder::MeshBuilder(int samples_per_arc, double arc_thickness) :
     _arc_thickness(arc_thickness) {
 }
 
-inline SurfaceMesh MeshBuilder::build(const PointsCollection &points_collection) {
+inline SurfaceMesh MeshBuilder::build(const VoronoiSphere &points_collection) {
     SurfaceMesh mesh;
     _vertices_by_point.clear();
 

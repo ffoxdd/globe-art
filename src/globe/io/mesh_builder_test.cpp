@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 #include "mesh_builder.hpp"
-#include "../points_collection/points_collection.hpp"
+#include "../points_collection/voronoi_sphere.hpp"
 #include "../types.hpp"
 
 using namespace globe;
 
 namespace {
 
-PointsCollection create_simple_points_collection() {
-    PointsCollection collection;
+VoronoiSphere create_simple_points_collection() {
+    VoronoiSphere collection;
 
     collection.insert(Point3(1, 0, 0));
     collection.insert(Point3(0, 1, 0));
@@ -20,8 +20,8 @@ PointsCollection create_simple_points_collection() {
 
 } // namespace
 
-TEST(MeshBuilderTest, CreatesMeshFromPointsCollection) {
-    PointsCollection collection = create_simple_points_collection();
+TEST(MeshBuilderTest, CreatesMeshFromVoronoiSphere) {
+    VoronoiSphere collection = create_simple_points_collection();
     MeshBuilder builder;
 
     SurfaceMesh mesh = builder.build(collection);
@@ -31,7 +31,7 @@ TEST(MeshBuilderTest, CreatesMeshFromPointsCollection) {
 }
 
 TEST(MeshBuilderTest, MeshHasVerticesForAllDualArcs) {
-    PointsCollection collection = create_simple_points_collection();
+    VoronoiSphere collection = create_simple_points_collection();
     MeshBuilder builder;
 
     SurfaceMesh mesh = builder.build(collection);
@@ -46,7 +46,7 @@ TEST(MeshBuilderTest, MeshHasVerticesForAllDualArcs) {
 }
 
 TEST(MeshBuilderTest, MeshIsValid) {
-    PointsCollection collection = create_simple_points_collection();
+    VoronoiSphere collection = create_simple_points_collection();
     MeshBuilder builder;
 
     SurfaceMesh mesh = builder.build(collection);
@@ -56,7 +56,7 @@ TEST(MeshBuilderTest, MeshIsValid) {
 }
 
 TEST(MeshBuilderTest, RespectsConfigurationParameters) {
-    PointsCollection collection = create_simple_points_collection();
+    VoronoiSphere collection = create_simple_points_collection();
     MeshBuilder builder_low_samples(5, 0.001);
     MeshBuilder builder_high_samples(50, 0.001);
 

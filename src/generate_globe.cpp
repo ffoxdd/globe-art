@@ -21,11 +21,9 @@ int run_with_density_field(int points_count, bool render, const char *program_na
 
 QApplication build_application(const char *program_name);
 
-template<typename GG>
-int render_qt(GG &globe_generator, bool render, const char *program_name);
+int render_qt(const VoronoiSphere &voronoi_sphere, bool render, const char *program_name);
 
-template<typename GG>
-void draw(GG &globe_generator, GeometryViewer &geometry_viewer);
+void draw(const VoronoiSphere &voronoi_sphere, GeometryViewer &geometry_viewer);
 
 int main(int argc, char *argv[]) {
     CLI::App app{"Globe Art Generator"};
@@ -81,15 +79,15 @@ int run(const char *program_name, int points_count, const std::string &density_f
 template<typename SF>
 int run_with_density_field(int points_count, bool render, const char *program_name) {
     auto globe_generator = build_globe_generator<SF>();
-    globe_generator.generate(points_count);
-    return render_qt(globe_generator, render, program_name);
+    VoronoiSphere voronoi_sphere = globe_generator.generate(points_count);
+    return render_qt(voronoi_sphere, render, program_name);
 }
 
 template<typename SF>
 GlobeGenerator<RandomSpherePointGenerator, SF> build_globe_generator() {
     return GlobeGenerator<RandomSpherePointGenerator, SF>(
         RandomSpherePointGenerator(),
-        PointsCollection(),
+        VoronoiSphere(),
         SF()
     );
 }
@@ -101,8 +99,7 @@ QApplication build_application(const char *program_name) {
     return QApplication(qt_argc, qt_argv);
 }
 
-template<typename GG>
-int render_qt(GG &globe_generator, bool render, const char *program_name) {
+int render_qt(const VoronoiSphere &voronoi_sphere, bool render, const char *program_name) {
     if (!render) {
         return 0;
     }
@@ -110,17 +107,16 @@ int render_qt(GG &globe_generator, bool render, const char *program_name) {
     QApplication app = build_application(program_name);
     GeometryViewer geometry_viewer(QApplication::activeWindow());
 
-    draw(globe_generator, geometry_viewer);
+    draw(voronoi_sphere, geometry_viewer);
 
     geometry_viewer.show();
     return QApplication::exec();
 }
 
-template<typename GG>
-void draw(GG &globe_generator, GeometryViewer &geometry_viewer) {
+void draw(const VoronoiSphere &voronoi_sphere, GeometryViewer &geometry_viewer) {
     geometry_viewer.clear();
 
-    for (const auto &arc : globe_generator.dual_arcs()) {
+    for (const auto &arc : voronoi_sphere.dual_arcs()) {
         geometry_viewer.add_arc(arc, CGAL::IO::Color(140, 140, 140));
     }
 }

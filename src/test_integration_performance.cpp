@@ -2,7 +2,7 @@
 #include "globe/integrable_field/grid_sample_integrable_field.hpp"
 #include "globe/scalar_field/noise_field.hpp"
 #include "globe/point_generator/random_sphere_point_generator.hpp"
-#include "globe/points_collection/points_collection.hpp"
+#include "globe/points_collection/voronoi_sphere.hpp"
 #include <iostream>
 #include <chrono>
 #include <vector>
@@ -16,7 +16,7 @@ int main() {
     RandomSpherePointGenerator point_gen(1.0);
 
     std::cout << "Generating 10 test points for Voronoi diagram..." << std::endl;
-    PointsCollection points;
+    VoronoiSphere points;
     for (int i = 0; i < 10; i++) {
         points.insert(point_gen.generate());
     }

@@ -4,7 +4,7 @@
 #include "../types.hpp"
 #include "../point_generator/point_generator.hpp"
 #include "../point_generator/random_sphere_point_generator.hpp"
-#include "../points_collection/points_collection.hpp"
+#include "../points_collection/voronoi_sphere.hpp"
 #include "../scalar_field/scalar_field.hpp"
 #include "../scalar_field/noise_field.hpp"
 #include "spherical_polygon.hpp"
@@ -34,11 +34,11 @@ class GlobeGenerator {
  public:
     GlobeGenerator(
         PG point_generator = PG(RandomSpherePointGenerator(1.0)),
-        PointsCollection points_collection = PointsCollection(),
+        VoronoiSphere points_collection = VoronoiSphere(),
         DF density_field = DF(NoiseField())
     );
 
-    void generate(int point_count = POINT_COUNT);
+    VoronoiSphere generate(int point_count = POINT_COUNT);
     void initialize();
     void add_points(int count = POINT_COUNT);
 
@@ -46,7 +46,7 @@ class GlobeGenerator {
 
  private:
     PG _point_generator;
-    PointsCollection _points_collection;
+    VoronoiSphere _points_collection;
     DF _density_field;
     MonteCarloIntegrableField<DF&> _integrable_field;
 
@@ -64,7 +64,7 @@ class GlobeGenerator {
 template<PointGenerator PG, ScalarField DF>
 GlobeGenerator<PG, DF>::GlobeGenerator(
     PG point_generator,
-    PointsCollection points_collection,
+    VoronoiSphere points_collection,
     DF density_field
 ) :
     _point_generator(std::move(point_generator)),
@@ -74,10 +74,11 @@ GlobeGenerator<PG, DF>::GlobeGenerator(
 }
 
 template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::generate(int point_count) {
+VoronoiSphere GlobeGenerator<PG, DF>::generate(int point_count) {
     initialize();
     add_points(point_count);
     adjust_mass();
+    return std::move(_points_collection);
 }
 
 template<PointGenerator PG, ScalarField DF>
