@@ -12,12 +12,10 @@
 #include "monte_carlo_integrator.hpp"
 #include "../integrable_field/monte_carlo_integrable_field.hpp"
 #include "../scalar_field/interval.hpp"
+#include "../io/mesh_exporter.hpp"
 #include <queue>
 #include <vector>
 #include <map>
-#include <fstream>
-#include <stdexcept>
-#include <format>
 #include <string>
 #include <utility>
 #include <cstddef>
@@ -63,13 +61,11 @@ class GlobeGenerator {
     void add_point();
     std::vector<Point3> sample_points(size_t n);
     [[nodiscard]] SurfaceMesh triangulation_mesh() const;
-    static void save_mesh_ply(SurfaceMesh &mesh, const std::string &filename);
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
     Point3 optimize_vertex_position(size_t index, double target_mass);
     void adjust_mass();
-    void adjust_centroids();
 };
 
 template<PointGenerator PG, ScalarField DF>
@@ -88,13 +84,12 @@ template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::build(int point_count) {
     initialize();
     add_points(point_count);
-    relax();
 }
 
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::save_ply(const std::string &filename) const {
     SurfaceMesh mesh = triangulation_mesh();
-    save_mesh_ply(mesh, filename);
+    MeshExporter::save_ply(mesh, filename);
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -192,29 +187,6 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
     }
     std::cout << "Average error: " << (total_error / _points_collection.size()) << std::endl;
     std::cout << "Max error: " << max_error << std::endl;
-}
-
-template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::adjust_centroids() {
-    using DualNeighborhoodIterator = decltype(_points_collection.dual_neighborhoods().begin());
-    using DualNeighborhoodType = typename std::iterator_traits<DualNeighborhoodIterator>::value_type;
-
-    std::vector<DualNeighborhoodType> temp_dual_neighborhoods(
-        _points_collection.dual_neighborhoods().begin(), _points_collection.dual_neighborhoods().end()
-    );
-
-    std::vector<Point3> new_points(temp_dual_neighborhoods.size());
-
-    oneapi::tbb::parallel_for(oneapi::tbb::blocked_range<size_t>(0, temp_dual_neighborhoods.size()),
-        [&](const oneapi::tbb::blocked_range<size_t> &range) {
-            for (size_t i = range.begin(); i < range.end(); ++i) {
-                const SphericalPolygon spherical_polygon(temp_dual_neighborhoods[i].dual_cell_arcs);
-                new_points[i] = this->centroid(spherical_polygon);
-            }
-        }
-    );
-
-    _points_collection.reset(new_points);
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -381,23 +353,6 @@ template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::add_point() {
     Point3 point = _point_generator.generate();
     _points_collection.insert(point);
-}
-
-template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::save_mesh_ply(
-    SurfaceMesh &mesh, const std::string &filename
-) {
-    std::ofstream stream(filename);
-
-    if (!stream) {
-        throw std::runtime_error(std::format("Cannot open file for writing: {}", filename));
-    }
-
-    bool success = CGAL::IO::write_PLY(stream, mesh);
-
-    if (!success) {
-        throw std::runtime_error(std::format("Cannot write file: {}", filename));
-    }
 }
 
 GlobeGenerator() -> GlobeGenerator<RandomSpherePointGenerator, NoiseField>;

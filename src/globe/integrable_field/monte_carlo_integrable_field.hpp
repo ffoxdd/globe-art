@@ -40,7 +40,7 @@ double MonteCarloIntegrableField<SF>::integrate(const SphericalPolygon &polygon)
         bbox
     );
 
-    return calculator.mass();
+    return calculator.result().mass;
 }
 
 }
