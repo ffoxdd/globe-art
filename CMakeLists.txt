@@ -38,6 +38,10 @@ add_executable(test_integration_performance src/test_integration_performance.cpp
 target_include_directories(test_integration_performance PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
 target_link_libraries(test_integration_performance PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib)
 
+add_executable(test_monte_carlo_params src/test_monte_carlo_params.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
+target_include_directories(test_monte_carlo_params PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
+target_link_libraries(test_monte_carlo_params PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib)
+
 # Tests
 
 pkg_search_module(GTEST REQUIRED gtest_main)

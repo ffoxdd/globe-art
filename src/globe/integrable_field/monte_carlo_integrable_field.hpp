@@ -35,8 +35,8 @@ double MonteCarloIntegrableField<SF>::integrate(const SphericalPolygon &polygon)
         std::ref(polygon),
         _scalar_field,
         BoundingBoxSamplePointGenerator(bbox),
-        1e-6,
-        10,
+        1e-5,
+        3,
         bbox
     );
 
