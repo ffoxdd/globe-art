@@ -107,7 +107,7 @@ int render(
   }
 
   auto qt_app = initialize_q_application(argc, argv);
-  VoronoiSphereQtRenderer renderer(QApplication::activeWindow(), program_name);
-  renderer.render(voronoi_sphere);
+  VoronoiSphereQtRenderer renderer(nullptr, program_name);
+  auto viewer = renderer.render(voronoi_sphere);
   return qt_app->exec();
 }

@@ -6,6 +6,7 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QWidget>
 #include <CGAL/IO/Color.h>
+#include <memory>
 #include <string>
 
 namespace globe {
@@ -13,7 +14,7 @@ namespace globe {
 class VoronoiSphereQtRenderer {
 public:
     explicit VoronoiSphereQtRenderer(QWidget *parent = nullptr, const std::string &window_title = "VoronoiSphere");
-    void render(const VoronoiSphere &voronoi_sphere);
+    std::unique_ptr<QtViewer> render(const VoronoiSphere &voronoi_sphere);
 
 private:
     void draw_voronoi_sphere(
@@ -30,10 +31,11 @@ inline VoronoiSphereQtRenderer::VoronoiSphereQtRenderer(QWidget *parent, const s
     _window_title(window_title) {
 }
 
-inline void VoronoiSphereQtRenderer::render(const VoronoiSphere &voronoi_sphere) {
-    QtViewer viewer(_parent, _window_title);
-    draw_voronoi_sphere(voronoi_sphere, viewer);
-    viewer.show();
+inline std::unique_ptr<QtViewer> VoronoiSphereQtRenderer::render(const VoronoiSphere &voronoi_sphere) {
+    auto viewer = std::make_unique<QtViewer>(_parent, _window_title);
+    draw_voronoi_sphere(voronoi_sphere, *viewer);
+    viewer->show();
+    return viewer;
 }
 
 inline void VoronoiSphereQtRenderer::draw_voronoi_sphere(
