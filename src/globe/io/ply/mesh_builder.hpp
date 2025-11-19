@@ -1,9 +1,8 @@
-#ifndef GLOBEART_SRC_GLOBE_IO_MESH_BUILDER_HPP_
-#define GLOBEART_SRC_GLOBE_IO_MESH_BUILDER_HPP_
+#ifndef GLOBEART_SRC_GLOBE_IO_PLY_MESH_BUILDER_HPP_
+#define GLOBEART_SRC_GLOBE_IO_PLY_MESH_BUILDER_HPP_
 
-#include "../types.hpp"
-#include "../points_collection/voronoi_sphere.hpp"
-#include "../geometry/helpers.hpp"
+#include "../../types.hpp"
+#include "../../geometry/helpers.hpp"
 #include <map>
 
 namespace globe {
@@ -11,11 +10,14 @@ namespace globe {
 class MeshBuilder {
 public:
     MeshBuilder(int samples_per_arc = 20, double arc_thickness = 0.001);
-    SurfaceMesh build(const VoronoiSphere &points_collection);
+
+    void build_arc(
+        SurfaceMesh &mesh,
+        const Point3 &source,
+        const Point3 &target
+    );
 
 private:
-    void process_arc(SurfaceMesh &mesh, const Point3 &source, const Point3 &target);
-
     void sample_arc_and_add_segments(
         SurfaceMesh &mesh,
         const Point3 &source,
@@ -61,21 +63,15 @@ inline MeshBuilder::MeshBuilder(int samples_per_arc, double arc_thickness) :
     _arc_thickness(arc_thickness) {
 }
 
-inline SurfaceMesh MeshBuilder::build(const VoronoiSphere &points_collection) {
-    SurfaceMesh mesh;
-    _vertices_by_point.clear();
-
-    for (const auto &arc : points_collection.dual_arcs()) {
-        Point3 source = to_point(arc.source());
-        Point3 target = to_point(arc.target());
-
-        process_arc(mesh, source, target);
+inline void MeshBuilder::build_arc(
+    SurfaceMesh &mesh,
+    const Point3 &source,
+    const Point3 &target
+) {
+    if (mesh.number_of_vertices() == 0) {
+        _vertices_by_point.clear();
     }
 
-    return std::move(mesh);
-}
-
-inline void MeshBuilder::process_arc(SurfaceMesh &mesh, const Point3 &source, const Point3 &target) {
     SurfaceMesh::Vertex_index prev_vertex = get_or_create_vertex(mesh, source);
     Vector3 arc_normal = this->arc_normal(source, target);
     Point3 prev_offset = create_offset_point(source, arc_normal);
@@ -162,5 +158,5 @@ inline Point3 MeshBuilder::create_offset_point(const Point3 &point, const Vector
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_IO_MESH_BUILDER_HPP_
+#endif //GLOBEART_SRC_GLOBE_IO_PLY_MESH_BUILDER_HPP_
 

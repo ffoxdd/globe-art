@@ -1,5 +1,5 @@
-#ifndef GLOBEART_SRC_GLOBE_IO_QT_VIEWER_HPP_
-#define GLOBEART_SRC_GLOBE_IO_QT_VIEWER_HPP_
+#ifndef GLOBEART_SRC_GLOBE_IO_QT_QT_VIEWER_HPP_
+#define GLOBEART_SRC_GLOBE_IO_QT_QT_VIEWER_HPP_
 
 #include <CGAL/Qt/Basic_viewer.h>
 #include <CGAL/Graphics_scene.h>
@@ -7,8 +7,8 @@
 #include <QtWidgets/QWidget>
 #include <QtGui/QKeyEvent>
 #include <functional>
-#include "../geometry/helpers.hpp"
-#include "../points_collection/types.hpp"
+#include "../../geometry/helpers.hpp"
+#include "../../points_collection/types.hpp"
 
 namespace globe {
 
@@ -64,7 +64,7 @@ inline void QtViewer::add_segment(const Point3 &source, const Point3 &target, co
     _scene.add_segment(source, target, color);
 }
 
-inline void QtViewer::add_arc(const Point3 &point1, const Point3 &point2, const CGAL::Color &color) {
+inline void QtViewer::add_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color) {
     for (int i = 0; i < CIRCULAR_ARC_RESOLUTION; i++) {
         const double t1 = static_cast<double>(i) / CIRCULAR_ARC_RESOLUTION;
         const double t2 = static_cast<double>(i + 1) / CIRCULAR_ARC_RESOLUTION;
@@ -76,7 +76,7 @@ inline void QtViewer::add_arc(const Point3 &point1, const Point3 &point2, const 
     }
 }
 
-inline void QtViewer::add_arc(const Arc &arc, const CGAL::Color &color) {
+inline void QtViewer::add_arc(const Arc &arc, const CGAL::IO::Color &color) {
     add_arc(to_point(arc.source()), to_point(arc.target()), color);
 }
 
@@ -102,4 +102,5 @@ inline void QtViewer::keyPressEvent(QKeyEvent *event) {
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_IO_QT_VIEWER_HPP_
+#endif //GLOBEART_SRC_GLOBE_IO_QT_QT_VIEWER_HPP_
+

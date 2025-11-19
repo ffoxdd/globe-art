@@ -1,5 +1,5 @@
 #include "globe/globe_generator/globe_generator.hpp"
-#include "globe/io/qt_renderer.hpp"
+#include "globe/io/qt/voronoi_sphere_qt_renderer.hpp"
 #include "globe/scalar_field/constant_scalar_field.hpp"
 #include "globe/scalar_field/noise_field.hpp"
 #include <CLI/CLI.hpp>
@@ -107,7 +107,7 @@ int render(
   }
 
   auto qt_app = initialize_q_application(argc, argv);
-  QtRenderer renderer(QApplication::activeWindow(), program_name);
+  VoronoiSphereQtRenderer renderer(QApplication::activeWindow(), program_name);
   renderer.render(voronoi_sphere);
   return qt_app->exec();
 }
