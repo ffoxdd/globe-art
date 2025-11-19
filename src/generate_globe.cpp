@@ -1,86 +1,84 @@
 #include "globe/globe_generator/globe_generator.hpp"
-#include "globe/geometry_viewer/geometry_viewer.hpp"
+#include "globe/io/qt_renderer.hpp"
 #include "globe/scalar_field/constant_scalar_field.hpp"
 #include "globe/scalar_field/noise_field.hpp"
-#include <QtWidgets/QApplication>
-#include <QtCore/Qt>
-#include <CGAL/Qt/init_ogl_context.h>
 #include <CLI/CLI.hpp>
+#include <CGAL/Qt/init_ogl_context.h>
 #include <iostream>
 #include <string>
+#include <memory>
 
 using namespace globe;
 
-int run(const char *program_name, int points_count, const std::string &density_function, bool render);
+int render(const VoronoiSphere &voronoi_sphere, bool render, const std::string &program_name, int argc, char *argv[]);
+int run(int points_count, const std::string &density_function, bool render, const std::string &program_name, int argc, char *argv[]);
 
-template<typename ScalarFieldType>
-GlobeGenerator<RandomSpherePointGenerator, ScalarFieldType> build_globe_generator();
+template<typename SF>
+int run_with_density_field(int points_count, bool render, const std::string &program_name, int argc, char *argv[]);
 
-template<typename ScalarFieldType>
-int run_with_density_field(int points_count, bool render, const char *program_name);
-
-QApplication build_application(const char *program_name);
-
-int render_qt(const VoronoiSphere &voronoi_sphere, bool render, const char *program_name);
-
-void draw(const VoronoiSphere &voronoi_sphere, GeometryViewer &geometry_viewer);
+template<typename SF>
+GlobeGenerator<RandomSpherePointGenerator, SF> build_globe_generator();
+std::unique_ptr<QApplication> initialize_q_application(int &argc, char **argv);
 
 int main(int argc, char *argv[]) {
+    std::string program_name = argc > 0 ? argv[0] : "generate_globe";
+
     CLI::App app{"Globe Art Generator"};
 
     int points_count;
     std::string density_function;
-    bool render;
+    bool perform_render;
 
-    app.add_option(
-        "-p,--points",
-        points_count,
-        "Number of points to generate"
-    )
-    ->default_val(10)
-    ->required();
+    app.add_option("--points,-p", points_count)
+        ->description("Number of points to generate")
+        ->default_val(10);
 
-    app.add_option(
-        "-d,--density-function",
-        density_function,
-        "Density function type"
-    )
-    ->check(CLI::IsMember({"constant", "noise"}))
-    ->default_val("noise");
+    app.add_option("--density-function,-d", density_function)
+        ->description("Density function type")
+        ->check(CLI::IsMember({"constant", "noise"}))
+        ->default_val("noise");
 
-    app.add_option(
-        "--render",
-        render,
-        "Enable Qt rendering"
-    )
-    ->default_val(true);
+    app.add_option("--render", perform_render)
+        ->description("Enable Qt rendering")
+        ->default_val(true);
 
     CLI11_PARSE(app, argc, argv);
 
-    const char *program_name = argc > 0 ? argv[0] : "generate_globe";
-    return run(program_name, points_count, density_function, render);
+    return run(points_count, density_function, perform_render, program_name, argc, argv);
 }
 
-int run(const char *program_name, int points_count, const std::string &density_function, bool render) {
+int run(
+    int points_count,
+    const std::string &density_function,
+    bool perform_render,
+    const std::string &program_name,
+    int argc, char *argv[]
+) {
     std::cout <<
         "Configuration:" << std::endl <<
         "  Points: " << points_count << std::endl <<
         "  Density: " << density_function << std::endl <<
-        "  Render: " << (render ? "yes" : "no") << std::endl <<
+        "  Render: " << (perform_render ? "yes" : "no") << std::endl <<
         std::endl;
 
     if (density_function == "constant") {
-        return run_with_density_field<ConstantScalarField>(points_count, render, program_name);
+        return run_with_density_field<ConstantScalarField>(points_count, perform_render, program_name, argc, argv);
     } else {
-        return run_with_density_field<NoiseField>(points_count, render, program_name);
+        return run_with_density_field<NoiseField>(points_count, perform_render, program_name, argc, argv);
     }
 }
 
 template<typename SF>
-int run_with_density_field(int points_count, bool render, const char *program_name) {
+int run_with_density_field(
+    int points_count,
+    bool perform_render,
+    const std::string &program_name,
+    int argc, char *argv[]
+) {
     auto globe_generator = build_globe_generator<SF>();
     VoronoiSphere voronoi_sphere = globe_generator.generate(points_count);
-    return render_qt(voronoi_sphere, render, program_name);
+
+    return render(voronoi_sphere, perform_render, program_name, argc, argv);
 }
 
 template<typename SF>
@@ -92,31 +90,24 @@ GlobeGenerator<RandomSpherePointGenerator, SF> build_globe_generator() {
     );
 }
 
-QApplication build_application(const char *program_name) {
-    CGAL::Qt::init_ogl_context(4, 3);
-    int qt_argc = 1;
-    char *qt_argv[] = { const_cast<char*>(program_name), nullptr };
-    return QApplication(qt_argc, qt_argv);
+std::unique_ptr<QApplication> initialize_q_application(int &argc, char **argv) {
+  CGAL::Qt::init_ogl_context(4, 3);
+  return std::make_unique<QApplication>(argc, argv);
 }
 
-int render_qt(const VoronoiSphere &voronoi_sphere, bool render, const char *program_name) {
-    if (!render) {
-        return 0;
-    }
+int render(
+    const VoronoiSphere &voronoi_sphere,
+    bool render,
+    const std::string &program_name,
+    int argc,
+    char *argv[]
+) {
+  if (!render) {
+    return 0;
+  }
 
-    QApplication app = build_application(program_name);
-    GeometryViewer geometry_viewer(QApplication::activeWindow());
-
-    draw(voronoi_sphere, geometry_viewer);
-
-    geometry_viewer.show();
-    return QApplication::exec();
-}
-
-void draw(const VoronoiSphere &voronoi_sphere, GeometryViewer &geometry_viewer) {
-    geometry_viewer.clear();
-
-    for (const auto &arc : voronoi_sphere.dual_arcs()) {
-        geometry_viewer.add_arc(arc, CGAL::IO::Color(140, 140, 140));
-    }
+  auto qt_app = initialize_q_application(argc, argv);
+  QtRenderer renderer(QApplication::activeWindow(), program_name);
+  renderer.render(voronoi_sphere);
+  return qt_app->exec();
 }

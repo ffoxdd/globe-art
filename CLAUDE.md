@@ -35,9 +35,11 @@ Examples:
 - Prefer private helper functions with early returns for exceptional cases
 - Keep main functions flat and linear when possible
 
-### Method Organization
-- Always organize methods with highest abstraction first, followed by lower abstraction methods
-- Public methods come before private methods
+### Function and Method Organization
+- Always organize functions/methods with highest abstraction first, followed by lower abstraction
+- In implementation files (.cpp), place main() or the highest-level entry point first
+- Use forward declarations when necessary to maintain this ordering (never reorganize to avoid forward declarations)
+- Public methods come before private methods in class definitions
 - Within each section, order by abstraction level (high-level orchestration methods before low-level utility methods)
 
 ### Formatting Multi-line Expressions
