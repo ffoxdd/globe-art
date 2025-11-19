@@ -51,7 +51,6 @@ class GlobeGenerator {
     MonteCarloIntegrableField<DF&> _integrable_field;
 
     void normalize_density_field();
-    void calculate_target_mass();
     void add_point();
     std::vector<Point3> sample_points(size_t n);
     double mass(const SphericalPolygon &spherical_polygon);
@@ -84,7 +83,6 @@ VoronoiSphere GlobeGenerator<PG, DF>::generate(int point_count) {
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::initialize() {
     normalize_density_field();
-    calculate_target_mass();
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -92,20 +90,6 @@ void GlobeGenerator<PG, DF>::normalize_density_field() {
     _density_field.normalize(sample_points(1000), DENSITY_FIELD_INTERVAL);
 }
 
-template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::calculate_target_mass() {
-    SphericalCircle3 circle(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0));
-
-    SphericalPolygon spherical_polygon = SphericalPolygon(
-        std::vector<Arc>{
-            Arc(circle, SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
-            Arc(circle, SphericalPoint3(0, 1, 0), SphericalPoint3(0, 0, 1)),
-            Arc(circle, SphericalPoint3(0, 0, 1), SphericalPoint3(1, 0, 0))
-        }
-    );
-
-
-}
 
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::add_points(int count) {
@@ -257,16 +241,22 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
         Point3 candidate = plane_to_sphere(params(0), params(1));
 
         _points_collection.update_site(index, candidate);
-        double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(index)));
-        double error = std::abs(cell_mass - target_mass);
 
-        if (objective_call_count % 10 == 0) {
-            std::cout << "      Objective call " << objective_call_count
-                      << ": mass = " << cell_mass
-                      << ", error = " << error << std::endl;
+        double total_error = 0.0;
+        for (size_t i = 0; i < _points_collection.size(); i++) {
+            double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
+            double error = cell_mass - target_mass;
+            total_error += error * error;
         }
 
-        return error;
+        if (objective_call_count % 10 == 0) {
+            double current_cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(index)));
+            std::cout << "      Objective call " << objective_call_count
+                      << ": cell mass = " << current_cell_mass
+                      << ", total error = " << std::sqrt(total_error) << std::endl;
+        }
+
+        return total_error;
     };
 
     column_vector starting_point;
