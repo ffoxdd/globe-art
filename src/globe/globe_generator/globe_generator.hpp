@@ -2,9 +2,10 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 
 #include "../types.hpp"
+#include "../geometry/helpers.hpp"
 #include "../point_generator/point_generator.hpp"
 #include "../point_generator/random_sphere_point_generator.hpp"
-#include "../points_collection/voronoi_sphere.hpp"
+#include "../voronoi_sphere/voronoi_sphere.hpp"
 #include "../scalar_field/scalar_field.hpp"
 #include "../scalar_field/noise_field.hpp"
 #include "spherical_polygon.hpp"
@@ -25,6 +26,17 @@ namespace globe {
 
 const Interval DENSITY_FIELD_INTERVAL = Interval(1, 100);
 const int POINT_COUNT = 10;
+
+struct VoronoiCell {
+    size_t index;
+    double mass{};
+};
+
+struct MinMassComparator {
+    bool operator()(const VoronoiCell &a, const VoronoiCell &b) const {
+        return a.mass > b.mass;
+    }
+};
 
 template<
     PointGenerator PG = RandomSpherePointGenerator,
@@ -56,6 +68,8 @@ class GlobeGenerator {
     double average_mass();
     Point3 optimize_vertex_position(size_t index, double target_mass);
     void adjust_mass();
+    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> build_cell_mass_heap();
+    double compute_total_error(double target_mass);
 };
 
 template<PointGenerator PG, ScalarField DF>
@@ -95,17 +109,6 @@ void GlobeGenerator<PG, DF>::add_points(int count) {
     }
 }
 
-struct VoronoiCell {
-    size_t index;
-    double mass{};
-};
-
-struct MinMassComparator {
-    bool operator()(const VoronoiCell &a, const VoronoiCell &b) const {
-        return a.mass > b.mass;
-    }
-};
-
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::adjust_mass() {
     std::cout << "Calculating total mass..." << std::endl;
@@ -114,20 +117,12 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
     const size_t max_passes = 2;
+
     for (size_t pass = 0; pass < max_passes; pass++) {
         std::cout << std::endl;
         std::cout << "=== Optimization pass " << pass + 1 << " / " << max_passes << " ===" << std::endl;
-        std::cout << "Calculating cell masses..." << std::endl;
 
-        std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> heap;
-
-        for (size_t i = 0; i < _points_collection.size(); i++) {
-            double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
-            std::cout << "  Cell " << i << " mass: " << cell_mass << std::endl;
-            heap.push({i, cell_mass});
-        }
-
-        std::cout << "Optimizing vertices..." << std::endl;
+        auto heap = build_cell_mass_heap();
         size_t vertex_count = 0;
 
         while (!heap.empty()) {
@@ -135,9 +130,7 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
             double current_mass = heap.top().mass;
             heap.pop();
 
-            std::cout << "  Optimizing vertex " << i << " (mass: " << current_mass << ")" << std::endl;
             optimize_vertex_position(i, target_mass);
-            std::cout << "    Vertex " << i << " optimized" << std::endl;
             vertex_count++;
         }
 
@@ -150,14 +143,16 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
     double total_error = 0.0;
     double max_error = 0.0;
 
-    for (size_t i = 0; i < _points_collection.size(); i++) {
-        double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
+    size_t i = 0;
+    for (const auto &cell : _points_collection.dual_cells()) {
+        double cell_mass = mass(cell);
         double error = std::abs(cell_mass - target_mass);
 
         total_error += error;
         max_error = std::max(max_error, error);
 
         std::cout << "  Cell " << i << " mass: " << cell_mass << ", error: " << error << std::endl;
+        i++;
     }
 
     std::cout << "Average error: " << (total_error / _points_collection.size()) << std::endl;
@@ -189,79 +184,27 @@ double GlobeGenerator<PG, DF>::average_mass() {
 template<PointGenerator PG, ScalarField DF>
 Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double target_mass) {
     Point3 current_position = _points_collection.site(index);
-
-    Point3 north(current_position.x(), current_position.y(), current_position.z());
-    Point3 south(-current_position.x(), -current_position.y(), -current_position.z());
-
-    Point3 tangent_u, tangent_v;
-
-    if (std::abs(north.z()) < 0.9) {
-        tangent_u = Point3(north.y(), -north.x(), 0.0);
-    } else {
-        tangent_u = Point3(0.0, north.z(), -north.y());
-    }
-
-    double tu_len = std::sqrt(
-        tangent_u.x() * tangent_u.x() +
-        tangent_u.y() * tangent_u.y() +
-        tangent_u.z() * tangent_u.z()
-    );
-
-    tangent_u = Point3(
-        tangent_u.x() / tu_len,
-        tangent_u.y() / tu_len,
-        tangent_u.z() / tu_len
-    );
-
-    tangent_v = Point3(
-        north.y() * tangent_u.z() - north.z() * tangent_u.y(),
-        north.z() * tangent_u.x() - north.x() * tangent_u.z(),
-        north.x() * tangent_u.y() - north.y() * tangent_u.x()
-    );
-
-    auto plane_to_sphere = [&](double u, double v) -> Point3 {
-        double r_squared = u * u + v * v;
-        double scale = 4.0 / (4.0 + r_squared);
-
-        Point3 result(
-            south.x() + scale * (u * tangent_u.x() + v * tangent_v.x() - south.x() * r_squared / 4.0),
-            south.y() + scale * (u * tangent_u.y() + v * tangent_v.y() - south.y() * r_squared / 4.0),
-            south.z() + scale * (u * tangent_u.z() + v * tangent_v.z() - south.z() * r_squared / 4.0)
-        );
-
-        double len = std::sqrt(
-            result.x() * result.x() +
-            result.y() * result.y() +
-            result.z() * result.z()
-        );
-
-        return Point3(result.x() / len, result.y() / len, result.z() / len);
-    };
+    Point3 north = antipodal(current_position);
+    TangentBasis basis = build_tangent_basis(north);
+    Point3 tangent_u = basis.tangent_u;
+    Point3 tangent_v = basis.tangent_v;
 
     using column_vector = dlib::matrix<double, 2, 1>;
     int objective_call_count = 0;
 
+    double initial_error = compute_total_error(target_mass);
+
     auto objective = [&](const column_vector& params) -> double {
         objective_call_count++;
-        Point3 candidate = plane_to_sphere(params(0), params(1));
+        Point3 candidate = stereographic_plane_to_sphere(params(0), params(1), current_position, tangent_u, tangent_v);
         _points_collection.update_site(index, candidate);
-
-        double total_error = 0.0;
-
-        for (size_t i = 0; i < _points_collection.size(); i++) {
-            double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
-            double error = cell_mass - target_mass;
-            total_error += error * error;
-        }
+        double total_error = compute_total_error(target_mass);
 
         if (objective_call_count % 10 == 0) {
-            double current_cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(index)));
-
             std::cout <<
                 "      " <<
-                "Objective call " << objective_call_count << " " <<
-                ": cell mass = " << current_cell_mass <<
-                ", total error = " << std::sqrt(total_error) <<
+                "Objective call " << objective_call_count <<
+                ": total error = " << std::sqrt(total_error) <<
                 std::endl;
         }
 
@@ -271,7 +214,10 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
     column_vector starting_point;
     starting_point = 0.0, 0.0;
 
-    std::cout << "    Starting optimization (target mass: " << target_mass << ")" << std::endl;
+    std::cout <<
+        "  Vertex " << index <<
+        ": initial error = " << std::sqrt(initial_error) <<
+        std::endl;
 
     try {
         dlib::find_min_bobyqa(
@@ -287,10 +233,16 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
     } catch (...) {
     }
 
-    std::cout << "    Optimization completed after " << objective_call_count << " objective calls" << std::endl;
-
-    Point3 optimal_position = plane_to_sphere(starting_point(0), starting_point(1));
+    Point3 optimal_position = stereographic_plane_to_sphere(starting_point(0), starting_point(1), current_position, tangent_u, tangent_v);
     _points_collection.update_site(index, optimal_position);
+
+    double final_error = compute_total_error(target_mass);
+
+    std::cout <<
+        "    " << objective_call_count << " calls" <<
+        ", final error = " << std::sqrt(final_error) <<
+        " (Δ = " << (std::sqrt(final_error) - std::sqrt(initial_error)) << ")" <<
+        std::endl;
 
     return optimal_position;
 }
@@ -310,6 +262,33 @@ template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::add_point() {
     Point3 point = _point_generator.generate();
     _points_collection.insert(point);
+}
+
+template<PointGenerator PG, ScalarField DF>
+std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> GlobeGenerator<PG, DF>::build_cell_mass_heap() {
+    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> heap;
+
+    size_t i = 0;
+    for (const auto &cell : _points_collection.dual_cells()) {
+        double cell_mass = mass(cell);
+        heap.push({i, cell_mass});
+        i++;
+    }
+
+    return heap;
+}
+
+template<PointGenerator PG, ScalarField DF>
+double GlobeGenerator<PG, DF>::compute_total_error(double target_mass) {
+    double total_error = 0.0;
+
+    for (const auto &cell : _points_collection.dual_cells()) {
+        double cell_mass = mass(cell);
+        double error = cell_mass - target_mass;
+        total_error += error * error;
+    }
+
+    return total_error;
 }
 
 GlobeGenerator() -> GlobeGenerator<RandomSpherePointGenerator, NoiseField>;

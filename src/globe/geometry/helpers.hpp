@@ -73,6 +73,61 @@ inline Point3 project_to_sphere(Point3 &point, const Point3 &center = ORIGIN, do
     return center + (vector * scale);
 }
 
+inline Point3 antipodal(const Point3 &point) {
+    return Point3(-point.x(), -point.y(), -point.z());
+}
+
+struct TangentBasis {
+    Point3 tangent_u;
+    Point3 tangent_v;
+};
+
+inline TangentBasis build_tangent_basis(const Point3 &normal) {
+    Point3 tangent_u;
+
+    if (std::abs(normal.z()) < 0.9) {
+        tangent_u = Point3(normal.y(), -normal.x(), 0.0);
+    } else {
+        tangent_u = Point3(0.0, normal.z(), -normal.y());
+    }
+
+    Vector3 tangent_u_vec = normalize(tangent_u - ORIGIN);
+    tangent_u = Point3(tangent_u_vec.x(), tangent_u_vec.y(), tangent_u_vec.z());
+
+    Point3 tangent_v(
+        normal.y() * tangent_u.z() - normal.z() * tangent_u.y(),
+        normal.z() * tangent_u.x() - normal.x() * tangent_u.z(),
+        normal.x() * tangent_u.y() - normal.y() * tangent_u.x()
+    );
+
+    return {tangent_u, tangent_v};
+}
+
+inline Point3 stereographic_plane_to_sphere(
+    double u,
+    double v,
+    const Point3 &south_pole,
+    const Point3 &tangent_u,
+    const Point3 &tangent_v
+) {
+    double r_squared = u * u + v * v;
+    double scale = 4.0 / (4.0 + r_squared);
+
+    Point3 result(
+        south_pole.x() + scale * (u * tangent_u.x() + v * tangent_v.x() - south_pole.x() * r_squared / 4.0),
+        south_pole.y() + scale * (u * tangent_u.y() + v * tangent_v.y() - south_pole.y() * r_squared / 4.0),
+        south_pole.z() + scale * (u * tangent_u.z() + v * tangent_v.z() - south_pole.z() * r_squared / 4.0)
+    );
+
+    double len = std::sqrt(
+        result.x() * result.x() +
+        result.y() * result.y() +
+        result.z() * result.z()
+    );
+
+    return Point3(result.x() / len, result.y() / len, result.z() / len);
+}
+
 }
 
 #endif //GLOBEART_SRC_GLOBE_GEOMETRY_HELPERS_H_

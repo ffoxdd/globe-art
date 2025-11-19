@@ -2,7 +2,7 @@
 #include "globe/scalar_field/noise_field.hpp"
 #include "globe/scalar_field/constant_scalar_field.hpp"
 #include "globe/point_generator/random_sphere_point_generator.hpp"
-#include "globe/points_collection/voronoi_sphere.hpp"
+#include "globe/voronoi_sphere/voronoi_sphere.hpp"
 #include "globe/globe_generator/monte_carlo_integrator.hpp"
 #include <iostream>
 #include <chrono>

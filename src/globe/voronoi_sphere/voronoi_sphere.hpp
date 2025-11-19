@@ -2,6 +2,7 @@
 #define GLOBEART_SRC_GLOBE_POINTS_COLLECTION_VORONOI_SPHERE_H_
 
 #include "../types.hpp"
+#include "../globe_generator/spherical_polygon.hpp"
 #include "types.hpp"
 #include "handle_iterator.hpp"
 #include "handle_circulator_iterator.hpp"
@@ -37,6 +38,7 @@ class VoronoiSphere {
     auto faces() const;
     auto dual_face_neighborhood(VertexHandle vertex_handle);
     std::vector<Arc> dual_cell_arcs(VertexHandle vertex_handle);
+    auto dual_cells() const;
 
     Point3 site(size_t index) const;
     std::vector<Arc> dual_cell_arcs(size_t index) const;
@@ -193,6 +195,14 @@ inline void VoronoiSphere::update_site(size_t index, Point3 new_position) {
     _triangulation.remove(_handles[index]);
     _handles[index] = _triangulation.insert(new_position);
     _sites[index] = new_position;
+}
+
+inline auto VoronoiSphere::dual_cells() const {
+    return std::views::iota(size_t(0), size()) | std::views::transform(
+        [this](size_t index) {
+            return SphericalPolygon(dual_cell_arcs(index));
+        }
+    );
 }
 
 } // namespace globe

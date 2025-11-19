@@ -2,7 +2,7 @@
 #include "globe/integrable_field/grid_sample_integrable_field.hpp"
 #include "globe/scalar_field/noise_field.hpp"
 #include "globe/point_generator/random_sphere_point_generator.hpp"
-#include "globe/points_collection/voronoi_sphere.hpp"
+#include "globe/voronoi_sphere/voronoi_sphere.hpp"
 #include <iostream>
 #include <chrono>
 #include <vector>

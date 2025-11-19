@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_POLYGON_HPP_
 
 #include "spherical_bounding_box.hpp"
-#include "../points_collection/types.hpp" // TODO: consider moving spherical_polygon closer to points_collection
+#include "../voronoi_sphere/types.hpp"
 #include "../geometry/helpers.hpp"
 #include "../scalar_field/interval.hpp" // TODO: move interval out of scalar_field
 #include <CGAL/assertions.h>
@@ -18,7 +18,7 @@ class SphericalPolygon {
  public:
     explicit SphericalPolygon(std::vector<Arc> arcs);
 
-    auto arcs();
+    [[nodiscard]] auto arcs() const;
     [[nodiscard]] auto points() const;
     [[nodiscard]] SphericalBoundingBox bounding_box() const;
     [[nodiscard]] bool contains(const Point3 &point) const;
@@ -33,7 +33,7 @@ class SphericalPolygon {
     [[nodiscard]] bool _arcs_form_closed_loop() const;
 };
 
-inline auto SphericalPolygon::arcs() { return _arcs; }
+inline auto SphericalPolygon::arcs() const { return _arcs; }
 
 inline auto SphericalPolygon::points() const {
     return _arcs | std::views::transform(

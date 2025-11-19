@@ -8,7 +8,7 @@
 #include <QtGui/QKeyEvent>
 #include <functional>
 #include "../../geometry/helpers.hpp"
-#include "../../points_collection/types.hpp"
+#include "../../voronoi_sphere/types.hpp"
 
 namespace globe {
 
