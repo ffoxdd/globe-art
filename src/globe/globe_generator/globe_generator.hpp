@@ -18,6 +18,7 @@
 #include <utility>
 #include <cstddef>
 #include <iostream>
+#include <atomic>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
 #include <dlib/optimization.h>
@@ -280,15 +281,32 @@ std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> Gl
 
 template<PointGenerator PG, ScalarField DF>
 double GlobeGenerator<PG, DF>::compute_total_error(double target_mass) {
-    double total_error = 0.0;
+    std::vector<SphericalPolygon> cells;
+    cells.reserve(_points_collection.size());
 
     for (const auto &cell : _points_collection.dual_cells()) {
-        double cell_mass = mass(cell);
-        double error = cell_mass - target_mass;
-        total_error += error * error;
+        cells.push_back(cell);
     }
 
-    return total_error;
+    std::atomic<double> total_error{0.0};
+
+    tbb::parallel_for(
+        tbb::blocked_range<size_t>(0, cells.size()),
+        [&](const tbb::blocked_range<size_t> &range) {
+            double local_error = 0.0;
+
+            for (size_t i = range.begin(); i != range.end(); ++i) {
+                double cell_mass = mass(cells[i]);
+                double error = cell_mass - target_mass;
+                local_error += error * error;
+            }
+
+            double current = total_error.load();
+            while (!total_error.compare_exchange_weak(current, current + local_error));
+        }
+    );
+
+    return total_error.load();
 }
 
 GlobeGenerator() -> GlobeGenerator<RandomSpherePointGenerator, NoiseField>;
