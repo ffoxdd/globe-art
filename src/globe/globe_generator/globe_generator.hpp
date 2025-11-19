@@ -39,10 +39,6 @@ class GlobeGenerator {
     );
 
     VoronoiSphere generate(int point_count = POINT_COUNT);
-    void initialize();
-    void add_points(int count = POINT_COUNT);
-
-    auto dual_arcs();
 
  private:
     PG _point_generator;
@@ -50,6 +46,8 @@ class GlobeGenerator {
     DF _density_field;
     MonteCarloIntegrableField<DF&> _integrable_field;
 
+    void initialize();
+    void add_points(int count);
     void normalize_density_field();
     void add_point();
     std::vector<Point3> sample_points(size_t n);
@@ -90,7 +88,6 @@ void GlobeGenerator<PG, DF>::normalize_density_field() {
     _density_field.normalize(sample_points(1000), DENSITY_FIELD_INTERVAL);
 }
 
-
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::add_points(int count) {
     for (int i = 0; i < count; i++) {
@@ -112,6 +109,7 @@ struct MinMassComparator {
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::adjust_mass() {
     std::cout << "Calculating total mass..." << std::endl;
+
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
@@ -119,18 +117,19 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
     for (size_t pass = 0; pass < max_passes; pass++) {
         std::cout << std::endl;
         std::cout << "=== Optimization pass " << pass + 1 << " / " << max_passes << " ===" << std::endl;
-
         std::cout << "Calculating cell masses..." << std::endl;
+
         std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> heap;
+
         for (size_t i = 0; i < _points_collection.size(); i++) {
             double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
             std::cout << "  Cell " << i << " mass: " << cell_mass << std::endl;
             heap.push({i, cell_mass});
         }
 
-
         std::cout << "Optimizing vertices..." << std::endl;
         size_t vertex_count = 0;
+
         while (!heap.empty()) {
             size_t i = heap.top().index;
             double current_mass = heap.top().mass;
@@ -141,20 +140,26 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
             std::cout << "    Vertex " << i << " optimized" << std::endl;
             vertex_count++;
         }
+
         std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
     }
 
     std::cout << std::endl;
     std::cout << "Final cell masses after optimization:" << std::endl;
+
     double total_error = 0.0;
     double max_error = 0.0;
+
     for (size_t i = 0; i < _points_collection.size(); i++) {
         double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
         double error = std::abs(cell_mass - target_mass);
+
         total_error += error;
         max_error = std::max(max_error, error);
+
         std::cout << "  Cell " << i << " mass: " << cell_mass << ", error: " << error << std::endl;
     }
+
     std::cout << "Average error: " << (total_error / _points_collection.size()) << std::endl;
     std::cout << "Max error: " << max_error << std::endl;
 }
@@ -189,6 +194,7 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
     Point3 south(-current_position.x(), -current_position.y(), -current_position.z());
 
     Point3 tangent_u, tangent_v;
+
     if (std::abs(north.z()) < 0.9) {
         tangent_u = Point3(north.y(), -north.x(), 0.0);
     } else {
@@ -233,16 +239,15 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
     };
 
     using column_vector = dlib::matrix<double, 2, 1>;
-
     int objective_call_count = 0;
+
     auto objective = [&](const column_vector& params) -> double {
         objective_call_count++;
-
         Point3 candidate = plane_to_sphere(params(0), params(1));
-
         _points_collection.update_site(index, candidate);
 
         double total_error = 0.0;
+
         for (size_t i = 0; i < _points_collection.size(); i++) {
             double cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(i)));
             double error = cell_mass - target_mass;
@@ -251,9 +256,13 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
 
         if (objective_call_count % 10 == 0) {
             double current_cell_mass = mass(SphericalPolygon(_points_collection.dual_cell_arcs(index)));
-            std::cout << "      Objective call " << objective_call_count
-                      << ": cell mass = " << current_cell_mass
-                      << ", total error = " << std::sqrt(total_error) << std::endl;
+
+            std::cout <<
+                "      " <<
+                "Objective call " << objective_call_count << " " <<
+                ": cell mass = " << current_cell_mass <<
+                ", total error = " << std::sqrt(total_error) <<
+                std::endl;
         }
 
         return total_error;
@@ -263,6 +272,7 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
     starting_point = 0.0, 0.0;
 
     std::cout << "    Starting optimization (target mass: " << target_mass << ")" << std::endl;
+
     try {
         dlib::find_min_bobyqa(
             objective,
@@ -276,10 +286,12 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
         );
     } catch (...) {
     }
+
     std::cout << "    Optimization completed after " << objective_call_count << " objective calls" << std::endl;
 
     Point3 optimal_position = plane_to_sphere(starting_point(0), starting_point(1));
     _points_collection.update_site(index, optimal_position);
+
     return optimal_position;
 }
 
@@ -292,11 +304,6 @@ std::vector<Point3> GlobeGenerator<PG, DF>::sample_points(size_t n) {
     }
 
     return points;
-}
-
-template<PointGenerator PG, ScalarField DF>
-auto GlobeGenerator<PG, DF>::dual_arcs() {
-    return _points_collection.dual_arcs();
 }
 
 template<PointGenerator PG, ScalarField DF>
