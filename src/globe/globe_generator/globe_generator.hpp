@@ -67,7 +67,7 @@ class GlobeGenerator {
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
-    Point3 optimize_vertex_position(size_t index, double target_mass);
+    double optimize_vertex_position(size_t index, double target_mass, double previous_error);
     void adjust_mass();
     std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> build_cell_mass_heap();
     double compute_total_error(double target_mass);
@@ -117,7 +117,7 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
-    const size_t max_passes = 2;
+    const size_t max_passes = 10;
 
     for (size_t pass = 0; pass < max_passes; pass++) {
         std::cout << std::endl;
@@ -125,13 +125,14 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
 
         auto heap = build_cell_mass_heap();
         size_t vertex_count = 0;
+        double current_error = compute_total_error(target_mass);
 
         while (!heap.empty()) {
             size_t i = heap.top().index;
             double current_mass = heap.top().mass;
             heap.pop();
 
-            optimize_vertex_position(i, target_mass);
+            current_error = optimize_vertex_position(i, target_mass, current_error);
             vertex_count++;
         }
 
@@ -183,7 +184,11 @@ double GlobeGenerator<PG, DF>::average_mass() {
 }
 
 template<PointGenerator PG, ScalarField DF>
-Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double target_mass) {
+double GlobeGenerator<PG, DF>::optimize_vertex_position(
+    size_t index,
+    double target_mass,
+    double previous_error
+) {
     Point3 current_position = _points_collection.site(index);
     Point3 north = antipodal(current_position);
     TangentBasis basis = build_tangent_basis(north);
@@ -193,7 +198,7 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
     using column_vector = dlib::matrix<double, 2, 1>;
     int objective_call_count = 0;
 
-    double initial_error = compute_total_error(target_mass);
+    double initial_error = previous_error;
 
     auto objective = [&](const column_vector& params) -> double {
         objective_call_count++;
@@ -245,7 +250,7 @@ Point3 GlobeGenerator<PG, DF>::optimize_vertex_position(size_t index, double tar
         " (Δ = " << (std::sqrt(final_error) - std::sqrt(initial_error)) << ")" <<
         std::endl;
 
-    return optimal_position;
+    return final_error;
 }
 
 template<PointGenerator PG, ScalarField DF>
