@@ -92,13 +92,10 @@ TEST(MonteCarloIntegratorTest, EstimatesHemisphereMassWithUniformDensity) {
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
-    MonteCarloParams params{3, 4};
-
     MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
         ConstantSamplePointGenerator(inside_point),
-        params,
         hemisphere_bounding_box()
     );
 
@@ -117,13 +114,11 @@ TEST(MonteCarloIntegratorTest, HandlesSamplesOutsideBeforeInside) {
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
-    MonteCarloParams params{5, 4};
 
     MonteCarloIntegrator<MockScalarField, TogglingSamplePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
         TogglingSamplePointGenerator(outside_point, inside_point),
-        params,
         hemisphere_bounding_box()
     );
 
@@ -141,13 +136,10 @@ TEST(MonteCarloIntegratorTest, AppliesNoiseDensityWeighting) {
         .WillOnce(Return(3.0))
         .WillRepeatedly(Return(2.0));
 
-    MonteCarloParams params{3, 4};
-
     MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
         ConstantSamplePointGenerator(inside_point),
-        params,
         hemisphere_bounding_box()
     );
 
@@ -164,13 +156,11 @@ TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithUniformDensity) {
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
-    MonteCarloParams params{3, 4};
 
     MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::nullopt,
         mock_scalar_field,
-        ConstantSamplePointGenerator(arbitrary_point),
-        params
+        ConstantSamplePointGenerator(arbitrary_point)
     );
 
     EXPECT_NEAR(
@@ -189,13 +179,11 @@ TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
         .WillOnce(Return(4.0))
         .WillRepeatedly(Return(3.0));
 
-    MonteCarloParams params{3, 4};
 
     MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::nullopt,
         mock_scalar_field,
-        ConstantSamplePointGenerator(arbitrary_point),
-        params
+        ConstantSamplePointGenerator(arbitrary_point)
     );
 
     EXPECT_NEAR(

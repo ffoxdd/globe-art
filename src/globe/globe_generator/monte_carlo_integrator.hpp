@@ -8,7 +8,6 @@
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "../scalar_field/scalar_field.hpp"
 #include "../scalar_field/noise_field.hpp"
-#include "monte_carlo_params.hpp"
 #include <cmath>
 #include <optional>
 #include <cstddef>
@@ -23,7 +22,6 @@ class MonteCarloIntegrator {
         std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
         DF &density_field,
         SPG sample_point_generator = SPG(),
-        MonteCarloParams params = MonteCarloParams::balanced(),
         std::optional<SphericalBoundingBox> bounding_box = std::nullopt
     );
 
@@ -34,10 +32,11 @@ class MonteCarloIntegrator {
     DF &_density_field;
     SPG _sample_point_generator;
     SphericalBoundingBox _bounding_box;
-    MonteCarloParams _params;
 
     static constexpr double RELATIVE_CHANGE_THRESHOLD = 0.001;
     static constexpr size_t MAX_SAMPLES_GUARD = 3'000'000;
+    static constexpr int CONSECUTIVE_STABLE_ITERATIONS = 15;
+    static constexpr size_t MIN_HITS = 2000;
 
     static SphericalBoundingBox unit_sphere_bounding_box() {
         return SphericalBoundingBox(
@@ -51,7 +50,6 @@ inline MonteCarloIntegrator<DF, SPG>::MonteCarloIntegrator(
     std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
     DF &density_field,
     SPG sample_point_generator,
-    MonteCarloParams params,
     std::optional<SphericalBoundingBox> bounding_box
 ):
     _spherical_polygon(spherical_polygon),
@@ -64,8 +62,7 @@ inline MonteCarloIntegrator<DF, SPG>::MonteCarloIntegrator(
             spherical_polygon.has_value() ? spherical_polygon->get().bounding_box()
             : unit_sphere_bounding_box()
         )
-    ),
-    _params(params) {
+    ) {
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
@@ -122,8 +119,8 @@ inline double MonteCarloIntegrator<DF, SPG>::integrate() {
         previous_weighted_area = weighted_area_estimate;
 
         if (
-            points_inside_polygon >= static_cast<int>(_params.min_hits) &&
-            consecutive_stable_iterations >= _params.consecutive_stable_iterations
+            points_inside_polygon >= static_cast<int>(MIN_HITS) &&
+            consecutive_stable_iterations >= CONSECUTIVE_STABLE_ITERATIONS
         ) {
             double mean_density = sum_density / points_inside_polygon;
             double mean_density_squared = sum_density_squared / points_inside_polygon;

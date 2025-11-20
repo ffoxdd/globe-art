@@ -124,11 +124,6 @@ void GlobeGenerator<PG, IntegrableFieldType>::add_points(int count) {
 
 template<PointGenerator PG, typename IntegrableFieldType>
 void GlobeGenerator<PG, IntegrableFieldType>::adjust_mass(size_t max_passes) {
-    std::cout <<
-        "Using integrable field (" <<
-        _integrable_field->sample_count() <<
-        " samples)" << std::endl;
-
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
@@ -202,7 +197,7 @@ double GlobeGenerator<PG, IntegrableFieldType>::mass(const SphericalPolygon &sph
 
 template<PointGenerator PG, typename IntegrableFieldType>
 double GlobeGenerator<PG, IntegrableFieldType>::total_mass() {
-    return _integrable_field->integrate_entire_sphere();
+    return _integrable_field->integrate();
 }
 
 template<PointGenerator PG, typename IntegrableFieldType>

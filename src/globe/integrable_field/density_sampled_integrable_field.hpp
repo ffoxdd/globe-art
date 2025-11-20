@@ -7,6 +7,7 @@
 #include "../globe_generator/spherical_bounding_box.hpp"
 #include "../globe_generator/sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "../globe_generator/interval_sampler.hpp"
+#include "../geometry/helpers.hpp"
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Kd_tree.h>
@@ -27,8 +28,7 @@ class DensitySampledIntegrableField {
     );
 
     [[nodiscard]] double integrate(const SphericalPolygon &polygon) const;
-    [[nodiscard]] double integrate_entire_sphere() const;
-    [[nodiscard]] size_t sample_count() const;
+    [[nodiscard]] double integrate(const SphericalBoundingBox &bbox = SphericalBoundingBox::full_sphere()) const;
 
  private:
     using SearchTraits = CGAL::Search_traits_3<Kernel>;
@@ -192,13 +192,37 @@ size_t DensitySampledIntegrableField<ScalarFieldType>::contained_points_count(
 }
 
 template<ScalarField ScalarFieldType>
-double DensitySampledIntegrableField<ScalarFieldType>::integrate_entire_sphere() const {
-    return static_cast<double>(_points.size()) * _weight_per_sample;
-}
+double DensitySampledIntegrableField<ScalarFieldType>::integrate(const SphericalBoundingBox &bbox) const {
+    if (_points.empty()) {
+        return 0.0;
+    }
 
-template<ScalarField ScalarFieldType>
-size_t DensitySampledIntegrableField<ScalarFieldType>::sample_count() const {
-    return _points.size();
+    Point3 center = bbox.center();
+    double radius = bbox.bounding_sphere_radius();
+    FuzzySphere query(center, radius, 1e-9);
+
+    std::vector<Point3> candidates;
+    _kdtree.search(std::back_inserter(candidates), query);
+
+    Interval theta_interval = bbox.theta_interval();
+    Interval z_interval = bbox.z_interval();
+
+    size_t hits = std::count_if(
+        candidates.begin(),
+        candidates.end(),
+        [&theta_interval, &z_interval](const Point3 &point) {
+            double theta_val = theta(point.x(), point.y());
+            double z_val = static_cast<double>(point.z());
+
+            bool theta_ok = (theta_interval.low() <= theta_val && theta_val <= theta_interval.high()) ||
+                           (theta_interval.high() > 2.0 * M_PI && theta_val >= 0 && theta_val <= theta_interval.high() - 2.0 * M_PI);
+            bool z_ok = z_interval.low() <= z_val && z_val <= z_interval.high();
+
+            return theta_ok && z_ok;
+        }
+    );
+
+    return static_cast<double>(hits) * _weight_per_sample;
 }
 
 } // namespace globe

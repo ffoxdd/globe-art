@@ -50,10 +50,9 @@ TEST(DensitySampledIntegrableFieldTest, IntegratesEntireSphereWithUniformDensity
         1.0
     );
 
-    EXPECT_EQ(integrable_field.sample_count(), sample_count);
     double expected = 4 * M_PI;
     double tolerance = expected * 0.05;
-    EXPECT_NEAR(integrable_field.integrate_entire_sphere(), expected, tolerance);
+    EXPECT_NEAR(integrable_field.integrate(), expected, tolerance);
 }
 
 TEST(DensitySampledIntegrableFieldTest, IntegratesPolygonSubsetOfSphere) {
@@ -69,7 +68,7 @@ TEST(DensitySampledIntegrableFieldTest, IntegratesPolygonSubsetOfSphere) {
     SphericalPolygon polygon = make_northern_hemisphere_polygon();
 
     double result = integrable_field.integrate(polygon);
-    double total = integrable_field.integrate_entire_sphere();
+    double total = integrable_field.integrate();
 
     EXPECT_GT(result, 0.0);
     EXPECT_LT(result, total);
