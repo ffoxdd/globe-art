@@ -68,3 +68,41 @@ TEST(SphericalBoundingBoxTest, CenterUsesIntervalMidpoints) {
     EXPECT_NEAR(center.x(), expected_r * std::cos(expected_theta), 1e-9);
     EXPECT_NEAR(center.y(), expected_r * std::sin(expected_theta), 1e-9);
 }
+
+TEST(SphericalBoundingBoxTest, HandlesWraparoundThetaInterval) {
+    Interval wrapped_theta(5.5, 0.8 + 2.0 * M_PI);
+    Interval z_interval(0.0, 0.5);
+    SphericalBoundingBox box(wrapped_theta, z_interval);
+
+    EXPECT_TRUE(box.is_theta_wrapped());
+
+    double expected_measure = (2.0 * M_PI - 5.5) + 0.8;
+    EXPECT_NEAR(box.theta_measure(), expected_measure, 1e-9);
+
+    Point3 center = box.center();
+    double expected_theta = (5.5 + 0.8 + 2.0 * M_PI) / 2.0 - 2.0 * M_PI;
+    double expected_z = 0.25;
+    double expected_r = std::sqrt(1.0 - expected_z * expected_z);
+
+    EXPECT_NEAR(center.z(), expected_z, 1e-9);
+    EXPECT_NEAR(center.x(), expected_r * std::cos(expected_theta), 1e-9);
+    EXPECT_NEAR(center.y(), expected_r * std::sin(expected_theta), 1e-9);
+}
+
+TEST(SphericalBoundingBoxTest, BoundingSphereRadiusEnclosesBox) {
+    Interval theta_interval(0.0, M_PI / 2);
+    Interval z_interval(0.0, 0.5);
+    SphericalBoundingBox box(theta_interval, z_interval);
+
+    double radius = box.bounding_sphere_radius();
+    Point3 center = box.center();
+
+    double theta_span = box.theta_measure();
+    double z_span = box.z_measure();
+    double r_max = std::sqrt(1.0 - z_interval.low() * z_interval.low());
+    double chord = 2.0 * r_max * std::sin(theta_span / 2.0);
+    double expected_radius = std::sqrt(z_span * z_span + chord * chord);
+
+    EXPECT_NEAR(radius, expected_radius, 1e-9);
+    EXPECT_GT(radius, 0.0);
+}

@@ -18,7 +18,7 @@ class SphericalBoundingBoxSampler {
     SphericalBoundingBoxSampler& operator=(const SphericalBoundingBoxSampler&) = delete;
 
     [[nodiscard]] inline Point3 sample(const SphericalBoundingBox &bounding_box) {
-        double theta = _interval_sampler.sample(bounding_box.theta_interval());
+        double theta = sample_theta(bounding_box);
         double z = _interval_sampler.sample(bounding_box.z_interval());
         double r = std::sqrt(1 - (z * z)); // not the sphere's radius, but the radius of the xy circle at that z
 
@@ -27,6 +27,24 @@ class SphericalBoundingBoxSampler {
             r * std::sin(theta),
             z
         };
+    }
+
+    [[nodiscard]] inline double sample_theta(const SphericalBoundingBox &bounding_box) {
+        Interval theta_interval = bounding_box.theta_interval();
+
+        if (!bounding_box.is_theta_wrapped()) {
+            return _interval_sampler.sample(theta_interval);
+        }
+
+        double span = bounding_box.theta_measure();
+        double offset = _interval_sampler.sample(Interval(0.0, span));
+        double theta = theta_interval.low() + offset;
+
+        if (theta >= 2.0 * M_PI) {
+            theta -= 2.0 * M_PI;
+        }
+
+        return theta;
     }
 
  private:

@@ -20,6 +20,10 @@ class SphericalBoundingBox {
     [[nodiscard]] Interval z_interval() const;
     [[nodiscard]] double area() const;
     [[nodiscard]] Point3 center() const;
+    [[nodiscard]] bool is_theta_wrapped() const;
+    [[nodiscard]] double theta_measure() const;
+    [[nodiscard]] double z_measure() const;
+    [[nodiscard]] double bounding_sphere_radius() const;
 
  private:
     const Interval _theta_interval;
@@ -55,12 +59,28 @@ inline Interval SphericalBoundingBox::z_interval() const {
     return _z_interval;
 }
 
+inline bool SphericalBoundingBox::is_theta_wrapped() const {
+    return _theta_interval.high() > 2.0 * M_PI;
+}
+
+inline double SphericalBoundingBox::theta_measure() const {
+    return _theta_interval.measure();
+}
+
+inline double SphericalBoundingBox::z_measure() const {
+    return _z_interval.measure();
+}
+
 inline double SphericalBoundingBox::area() const {
-    return _theta_interval.measure() * _z_interval.measure();
+    return theta_measure() * z_measure();
 }
 
 inline Point3 SphericalBoundingBox::center() const {
     double theta_mid = _theta_interval.midpoint();
+    if (theta_mid >= 2.0 * M_PI) {
+        theta_mid -= 2.0 * M_PI;
+    }
+
     double z_mid = _z_interval.midpoint();
     double r_mid = std::sqrt(1.0 - z_mid * z_mid);
 
@@ -69,6 +89,18 @@ inline Point3 SphericalBoundingBox::center() const {
         r_mid * std::sin(theta_mid),
         z_mid
     );
+}
+
+inline double SphericalBoundingBox::bounding_sphere_radius() const {
+    double z_span = z_measure();
+    double theta_span = theta_measure();
+
+    double r_low = std::sqrt(std::max(0.0, 1.0 - _z_interval.low() * _z_interval.low()));
+    double r_high = std::sqrt(std::max(0.0, 1.0 - _z_interval.high() * _z_interval.high()));
+    double r_max = std::max(r_low, r_high);
+    double chord = 2.0 * r_max * std::sin(theta_span / 2.0);
+
+    return std::sqrt(z_span * z_span + chord * chord);
 }
 
 } // namespace globe

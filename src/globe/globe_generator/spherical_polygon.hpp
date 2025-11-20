@@ -22,7 +22,6 @@ class SphericalPolygon {
     [[nodiscard]] auto points() const;
     [[nodiscard]] SphericalBoundingBox bounding_box() const;
     [[nodiscard]] bool contains(const Point3 &point) const;
-
     [[nodiscard]] bool is_valid() const;
     [[nodiscard]] bool is_convex() const;
     void validate() const;
@@ -100,19 +99,35 @@ inline void SphericalPolygon::validate() const {
 }
 
 inline double theta(double x, double y) {
-    return std::atan2(y, x);
+    double t = std::atan2(y, x);
+    return t < 0.0 ? t + 2.0 * M_PI : t;
 }
 
 inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
-    auto theta_values = points() | std::views::transform(
-        [](const Point3 &point) { return theta(point.x(), point.y()); }
-    );
+    std::vector<double> theta_values;
+    std::vector<double> z_values;
 
-    auto z_values = points() | std::views::transform(
-        [](const Point3 &point) { return static_cast<double>(point.z()); }
-    );
+    for (const auto &point : points()) {
+        theta_values.push_back(theta(point.x(), point.y()));
+        z_values.push_back(static_cast<double>(point.z()));
+    }
 
-    return {Interval(theta_values), Interval(z_values)};
+    if (theta_values.empty()) {
+        return {Interval(0, 2 * M_PI), Interval(-1, 1)};
+    }
+
+    double theta_min = *std::ranges::min_element(theta_values);
+    double theta_max = *std::ranges::max_element(theta_values);
+    double theta_span = theta_max - theta_min;
+
+    Interval theta_interval;
+    if (theta_span > M_PI) {
+        theta_interval = Interval(theta_max, theta_min + 2.0 * M_PI);
+    } else {
+        theta_interval = Interval(theta_min, theta_max);
+    }
+
+    return {theta_interval, Interval(z_values)};
 }
 
 inline bool SphericalPolygon::_arcs_form_closed_loop() const {
