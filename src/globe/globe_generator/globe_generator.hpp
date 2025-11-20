@@ -28,7 +28,7 @@ namespace globe {
 const Interval DENSITY_FIELD_INTERVAL = Interval(1, 100);
 const int DEFAULT_POINT_COUNT = 10;
 const size_t DEFAULT_OPTIMIZATION_PASSES = 10;
-const double DISPLACEMENT_PENALTY_SCALE = 0.05;
+const double DISPLACEMENT_PENALTY_SCALE = 0.0;
 const double MOVEMENT_EPSILON = 1e-4;
 const double ZERO_ERROR_TOLERANCE = 1e-3;
 const double MAX_PERTURBATION_STEP = 0.15;
@@ -240,6 +240,10 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
         column_vector starting_point = initial_point;
         _points_collection.update_site(index, original_position);
 
+        size_t eval_count = 0;
+        double first_eval_error = -1.0;
+        double last_eval_error = -1.0;
+
         auto objective = [&](const column_vector& params) -> double {
             Point3 candidate = stereographic_plane_to_sphere(
                 params(0),
@@ -255,6 +259,12 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
             double displacement_angle = angular_distance(original_vector, candidate - ORIGIN);
             double penalty = DISPLACEMENT_PENALTY_SCALE * target_mass * target_mass * displacement_angle * displacement_angle;
             double cost = total_error + penalty;
+
+            if (eval_count == 0) {
+                first_eval_error = total_error;
+            }
+            last_eval_error = total_error;
+            eval_count++;
 
             if (cost < run_best_cost) {
                 run_best_cost = cost;
@@ -279,6 +289,13 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
         } catch (...) {
         }
 
+        std::cout <<
+            "    [BOBYQA evals=" << eval_count <<
+            ", first_error=" << std::sqrt(first_eval_error) <<
+            ", last_error=" << std::sqrt(last_eval_error) <<
+            ", best_error=" << std::sqrt(run_best_mass_error) <<
+            "]" << std::endl;
+
         _points_collection.update_site(index, run_best_position);
         return RunResult{run_best_mass_error, run_best_cost, run_best_position};
     };
@@ -286,7 +303,7 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
     column_vector origin;
     origin = 0.0, 0.0;
 
-    auto initial_result = run_bobyqa(origin, 6);
+    auto initial_result = run_bobyqa(origin, 15);
     double final_error = initial_result.mass_error;
     Point3 best_position = initial_result.best_position;
 
@@ -295,12 +312,16 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
 
     _points_collection.update_site(index, best_position);
     double delta = final_norm - initial_norm;
-    bool moved = angular_distance(original_vector, best_position - ORIGIN) > MOVEMENT_EPSILON;
+    double movement = angular_distance(original_vector, best_position - ORIGIN);
+    bool moved = movement > MOVEMENT_EPSILON;
 
     std::cout <<
         "  Vertex " << index <<
         ": error = " << final_norm <<
-        " (Δ = " << delta << ")" <<
+        " (Δ = " << delta <<
+        ", movement = " << movement <<
+        ", moved = " << (moved ? "yes" : "no") <<
+        ")" <<
         std::endl;
 
     return {final_error, moved};
