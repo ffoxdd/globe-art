@@ -21,6 +21,7 @@ class SphericalPolygon {
     [[nodiscard]] auto arcs() const;
     [[nodiscard]] auto points() const;
     [[nodiscard]] SphericalBoundingBox bounding_box() const;
+    [[nodiscard]] Point3 centroid() const;
     [[nodiscard]] bool contains(const Point3 &point) const;
     [[nodiscard]] bool is_valid() const;
     [[nodiscard]] bool is_convex() const;
@@ -128,6 +129,28 @@ inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
     }
 
     return {theta_interval, Interval(z_values)};
+}
+
+inline Point3 SphericalPolygon::centroid() const {
+    Vector3 sum(0, 0, 0);
+    size_t count = 0;
+
+    for (const auto& point : points()) {
+        sum += position_vector(point);
+        ++count;
+    }
+
+    if (count == 0) {
+        return bounding_box().center();
+    }
+
+    Vector3 average = sum / static_cast<double>(count);
+
+    if (average.squared_length() < 1e-20) {
+        return bounding_box().center();
+    }
+
+    return ORIGIN + normalize(average);
 }
 
 inline bool SphericalPolygon::_arcs_form_closed_loop() const {

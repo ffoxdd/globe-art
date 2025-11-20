@@ -231,3 +231,118 @@ TEST(SphericalPolygonTest, BoundingSphereRadiusWithWrappedTheta) {
 
     EXPECT_NEAR(radius, expected_radius, 1e-9);
 }
+
+TEST(SphericalPolygonTest, CentroidReturnsPointOnUnitSphere) {
+    SphericalPolygon polygon = SphericalPolygon(
+        std::vector<Arc>{
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(1, 0, 0),
+                SphericalPoint3(0, 1, 0)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0)),
+                SphericalPoint3(0, 1, 0),
+                SphericalPoint3(0, 0, 1)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 1, 0)),
+                SphericalPoint3(0, 0, 1),
+                SphericalPoint3(1, 0, 0)
+            ),
+        }
+    );
+
+    Point3 centroid = polygon.centroid();
+
+    double distance = std::sqrt(
+        centroid.x() * centroid.x() +
+        centroid.y() * centroid.y() +
+        centroid.z() * centroid.z()
+    );
+    EXPECT_NEAR(distance, 1.0, 1e-9);
+}
+
+TEST(SphericalPolygonTest, CentroidIsOnUnitSphere) {
+    SphericalPolygon polygon = SphericalPolygon(
+        std::vector<Arc>{
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(1, 0, 0),
+                SphericalPoint3(0, 1, 0)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(0, 1, 0),
+                SphericalPoint3(-1, 0, 0)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(-1, 0, 0),
+                SphericalPoint3(0, -1, 0)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(0, -1, 0),
+                SphericalPoint3(1, 0, 0)
+            ),
+        }
+    );
+
+    Point3 centroid = polygon.centroid();
+
+    double distance = std::sqrt(
+        centroid.x() * centroid.x() +
+        centroid.y() * centroid.y() +
+        centroid.z() * centroid.z()
+    );
+    EXPECT_NEAR(distance, 1.0, 1e-9);
+}
+
+TEST(SphericalPolygonTest, CentroidForSymmetricPolygon) {
+    const double sqrt3 = std::sqrt(3);
+    SphericalPolygon polygon = SphericalPolygon(
+        std::vector<Arc>{
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(1, 0, 0),
+                SphericalPoint3(0.5, sqrt3 / 2, 0)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(0.5, sqrt3 / 2, 0),
+                SphericalPoint3(-0.5, sqrt3 / 2, 0)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(-0.5, sqrt3 / 2, 0),
+                SphericalPoint3(-1, 0, 0)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(-1, 0, 0),
+                SphericalPoint3(-0.5, -sqrt3 / 2, 0)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(-0.5, -sqrt3 / 2, 0),
+                SphericalPoint3(0.5, -sqrt3 / 2, 0)
+            ),
+            Arc(
+                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
+                SphericalPoint3(0.5, -sqrt3 / 2, 0),
+                SphericalPoint3(1, 0, 0)
+            ),
+        }
+    );
+
+    Point3 centroid = polygon.centroid();
+
+    double distance = std::sqrt(
+        centroid.x() * centroid.x() +
+        centroid.y() * centroid.y() +
+        centroid.z() * centroid.z()
+    );
+    EXPECT_NEAR(distance, 1.0, 1e-9);
+    EXPECT_NEAR(centroid.z(), 0.0, 1e-9);
+}

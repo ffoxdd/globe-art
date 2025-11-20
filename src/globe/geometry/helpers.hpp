@@ -33,6 +33,12 @@ inline Vector3 normalize(const Vector3 &vector) {
     return {vector.x() / length, vector.y() / length, vector.z() / length};
 }
 
+inline Point3 normalize(const Point3 &point) {
+    Vector3 vec = point - ORIGIN;
+    Vector3 normalized = normalize(vec);
+    return Point3(normalized.x(), normalized.y(), normalized.z());
+}
+
 inline Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, double t, const Point3 &center = ORIGIN) {
     globe::Vector3 v1 = point1 - center;
     globe::Vector3 v2 = point2 - center;
@@ -50,6 +56,10 @@ inline Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, 
     Vector3 interpolated_vector = (alpha * v1) + (beta * v2);
 
     return center + interpolated_vector;
+}
+
+inline double distance(const Point3 &a, const Point3 &b) {
+    return std::sqrt(CGAL::squared_distance(a, b));
 }
 
 inline double angular_distance(const Vector3 &a, const Vector3 &b) {

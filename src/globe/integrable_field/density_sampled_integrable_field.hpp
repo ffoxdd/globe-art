@@ -154,11 +154,17 @@ template<ScalarField ScalarFieldType>
 CGAL::Fuzzy_sphere<CGAL::Search_traits_3<Kernel>> DensitySampledIntegrableField<ScalarFieldType>::query_sphere(
     const SphericalPolygon &polygon
 ) const {
-    auto bounding_box = polygon.bounding_box();
-    Point3 center = bounding_box.center();
-    double radius = bounding_box.bounding_sphere_radius();
+    Point3 centroid = polygon.centroid();
 
-    return FuzzySphere(center, radius, 1e-9);
+    double max_squared_distance = 0.0;
+
+    for (const auto& v : polygon.points()) {
+        double squared_dist = CGAL::squared_distance(v, centroid);
+        max_squared_distance = std::max(max_squared_distance, squared_dist);
+    }
+
+    double max_chord_distance = std::sqrt(max_squared_distance);
+    return FuzzySphere(centroid, max_chord_distance, 1e-9);
 }
 
 template<ScalarField ScalarFieldType>
