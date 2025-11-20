@@ -95,7 +95,7 @@ double MonteCarloIntegrableField<SF>::integrate(const SphericalPolygon &polygon)
         bbox
     );
 
-    return calculator.result().mass;
+    return calculator.integrate();
 }
 
 template<ScalarField SF>
@@ -113,7 +113,7 @@ double MonteCarloIntegrableField<SF>::integrate_entire_sphere() {
         bbox
     );
 
-    return calculator.result().mass;
+    return calculator.integrate();
 }
 
 template<ScalarField SF>
@@ -136,8 +136,8 @@ typename MonteCarloIntegrableField<SF>::CandidateMetrics MonteCarloIntegrableFie
             bbox
         );
 
-        auto result = calculator.result();
-        samples.push_back(SampleOutcome{result.mass, result.sample_count});
+        double mass = calculator.integrate();
+        samples.push_back(SampleOutcome{mass, 0});
     }
 
     CandidateMetrics stats{};
@@ -156,12 +156,7 @@ typename MonteCarloIntegrableField<SF>::CandidateMetrics MonteCarloIntegrableFie
     );
 
     stats.coefficient_of_variation = (stats.mean > 0) ? (stats.stddev / stats.mean) : 0.0;
-
-    size_t total_samples = 0;
-    for (const auto &sample : samples) {
-        total_samples += sample.sample_count;
-    }
-    stats.avg_sample_count = static_cast<double>(total_samples) / num_trials;
+    stats.avg_sample_count = 0.0;
 
     return stats;
 }

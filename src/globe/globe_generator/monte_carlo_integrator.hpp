@@ -9,7 +9,6 @@
 #include "../scalar_field/scalar_field.hpp"
 #include "../scalar_field/noise_field.hpp"
 #include "monte_carlo_params.hpp"
-#include "integration_result.hpp"
 #include <cmath>
 #include <optional>
 #include <cstddef>
@@ -28,7 +27,7 @@ class MonteCarloIntegrator {
         std::optional<SphericalBoundingBox> bounding_box = std::nullopt
     );
 
-    [[nodiscard]] IntegrationResult result();
+    [[nodiscard]] double integrate();
 
  private:
     std::optional<std::reference_wrapper<const SphericalPolygon>> _spherical_polygon;
@@ -70,7 +69,7 @@ inline MonteCarloIntegrator<DF, SPG>::MonteCarloIntegrator(
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
-inline IntegrationResult MonteCarloIntegrator<DF, SPG>::result() {
+inline double MonteCarloIntegrator<DF, SPG>::integrate() {
     auto contains = [&](const Point3 &point) {
         if (!_spherical_polygon) {
             return true;
@@ -130,16 +129,12 @@ inline IntegrationResult MonteCarloIntegrator<DF, SPG>::result() {
             double mean_density_squared = sum_density_squared / points_inside_polygon;
             double variance = mean_density_squared - (mean_density * mean_density);
 
-            return IntegrationResult{
-                weighted_area_estimate,
-                variance,
-                static_cast<size_t>(points_inside_polygon)
-            };
+            return weighted_area_estimate;
         }
     }
 
     if (points_inside_polygon == 0) {
-        return IntegrationResult{0.0, 0.0, 0};
+        return 0.0;
     }
 
     double inside_fraction = static_cast<double>(points_inside_polygon) / total_points_sampled;
@@ -147,15 +142,7 @@ inline IntegrationResult MonteCarloIntegrator<DF, SPG>::result() {
     double average_density = sum_density / static_cast<double>(points_inside_polygon);
     double weighted_area_estimate = spherical_polygon_area_estimate * average_density;
 
-    double mean_density = sum_density / points_inside_polygon;
-    double mean_density_squared = sum_density_squared / points_inside_polygon;
-    double variance = mean_density_squared - (mean_density * mean_density);
-
-    return IntegrationResult{
-        weighted_area_estimate,
-        variance,
-        static_cast<size_t>(points_inside_polygon)
-    };
+    return weighted_area_estimate;
 }
 
 } // namespace globe

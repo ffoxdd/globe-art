@@ -103,7 +103,7 @@ TEST(MonteCarloIntegratorTest, EstimatesHemisphereMassWithUniformDensity) {
     );
 
     EXPECT_NEAR(
-        monte_carlo_integrator.result().mass,
+        monte_carlo_integrator.integrate(),
         2 * M_PI,
         1e-6
     );
@@ -127,7 +127,7 @@ TEST(MonteCarloIntegratorTest, HandlesSamplesOutsideBeforeInside) {
         hemisphere_bounding_box()
     );
 
-    double cell_mass = monte_carlo_integrator.result().mass;
+    double cell_mass = monte_carlo_integrator.integrate();
     EXPECT_NEAR(cell_mass / (2 * M_PI), 1.0, 0.1);
 }
 
@@ -152,7 +152,7 @@ TEST(MonteCarloIntegratorTest, AppliesNoiseDensityWeighting) {
     );
 
     EXPECT_NEAR(
-        monte_carlo_integrator.result().mass,
+        monte_carlo_integrator.integrate(),
         4 * M_PI,
         1e-6
     );
@@ -174,7 +174,7 @@ TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithUniformDensity) {
     );
 
     EXPECT_NEAR(
-        monte_carlo_integrator.result().mass,
+        monte_carlo_integrator.integrate(),
         4 * M_PI,
         1e-6
     );
@@ -199,7 +199,7 @@ TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
     );
 
     EXPECT_NEAR(
-        monte_carlo_integrator.result().mass,
+        monte_carlo_integrator.integrate(),
         12 * M_PI,
         1e-6
     );
