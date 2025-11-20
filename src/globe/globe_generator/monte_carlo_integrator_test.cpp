@@ -45,7 +45,7 @@ SphericalBoundingBox hemisphere_bounding_box() {
 class ConstantSamplePointGenerator {
  public:
     explicit ConstantSamplePointGenerator(Point3 point) : _point(point) {}
-    Point3 generate() { return _point; }
+    Point3 generate(const SphericalBoundingBox &) { return _point; }
  private:
     Point3 _point;
 };
@@ -55,7 +55,7 @@ class TogglingSamplePointGenerator {
     TogglingSamplePointGenerator(Point3 first_point, Point3 subsequent_point)
         : _first_point(first_point), _subsequent_point(subsequent_point), _first_call(true) {}
 
-    Point3 generate() {
+    Point3 generate(const SphericalBoundingBox &) {
         if (_first_call) {
             _first_call = false;
             return _first_point;
@@ -73,7 +73,7 @@ class SequenceSamplePointGenerator {
     SequenceSamplePointGenerator(std::vector<Point3> sequence)
         : _sequence(std::move(sequence)), _index(0) {}
 
-    Point3 generate() {
+    Point3 generate(const SphericalBoundingBox &) {
         Point3 result = _sequence[_index % _sequence.size()];
         _index++;
         return result;
@@ -92,16 +92,21 @@ TEST(MonteCarloIntegratorTest, EstimatesHemisphereMassWithUniformDensity) {
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
+    MonteCarloParams params{3, 4};
+
     MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
         ConstantSamplePointGenerator(inside_point),
-        1e-12,
-        3,
+        params,
         hemisphere_bounding_box()
     );
 
-    EXPECT_NEAR(monte_carlo_integrator.result().mass, 2 * M_PI, 1e-6);
+    EXPECT_NEAR(
+        monte_carlo_integrator.result().mass,
+        2 * M_PI,
+        1e-6
+    );
 }
 
 TEST(MonteCarloIntegratorTest, HandlesSamplesOutsideBeforeInside) {
@@ -112,12 +117,13 @@ TEST(MonteCarloIntegratorTest, HandlesSamplesOutsideBeforeInside) {
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
+    MonteCarloParams params{5, 4};
+
     MonteCarloIntegrator<MockScalarField, TogglingSamplePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
         TogglingSamplePointGenerator(outside_point, inside_point),
-        1e-6,
-        5,
+        params,
         hemisphere_bounding_box()
     );
 
@@ -135,16 +141,21 @@ TEST(MonteCarloIntegratorTest, AppliesNoiseDensityWeighting) {
         .WillOnce(Return(3.0))
         .WillRepeatedly(Return(2.0));
 
+    MonteCarloParams params{3, 4};
+
     MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
         ConstantSamplePointGenerator(inside_point),
-        1e-12,
-        3,
+        params,
         hemisphere_bounding_box()
     );
 
-    EXPECT_NEAR(monte_carlo_integrator.result().mass, 4 * M_PI, 1e-6);
+    EXPECT_NEAR(
+        monte_carlo_integrator.result().mass,
+        4 * M_PI,
+        1e-6
+    );
 }
 
 TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithUniformDensity) {
@@ -153,15 +164,20 @@ TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithUniformDensity) {
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
+    MonteCarloParams params{3, 4};
+
     MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::nullopt,
         mock_scalar_field,
         ConstantSamplePointGenerator(arbitrary_point),
-        1e-12,
-        3
+        params
     );
 
-    EXPECT_NEAR(monte_carlo_integrator.result().mass, 4 * M_PI, 1e-6);
+    EXPECT_NEAR(
+        monte_carlo_integrator.result().mass,
+        4 * M_PI,
+        1e-6
+    );
 }
 
 TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
@@ -173,13 +189,18 @@ TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
         .WillOnce(Return(4.0))
         .WillRepeatedly(Return(3.0));
 
+    MonteCarloParams params{3, 4};
+
     MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
         std::nullopt,
         mock_scalar_field,
         ConstantSamplePointGenerator(arbitrary_point),
-        1e-12,
-        3
+        params
     );
 
-    EXPECT_NEAR(monte_carlo_integrator.result().mass, 12 * M_PI, 1e-6);
+    EXPECT_NEAR(
+        monte_carlo_integrator.result().mass,
+        12 * M_PI,
+        1e-6
+    );
 }

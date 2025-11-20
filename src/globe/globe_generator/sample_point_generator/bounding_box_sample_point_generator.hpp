@@ -9,29 +9,21 @@ namespace globe {
 
 class BoundingBoxSamplePointGenerator {
  public:
-    explicit BoundingBoxSamplePointGenerator(const SphericalBoundingBox &bounding_box);
-
-    BoundingBoxSamplePointGenerator(BoundingBoxSamplePointGenerator &&other) noexcept = default;
-    BoundingBoxSamplePointGenerator& operator=(BoundingBoxSamplePointGenerator &&other) noexcept = delete;
+    BoundingBoxSamplePointGenerator() = default;
 
     BoundingBoxSamplePointGenerator(const BoundingBoxSamplePointGenerator&) = delete;
     BoundingBoxSamplePointGenerator& operator=(const BoundingBoxSamplePointGenerator&) = delete;
+    BoundingBoxSamplePointGenerator(BoundingBoxSamplePointGenerator&&) noexcept = default;
+    BoundingBoxSamplePointGenerator& operator=(BoundingBoxSamplePointGenerator&&) noexcept = delete;
 
-    Point3 generate();
+    Point3 generate(const SphericalBoundingBox &bounding_box);
 
  private:
-    SphericalBoundingBox _bounding_box;
     SphericalBoundingBoxSampler _sampler;
 };
 
-inline BoundingBoxSamplePointGenerator::BoundingBoxSamplePointGenerator(
-    const SphericalBoundingBox &bounding_box) :
-    _bounding_box(bounding_box),
-    _sampler() {
-}
-
-inline Point3 BoundingBoxSamplePointGenerator::generate() {
-    return _sampler.sample(_bounding_box);
+inline Point3 BoundingBoxSamplePointGenerator::generate(const SphericalBoundingBox &bounding_box) {
+    return _sampler.sample(bounding_box);
 }
 
 } // namespace globe

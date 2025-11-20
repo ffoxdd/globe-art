@@ -8,11 +8,12 @@
 #include "sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "../scalar_field/scalar_field.hpp"
 #include "../scalar_field/noise_field.hpp"
+#include "monte_carlo_params.hpp"
 #include "integration_result.hpp"
 #include <cmath>
 #include <optional>
-#include <utility>
 #include <cstddef>
+#include <utility>
 
 namespace globe {
 
@@ -22,11 +23,9 @@ class MonteCarloIntegrator {
     MonteCarloIntegrator(
         std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
         DF &density_field,
-        SPG sample_point_generator,
-        double error_threshold = 1e-6,
-        int consecutive_stable_iterations_threshold = 10,
-        std::optional<SphericalBoundingBox> bounding_box = std::nullopt,
-        size_t max_samples = 1000000
+        SPG sample_point_generator = SPG(),
+        MonteCarloParams params = MonteCarloParams::balanced(),
+        std::optional<SphericalBoundingBox> bounding_box = std::nullopt
     );
 
     [[nodiscard]] IntegrationResult result();
@@ -34,15 +33,12 @@ class MonteCarloIntegrator {
  private:
     std::optional<std::reference_wrapper<const SphericalPolygon>> _spherical_polygon;
     DF &_density_field;
-    const SphericalBoundingBox _bounding_box;
-    double _error_threshold;
-    int _consecutive_stable_iterations_threshold;
-    size_t _max_samples;
     SPG _sample_point_generator;
+    SphericalBoundingBox _bounding_box;
+    MonteCarloParams _params;
 
-    bool contains(const Point3 &point);
-    double density_at(const Point3 &point);
-    Point3 sample_point();
+    static constexpr double RELATIVE_CHANGE_THRESHOLD = 0.001;
+    static constexpr size_t MAX_SAMPLES_GUARD = 3'000'000;
 
     static SphericalBoundingBox unit_sphere_bounding_box() {
         return SphericalBoundingBox(
@@ -56,13 +52,12 @@ inline MonteCarloIntegrator<DF, SPG>::MonteCarloIntegrator(
     std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
     DF &density_field,
     SPG sample_point_generator,
-    double error_threshold,
-    int consecutive_stable_iterations_threshold,
-    std::optional<SphericalBoundingBox> bounding_box,
-    size_t max_samples
+    MonteCarloParams params,
+    std::optional<SphericalBoundingBox> bounding_box
 ):
     _spherical_polygon(spherical_polygon),
     _density_field(density_field),
+    _sample_point_generator(std::move(sample_point_generator)),
     _bounding_box(
         bounding_box.has_value() ?
         *bounding_box :
@@ -71,14 +66,23 @@ inline MonteCarloIntegrator<DF, SPG>::MonteCarloIntegrator(
             : unit_sphere_bounding_box()
         )
     ),
-    _error_threshold(error_threshold),
-    _consecutive_stable_iterations_threshold(consecutive_stable_iterations_threshold),
-    _max_samples(max_samples),
-    _sample_point_generator(std::move(sample_point_generator)) {
+    _params(params) {
 }
 
 template<ScalarField DF, SamplePointGenerator SPG>
 inline IntegrationResult MonteCarloIntegrator<DF, SPG>::result() {
+    auto contains = [&](const Point3 &point) {
+        if (!_spherical_polygon) {
+            return true;
+        }
+
+        return _spherical_polygon->get().contains(point);
+    };
+
+    auto density_at = [&](const Point3 &point) {
+        return _density_field.value(point);
+    };
+
     int points_inside_polygon = 0;
     int total_points_sampled = 0;
     double sum_density = 0;
@@ -86,8 +90,8 @@ inline IntegrationResult MonteCarloIntegrator<DF, SPG>::result() {
     int consecutive_stable_iterations = 0;
     double previous_weighted_area = 0;
 
-    while (total_points_sampled < _max_samples) {
-        Point3 sampled_point = sample_point();
+    while (static_cast<size_t>(total_points_sampled) < MAX_SAMPLES_GUARD) {
+        Point3 sampled_point = _sample_point_generator.generate(_bounding_box);
         total_points_sampled++;
 
         if (contains(sampled_point)) {
@@ -106,9 +110,11 @@ inline IntegrationResult MonteCarloIntegrator<DF, SPG>::result() {
         double average_density = sum_density / static_cast<double>(points_inside_polygon);
         double weighted_area_estimate = spherical_polygon_area_estimate * average_density;
 
-        double error = std::pow(weighted_area_estimate - previous_weighted_area, 2);
+        double relative_change = (previous_weighted_area > 0) ?
+            std::abs(weighted_area_estimate - previous_weighted_area) / previous_weighted_area :
+            1.0;
 
-        if (error < _error_threshold) {
+        if (relative_change < RELATIVE_CHANGE_THRESHOLD) {
             consecutive_stable_iterations++;
         } else {
             consecutive_stable_iterations = 0;
@@ -116,7 +122,10 @@ inline IntegrationResult MonteCarloIntegrator<DF, SPG>::result() {
 
         previous_weighted_area = weighted_area_estimate;
 
-        if (consecutive_stable_iterations >= _consecutive_stable_iterations_threshold) {
+        if (
+            points_inside_polygon >= static_cast<int>(_params.min_hits) &&
+            consecutive_stable_iterations >= _params.consecutive_stable_iterations
+        ) {
             double mean_density = sum_density / points_inside_polygon;
             double mean_density_squared = sum_density_squared / points_inside_polygon;
             double variance = mean_density_squared - (mean_density * mean_density);
@@ -147,25 +156,6 @@ inline IntegrationResult MonteCarloIntegrator<DF, SPG>::result() {
         variance,
         static_cast<size_t>(points_inside_polygon)
     };
-}
-
-template<ScalarField DF, SamplePointGenerator SPG>
-inline bool MonteCarloIntegrator<DF, SPG>::contains(const Point3 &point) {
-    if (!_spherical_polygon) {
-        return true;
-    }
-
-    return _spherical_polygon->get().contains(point);
-}
-
-template<ScalarField DF, SamplePointGenerator SPG>
-inline double MonteCarloIntegrator<DF, SPG>::density_at(const Point3 &point) {
-    return _density_field.value(point);
-}
-
-template<ScalarField DF, SamplePointGenerator SPG>
-inline Point3 MonteCarloIntegrator<DF, SPG>::sample_point() {
-    return _sample_point_generator.generate();
 }
 
 } // namespace globe

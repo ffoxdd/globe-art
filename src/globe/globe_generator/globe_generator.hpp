@@ -9,8 +9,6 @@
 #include "../scalar_field/scalar_field.hpp"
 #include "../scalar_field/noise_field.hpp"
 #include "spherical_polygon.hpp"
-#include "sample_point_generator/bounding_box_sample_point_generator.hpp"
-#include "monte_carlo_integrator.hpp"
 #include "../integrable_field/monte_carlo_integrable_field.hpp"
 #include "../scalar_field/interval.hpp"
 #include <queue>
@@ -112,7 +110,14 @@ void GlobeGenerator<PG, DF>::add_points(int count) {
 
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::adjust_mass() {
-    std::cout << "Calculating total mass..." << std::endl;
+    std::cout << "Calibrating Monte Carlo parameters..." << std::endl;
+
+    std::vector<SphericalPolygon> initial_cells;
+    for (const auto &cell : _points_collection.dual_cells()) {
+        initial_cells.push_back(cell);
+    }
+
+    _integrable_field.calibrate(initial_cells, 0.008, 3);
 
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
@@ -168,14 +173,7 @@ double GlobeGenerator<PG, DF>::mass(const SphericalPolygon &spherical_polygon) {
 
 template<PointGenerator PG, ScalarField DF>
 double GlobeGenerator<PG, DF>::total_mass() {
-    auto bounding_box = SphericalBoundingBox(Interval(0, 2 * M_PI), Interval(-1, 1));
-    auto generator = BoundingBoxSamplePointGenerator(bounding_box);
-
-    return MonteCarloIntegrator<DF, BoundingBoxSamplePointGenerator>(
-        std::nullopt,
-        _density_field,
-        std::move(generator)
-    ).result().mass;
+    return _integrable_field.integrate_entire_sphere();
 }
 
 template<PointGenerator PG, ScalarField DF>

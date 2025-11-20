@@ -3,12 +3,13 @@
 
 #include <concepts>
 #include "../../types.hpp"
+#include "../spherical_bounding_box.hpp"
 
 namespace globe {
 
 template<typename T>
-concept SamplePointGenerator = requires(T t) {
-    { t.generate() } -> std::same_as<Point3>;
+concept SamplePointGenerator = requires(T t, const SphericalBoundingBox &bbox) {
+    { t.generate(bbox) } -> std::same_as<Point3>;
 };
 
 }
