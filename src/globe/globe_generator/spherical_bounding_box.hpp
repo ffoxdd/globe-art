@@ -25,6 +25,8 @@ class SphericalBoundingBox {
     [[nodiscard]] double z_measure() const;
     [[nodiscard]] double bounding_sphere_radius() const;
 
+    [[nodiscard]] static SphericalBoundingBox full_sphere();
+
  private:
     const Interval _theta_interval;
     const Interval _z_interval;
@@ -101,6 +103,10 @@ inline double SphericalBoundingBox::bounding_sphere_radius() const {
     double chord = 2.0 * r_max * std::sin(theta_span / 2.0);
 
     return std::sqrt(z_span * z_span + chord * chord);
+}
+
+inline SphericalBoundingBox SphericalBoundingBox::full_sphere() {
+    return SphericalBoundingBox(Interval(0, 2 * M_PI), Interval(-1, 1));
 }
 
 } // namespace globe
