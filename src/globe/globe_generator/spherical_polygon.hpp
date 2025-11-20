@@ -4,6 +4,7 @@
 #include "spherical_bounding_box.hpp"
 #include "../voronoi_sphere/types.hpp"
 #include "../geometry/helpers.hpp"
+#include "../helpers/ranges.hpp"
 #include "../scalar_field/interval.hpp" // TODO: move interval out of scalar_field
 #include <CGAL/assertions.h>
 #include <utility>
@@ -13,6 +14,7 @@
 #include <cmath>
 #include <limits>
 #include <algorithm>
+#include <ranges>
 
 namespace globe {
 
@@ -25,9 +27,6 @@ class SphericalPolygon {
     [[nodiscard]] SphericalBoundingBox bounding_box() const;
     [[nodiscard]] Point3 centroid() const;
     [[nodiscard]] bool contains(const Point3 &point) const;
-    [[nodiscard]] bool is_valid() const;
-    [[nodiscard]] bool is_convex() const;
-    void validate() const;
 
  private:
     std::vector<Arc> _arcs;
@@ -35,6 +34,8 @@ class SphericalPolygon {
     [[nodiscard]] bool _arcs_form_closed_loop() const;
     [[nodiscard]] Interval _theta_interval(double theta_min, double theta_max) const;
     [[nodiscard]] bool _is_on_arc(const Arc &arc, const Vector3 &point_vector) const;
+    [[nodiscard]] bool _is_degenerate() const;
+    [[nodiscard]] bool is_convex() const;
 };
 
 inline auto SphericalPolygon::arcs() const { return _arcs; }
@@ -47,7 +48,8 @@ inline auto SphericalPolygon::points() const {
 
 inline SphericalPolygon::SphericalPolygon(std::vector<Arc> arcs) :
     _arcs(std::move(arcs)) {
-    CGAL_precondition(is_valid());
+    CGAL_precondition(!_is_degenerate());
+    CGAL_precondition(_arcs_form_closed_loop());
 }
 
 inline bool SphericalPolygon::contains(const Point3 &point) const {
@@ -78,32 +80,10 @@ inline bool SphericalPolygon::contains(const Point3 &point) const {
     return std::fabs(angle_sum - (2 * CGAL_PI)) < CGAL_PI;
 }
 
-inline bool SphericalPolygon::is_valid() const {
-    if (_arcs.empty()) {
-        return false;
-    }
-
-    return _arcs_form_closed_loop();
-}
-
 inline bool SphericalPolygon::is_convex() const {
-    return true;
+    return true; // TODO: implement
 }
 
-inline void SphericalPolygon::validate() const {
-    if (!is_valid()) {
-        throw std::runtime_error("SphericalPolygon is invalid: arcs don't form a closed loop");
-    }
-
-    if (!is_convex()) {
-        throw std::runtime_error("SphericalPolygon is not convex");
-    }
-}
-
-inline double theta(double x, double y) {
-    double t = std::atan2(y, x);
-    return t < 0.0 ? t + 2.0 * M_PI : t;
-}
 
 inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
     double theta_min = std::numeric_limits<double>::max();
@@ -160,15 +140,17 @@ inline Point3 SphericalPolygon::centroid() const {
 }
 
 inline bool SphericalPolygon::_arcs_form_closed_loop() const {
-    for (size_t i = 0; i < _arcs.size(); ++i) {
-        size_t next = (i + 1) % _arcs.size();
-
-        if (_arcs[i].target() != _arcs[next].source()) {
+    for (const auto &[prev, next] : circular_adjacent_pairs(_arcs)) {
+        if (prev.target() != next.source()) {
             return false;
         }
     }
 
     return true;
+}
+
+inline bool SphericalPolygon::_is_degenerate() const {
+    return _arcs.empty();
 }
 
 inline Interval SphericalPolygon::_theta_interval(double theta_min, double theta_max) const {

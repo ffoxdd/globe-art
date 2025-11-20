@@ -62,6 +62,11 @@ inline double distance(const Point3 &a, const Point3 &b) {
     return std::sqrt(CGAL::squared_distance(a, b));
 }
 
+inline double theta(double x, double y) {
+    double t = std::atan2(y, x);
+    return t < 0.0 ? t + 2.0 * M_PI : t;
+}
+
 inline double angular_distance(const Vector3 &a, const Vector3 &b) {
     Vector3 a_ = normalize(a);
     Vector3 b_ = normalize(b);
