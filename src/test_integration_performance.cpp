@@ -1,5 +1,5 @@
 #include "globe/integrable_field/monte_carlo_integrable_field.hpp"
-#include "globe/integrable_field/grid_sample_integrable_field.hpp"
+#include "globe/integrable_field/density_sampled_integrable_field.hpp"
 #include "globe/scalar_field/noise_field.hpp"
 #include "globe/point_generator/random_sphere_point_generator.hpp"
 #include "globe/voronoi_sphere/voronoi_sphere.hpp"
@@ -47,41 +47,40 @@ int main() {
     std::cout << "Average time per polygon: " <<
         (mc_duration.count() / test_polygons.size()) << " ms\n" << std::endl;
 
-    std::cout << "=== Grid Sample (Fibonacci Sphere, 10k samples) ===" << std::endl;
-    GridSampleIntegrableField<NoiseField&> grid_field(noise_field, 10000);
+    std::cout << "=== Density-Sampled (50k samples) ===" << std::endl;
+    DensitySampledIntegrableField<NoiseField&> density_field(noise_field, 50'000);
 
-    auto grid_start = std::chrono::high_resolution_clock::now();
-    std::vector<double> grid_masses;
+    auto density_start = std::chrono::high_resolution_clock::now();
+    std::vector<double> density_masses;
     for (const auto &polygon : test_polygons) {
-        grid_masses.push_back(grid_field.integrate(polygon));
+        density_masses.push_back(density_field.integrate(polygon));
     }
-    auto grid_end = std::chrono::high_resolution_clock::now();
-    auto grid_duration = std::chrono::duration_cast<std::chrono::milliseconds>(grid_end - grid_start);
+    auto density_end = std::chrono::high_resolution_clock::now();
+    auto density_duration = std::chrono::duration_cast<std::chrono::milliseconds>(density_end - density_start);
 
     std::cout << "Integrated " << test_polygons.size() << " polygons" << std::endl;
-    std::cout << "Total time: " << grid_duration.count() << " ms" << std::endl;
+    std::cout << "Total time: " << density_duration.count() << " ms" << std::endl;
     std::cout << "Average time per polygon: " <<
-        (grid_duration.count() / test_polygons.size()) << " ms" << std::endl;
-    grid_field.print_stats();
+        (density_duration.count() / test_polygons.size()) << " ms" << std::endl;
     std::cout << std::endl;
 
     std::cout << "=== Comparison ===" << std::endl;
     std::cout << "Monte Carlo total: " << mc_duration.count() << " ms" << std::endl;
-    std::cout << "Grid Sample total: " << grid_duration.count() << " ms" << std::endl;
+    std::cout << "Density-Sampled total: " << density_duration.count() << " ms" << std::endl;
     std::cout << "\nSpeedup vs Monte Carlo:" << std::endl;
-    std::cout << "  Grid Sample: " <<
-        (static_cast<double>(mc_duration.count()) / grid_duration.count()) << "x" << std::endl;
+    std::cout << "  Density-Sampled: " <<
+        (static_cast<double>(mc_duration.count()) / density_duration.count()) << "x" << std::endl;
 
     std::cout << "\nMass comparison (vs Monte Carlo baseline):" << std::endl;
-    double max_grid_error = 0.0;
+    double max_density_error = 0.0;
     for (size_t i = 0; i < test_polygons.size(); i++) {
-        double grid_error = std::abs(mc_masses[i] - grid_masses[i]);
-        max_grid_error = std::max(max_grid_error, grid_error);
+        double density_error = std::abs(mc_masses[i] - density_masses[i]);
+        max_density_error = std::max(max_density_error, density_error);
         std::cout << "  Polygon " << i << ": MC=" << mc_masses[i] <<
-            ", Grid=" << grid_masses[i] << " (err=" << grid_error << ")" <<
+            ", Density=" << density_masses[i] << " (err=" << density_error << ")" <<
             std::endl;
     }
-    std::cout << "Max grid error: " << max_grid_error << std::endl;
+    std::cout << "Max density error: " << max_density_error << std::endl;
 
     return 0;
 }

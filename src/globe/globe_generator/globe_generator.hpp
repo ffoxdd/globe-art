@@ -9,8 +9,10 @@
 #include "../scalar_field/scalar_field.hpp"
 #include "../scalar_field/noise_field.hpp"
 #include "spherical_polygon.hpp"
-#include "../integrable_field/monte_carlo_integrable_field.hpp"
+#include "../integrable_field/density_sampled_integrable_field.hpp"
 #include "../scalar_field/interval.hpp"
+#include <algorithm>
+#include <memory>
 #include <queue>
 #include <vector>
 #include <utility>
@@ -55,7 +57,7 @@ class GlobeGenerator {
     PG _point_generator;
     VoronoiSphere _points_collection;
     DF _density_field;
-    MonteCarloIntegrableField<DF&> _integrable_field;
+    std::unique_ptr<DensitySampledIntegrableField<DF>> _integrable_field;
 
     void initialize();
     void add_points(int count);
@@ -69,6 +71,7 @@ class GlobeGenerator {
     void adjust_mass();
     std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> build_cell_mass_heap();
     double compute_total_error(double target_mass);
+    void ensure_integrable_field_ready();
 };
 
 template<PointGenerator PG, ScalarField DF>
@@ -79,8 +82,7 @@ GlobeGenerator<PG, DF>::GlobeGenerator(
 ) :
     _point_generator(std::move(point_generator)),
     _points_collection(std::move(points_collection)),
-    _density_field(std::move(density_field)),
-    _integrable_field(_density_field) {
+    _density_field(std::move(density_field)) {
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -94,6 +96,7 @@ VoronoiSphere GlobeGenerator<PG, DF>::generate(int point_count) {
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::initialize() {
     normalize_density_field();
+    _integrable_field.reset();
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -110,14 +113,12 @@ void GlobeGenerator<PG, DF>::add_points(int count) {
 
 template<PointGenerator PG, ScalarField DF>
 void GlobeGenerator<PG, DF>::adjust_mass() {
-    std::cout << "Calibrating Monte Carlo parameters..." << std::endl;
+    ensure_integrable_field_ready();
 
-    std::vector<SphericalPolygon> initial_cells;
-    for (const auto &cell : _points_collection.dual_cells()) {
-        initial_cells.push_back(cell);
-    }
-
-    _integrable_field.calibrate(initial_cells, 0.008, 3);
+    std::cout <<
+        "Using density-sampled integrator (" <<
+        _integrable_field->sample_count() <<
+        " samples)" << std::endl;
 
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
@@ -168,12 +169,14 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
 
 template<PointGenerator PG, ScalarField DF>
 double GlobeGenerator<PG, DF>::mass(const SphericalPolygon &spherical_polygon) {
-    return _integrable_field.integrate(spherical_polygon);
+    ensure_integrable_field_ready();
+    return _integrable_field->integrate(spherical_polygon);
 }
 
 template<PointGenerator PG, ScalarField DF>
 double GlobeGenerator<PG, DF>::total_mass() {
-    return _integrable_field.integrate_entire_sphere();
+    ensure_integrable_field_ready();
+    return _integrable_field->integrate_entire_sphere();
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -310,6 +313,36 @@ double GlobeGenerator<PG, DF>::compute_total_error(double target_mass) {
     );
 
     return total_error.load();
+}
+
+template<PointGenerator PG, ScalarField DF>
+void GlobeGenerator<PG, DF>::ensure_integrable_field_ready() {
+    if (_integrable_field) {
+        return;
+    }
+
+    static constexpr size_t MIN_SAMPLE_COUNT = 50'000;
+    static constexpr size_t SAMPLES_PER_POINT = 4'000;
+
+    size_t target_samples = std::max(
+        MIN_SAMPLE_COUNT,
+        _points_collection.size() * SAMPLES_PER_POINT
+    );
+
+    std::cout <<
+        "Generating density-sampled integrable field with " <<
+        target_samples <<
+        " samples..." << std::endl;
+
+    _integrable_field = std::make_unique<DensitySampledIntegrableField<DF>>(
+        _density_field,
+        target_samples
+    );
+
+    std::cout <<
+        "Density-sampled integrable field ready (" <<
+        _integrable_field->sample_count() <<
+        " samples)" << std::endl;
 }
 
 GlobeGenerator() -> GlobeGenerator<RandomSpherePointGenerator, NoiseField>;

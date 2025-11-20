@@ -43,7 +43,7 @@ Currently using Monte Carlo integration for scalar field integration over spheri
 
 ### Implementation Notes
 
-- Current grid sampling approach (GridSampleIntegrableField) is 3.5x slower than Monte Carlo for one-time queries
+- Earlier grid sampling experiments were 3.5x slower than Monte Carlo for one-time queries
 - Problem: 2000+ point-in-polygon tests per query dominate runtime
 - Solution: Incremental approach avoids retesting unchanged regions
 - Expected speedup: 10-100x for small vertex movements
