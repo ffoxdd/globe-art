@@ -27,6 +27,13 @@ namespace globe {
 
 const Interval DENSITY_FIELD_INTERVAL = Interval(1, 100);
 const int POINT_COUNT = 10;
+const size_t DEFAULT_OPTIMIZATION_PASSES = 10;
+const double DISPLACEMENT_PENALTY_SCALE = 0.05;
+const double MOVEMENT_EPSILON = 1e-4;
+const double ZERO_ERROR_TOLERANCE = 1e-3;
+const double MAX_PERTURBATION_STEP = 0.15;
+const size_t MIN_SAMPLE_COUNT = 60'000;
+const size_t SAMPLES_PER_POINT = 3'000;
 
 struct VoronoiCell {
     size_t index;
@@ -51,7 +58,10 @@ class GlobeGenerator {
         DF density_field = DF(NoiseField())
     );
 
-    VoronoiSphere generate(int point_count = POINT_COUNT);
+    VoronoiSphere generate(
+        int point_count = POINT_COUNT,
+        size_t optimization_passes = DEFAULT_OPTIMIZATION_PASSES
+    );
 
  private:
     PG _point_generator;
@@ -67,11 +77,19 @@ class GlobeGenerator {
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
-    double optimize_vertex_position(size_t index, double target_mass, double previous_error);
-    void adjust_mass();
+    struct OptimizationResult {
+        double error;
+        bool moved;
+    };
+
+    OptimizationResult optimize_vertex_position(size_t index, double target_mass, double previous_error);
+    void adjust_mass(size_t max_passes);
     std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> build_cell_mass_heap();
     double compute_total_error(double target_mass);
     void ensure_integrable_field_ready();
+    bool perturb_most_undersized_vertex(double target_mass);
+    std::optional<std::pair<size_t, double>> find_most_undersized_vertex_with_deficit(double target_mass);
+    bool perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass);
 };
 
 template<PointGenerator PG, ScalarField DF>
@@ -86,10 +104,13 @@ GlobeGenerator<PG, DF>::GlobeGenerator(
 }
 
 template<PointGenerator PG, ScalarField DF>
-VoronoiSphere GlobeGenerator<PG, DF>::generate(int point_count) {
+VoronoiSphere GlobeGenerator<PG, DF>::generate(
+    int point_count,
+    size_t optimization_passes
+) {
     initialize();
     add_points(point_count);
-    adjust_mass();
+    adjust_mass(optimization_passes);
     return std::move(_points_collection);
 }
 
@@ -112,7 +133,7 @@ void GlobeGenerator<PG, DF>::add_points(int count) {
 }
 
 template<PointGenerator PG, ScalarField DF>
-void GlobeGenerator<PG, DF>::adjust_mass() {
+void GlobeGenerator<PG, DF>::adjust_mass(size_t max_passes) {
     ensure_integrable_field_ready();
 
     std::cout <<
@@ -123,8 +144,6 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
-    const size_t max_passes = 10;
-
     for (size_t pass = 0; pass < max_passes; pass++) {
         std::cout << std::endl;
         std::cout << "=== Optimization pass " << pass + 1 << " / " << max_passes << " ===" << std::endl;
@@ -132,17 +151,38 @@ void GlobeGenerator<PG, DF>::adjust_mass() {
         auto heap = build_cell_mass_heap();
         size_t vertex_count = 0;
         double current_error = compute_total_error(target_mass);
+        bool pass_made_progress = false;
 
         while (!heap.empty()) {
             size_t i = heap.top().index;
-            double current_mass = heap.top().mass;
             heap.pop();
 
-            current_error = optimize_vertex_position(i, target_mass, current_error);
+            OptimizationResult result = optimize_vertex_position(i, target_mass, current_error);
+            current_error = result.error;
+            pass_made_progress = pass_made_progress || result.moved;
             vertex_count++;
         }
 
         std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
+
+        if (!pass_made_progress) {
+            double rms_error = std::sqrt(current_error / _points_collection.size());
+            if (rms_error <= ZERO_ERROR_TOLERANCE * target_mass) {
+                std::cout <<
+                    "No vertex movement and RMS error " << rms_error <<
+                    " below threshold; stopping optimization." <<
+                    std::endl;
+                break;
+            }
+
+            std::cout <<
+                "No vertex movement detected; perturbing undersized vertex to escape local minimum."
+                << std::endl;
+
+            if (!perturb_most_undersized_vertex(target_mass)) {
+                std::cout << "No suitable vertex found for perturbation." << std::endl;
+            }
+        }
     }
 
     std::cout << std::endl;
@@ -185,101 +225,99 @@ double GlobeGenerator<PG, DF>::average_mass() {
 }
 
 template<PointGenerator PG, ScalarField DF>
-double GlobeGenerator<PG, DF>::optimize_vertex_position(
+typename GlobeGenerator<PG, DF>::OptimizationResult GlobeGenerator<PG, DF>::optimize_vertex_position(
     size_t index,
     double target_mass,
     double previous_error
 ) {
-    Point3 current_position = _points_collection.site(index);
-    Point3 north = antipodal(current_position);
+    Point3 original_position = _points_collection.site(index);
+    Point3 north = antipodal(original_position);
     TangentBasis basis = build_tangent_basis(north);
     Point3 tangent_u = basis.tangent_u;
     Point3 tangent_v = basis.tangent_v;
 
     using column_vector = dlib::matrix<double, 2, 1>;
-    int objective_call_count = 0;
 
     double initial_error = previous_error;
-    SphericalPolygon original_cell(_points_collection.dual_cell_arcs(index));
-    Point3 last_position = current_position;
-    Point3 best_position = current_position;
-    double best_error = initial_error;
+    Vector3 original_vector = original_position - ORIGIN;
 
-    auto clamp_to_cell = [&](const Point3 &target) -> Point3 {
-        if (original_cell.contains(target)) {
-            return target;
-        }
+    auto run_bobyqa = [&](const column_vector& initial_point, int max_function_calls) {
+        struct RunResult {
+            double mass_error;
+            double cost;
+            Point3 best_position;
+        };
 
-        Point3 inside = last_position;
-        Point3 outside = target;
+        Point3 run_best_position = original_position;
+        double run_best_mass_error = initial_error;
+        double run_best_cost = initial_error;
+        column_vector starting_point = initial_point;
+        _points_collection.update_site(index, original_position);
 
-        for (int i = 0; i < 20; ++i) {
-            Point3 midpoint = spherical_interpolate(inside, outside, 0.5);
+        auto objective = [&](const column_vector& params) -> double {
+            Point3 candidate = stereographic_plane_to_sphere(
+                params(0),
+                params(1),
+                original_position,
+                tangent_u,
+                tangent_v
+            );
 
-            if (original_cell.contains(midpoint)) {
-                inside = midpoint;
-            } else {
-                outside = midpoint;
+            _points_collection.update_site(index, candidate);
+
+            double total_error = compute_total_error(target_mass);
+            double displacement_angle = angular_distance(original_vector, candidate - ORIGIN);
+            double penalty = DISPLACEMENT_PENALTY_SCALE * target_mass * target_mass * displacement_angle * displacement_angle;
+            double cost = total_error + penalty;
+
+            if (cost < run_best_cost) {
+                run_best_cost = cost;
+                run_best_mass_error = total_error;
+                run_best_position = candidate;
             }
+
+            return cost;
+        };
+
+        try {
+            dlib::find_min_bobyqa(
+                objective,
+                starting_point,
+                5,
+                dlib::uniform_matrix<double>(2, 1, -10.0),
+                dlib::uniform_matrix<double>(2, 1, 10.0),
+                0.5,
+                1e-5,
+                max_function_calls
+            );
+        } catch (...) {
         }
 
-        return inside;
+        _points_collection.update_site(index, run_best_position);
+        return RunResult{run_best_mass_error, run_best_cost, run_best_position};
     };
 
-    auto objective = [&](const column_vector& params) -> double {
-        objective_call_count++;
-        Point3 candidate = stereographic_plane_to_sphere(params(0), params(1), current_position, tangent_u, tangent_v);
-        Point3 clamped_candidate = clamp_to_cell(candidate);
-        _points_collection.update_site(index, clamped_candidate);
-        last_position = clamped_candidate;
-        double total_error = compute_total_error(target_mass);
-        if (total_error < best_error) {
-            best_error = total_error;
-            best_position = clamped_candidate;
-        }
+    column_vector origin;
+    origin = 0.0, 0.0;
 
-        std::cout <<
-            "      " <<
-            "Objective call " << objective_call_count <<
-            ": total error = " << std::sqrt(total_error) <<
-            std::endl;
+    auto initial_result = run_bobyqa(origin, 6);
+    double final_error = initial_result.mass_error;
+    Point3 best_position = initial_result.best_position;
 
-        return total_error;
-    };
+    double initial_norm = std::sqrt(initial_error);
+    double final_norm = std::sqrt(final_error);
 
-    column_vector starting_point;
-    starting_point = 0.0, 0.0;
+    _points_collection.update_site(index, best_position);
+    double delta = final_norm - initial_norm;
+    bool moved = angular_distance(original_vector, best_position - ORIGIN) > MOVEMENT_EPSILON;
 
     std::cout <<
         "  Vertex " << index <<
-        ": initial error = " << std::sqrt(initial_error) <<
+        ": error = " << final_norm <<
+        " (Δ = " << delta << ")" <<
         std::endl;
 
-    try {
-        dlib::find_min_bobyqa(
-            objective,
-            starting_point,
-            5,
-            dlib::uniform_matrix<double>(2, 1, -10.0),
-            dlib::uniform_matrix<double>(2, 1, 10.0),
-            0.5,
-            1e-5,
-            6
-        );
-    } catch (...) {
-    }
-
-    _points_collection.update_site(index, best_position);
-
-    double final_error = best_error;
-
-    std::cout <<
-        "    " << objective_call_count << " calls" <<
-        ", final error = " << std::sqrt(final_error) <<
-        " (Δ = " << (std::sqrt(final_error) - std::sqrt(initial_error)) << ")" <<
-        std::endl;
-
-    return final_error;
+    return {final_error, moved};
 }
 
 template<PointGenerator PG, ScalarField DF>
@@ -349,9 +387,6 @@ void GlobeGenerator<PG, DF>::ensure_integrable_field_ready() {
         return;
     }
 
-    static constexpr size_t MIN_SAMPLE_COUNT = 20'000;
-    static constexpr size_t SAMPLES_PER_POINT = 1'500;
-
     size_t target_samples = std::max(
         MIN_SAMPLE_COUNT,
         _points_collection.size() * SAMPLES_PER_POINT
@@ -371,6 +406,71 @@ void GlobeGenerator<PG, DF>::ensure_integrable_field_ready() {
         "Density-sampled integrable field ready (" <<
         _integrable_field->sample_count() <<
         " samples)" << std::endl;
+}
+
+template<PointGenerator PG, ScalarField DF>
+bool GlobeGenerator<PG, DF>::perturb_most_undersized_vertex(double target_mass) {
+    auto candidate = find_most_undersized_vertex_with_deficit(target_mass);
+
+    if (!candidate.has_value()) {
+        return false;
+    }
+
+    auto [vertex_index, deficit] = candidate.value();
+
+    if (!perturb_vertex_toward_random_point(vertex_index, deficit, target_mass)) {
+        return false;
+    }
+
+    std::cout <<
+        "  Perturbed vertex " << vertex_index <<
+        " toward random direction to escape local minimum." <<
+        std::endl;
+
+    return true;
+}
+
+template<PointGenerator PG, ScalarField DF>
+std::optional<std::pair<size_t, double>> GlobeGenerator<PG, DF>::find_most_undersized_vertex_with_deficit(double target_mass) {
+    size_t best_index = _points_collection.size();
+    double largest_deficit = 0.0;
+    size_t i = 0;
+
+    for (const auto &cell : _points_collection.dual_cells()) {
+        double cell_mass = mass(cell);
+        double deficit = target_mass - cell_mass;
+
+        if (deficit > largest_deficit) {
+            largest_deficit = deficit;
+            best_index = i;
+        }
+
+        i++;
+    }
+
+    if (largest_deficit <= 0.0) {
+        return std::nullopt;
+    }
+
+    return std::make_pair(best_index, largest_deficit);
+}
+
+template<PointGenerator PG, ScalarField DF>
+bool GlobeGenerator<PG, DF>::perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass) {
+    if (index >= _points_collection.size()) {
+        return false;
+    }
+
+    double deficit_ratio = std::clamp(deficit / target_mass, 0.0, 1.0);
+    double step = MAX_PERTURBATION_STEP * deficit_ratio;
+
+    Point3 current_site = _points_collection.site(index);
+    Point3 random_point = _point_generator.generate();
+    Point3 perturbed = spherical_interpolate(current_site, random_point, step);
+    Point3 normalized_point = project_to_sphere(perturbed);
+    _points_collection.update_site(index, normalized_point);
+
+    return true;
 }
 
 GlobeGenerator() -> GlobeGenerator<RandomSpherePointGenerator, NoiseField>;

@@ -11,10 +11,10 @@
 using namespace globe;
 
 int render(const VoronoiSphere &voronoi_sphere, bool render, const std::string &program_name, int argc, char *argv[]);
-int run(int points_count, const std::string &density_function, bool render, const std::string &program_name, int argc, char *argv[]);
+int run(int points_count, const std::string &density_function, bool render, int optimization_passes, const std::string &program_name, int argc, char *argv[]);
 
 template<typename SF>
-int run_with_density_field(int points_count, bool render, const std::string &program_name, int argc, char *argv[]);
+int run_with_density_field(int points_count, int optimization_passes, bool render, const std::string &program_name, int argc, char *argv[]);
 
 template<typename SF>
 GlobeGenerator<RandomSpherePointGenerator, SF> build_globe_generator();
@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
     int points_count;
     std::string density_function;
     bool perform_render;
+    int optimization_passes;
 
     app.add_option("--points,-p", points_count)
         ->description("Number of points to generate")
@@ -42,15 +43,21 @@ int main(int argc, char *argv[]) {
         ->description("Enable Qt rendering")
         ->default_val(true);
 
+    app.add_option("--optimization-passes", optimization_passes)
+        ->description("Number of optimization passes")
+        ->default_val(10)
+        ->check(CLI::PositiveNumber);
+
     CLI11_PARSE(app, argc, argv);
 
-    return run(points_count, density_function, perform_render, program_name, argc, argv);
+    return run(points_count, density_function, perform_render, optimization_passes, program_name, argc, argv);
 }
 
 int run(
     int points_count,
     const std::string &density_function,
     bool perform_render,
+    int optimization_passes,
     const std::string &program_name,
     int argc, char *argv[]
 ) {
@@ -59,24 +66,29 @@ int run(
         "  Points: " << points_count << std::endl <<
         "  Density: " << density_function << std::endl <<
         "  Render: " << (perform_render ? "yes" : "no") << std::endl <<
+        "  Optimization passes: " << optimization_passes << std::endl <<
         std::endl;
 
     if (density_function == "constant") {
-        return run_with_density_field<ConstantScalarField>(points_count, perform_render, program_name, argc, argv);
+        return run_with_density_field<ConstantScalarField>(points_count, optimization_passes, perform_render, program_name, argc, argv);
     } else {
-        return run_with_density_field<NoiseField>(points_count, perform_render, program_name, argc, argv);
+        return run_with_density_field<NoiseField>(points_count, optimization_passes, perform_render, program_name, argc, argv);
     }
 }
 
 template<typename SF>
 int run_with_density_field(
     int points_count,
+    int optimization_passes,
     bool perform_render,
     const std::string &program_name,
     int argc, char *argv[]
 ) {
     auto globe_generator = build_globe_generator<SF>();
-    VoronoiSphere voronoi_sphere = globe_generator.generate(points_count);
+    VoronoiSphere voronoi_sphere = globe_generator.generate(
+        points_count,
+        static_cast<size_t>(optimization_passes)
+    );
 
     return render(voronoi_sphere, perform_render, program_name, argc, argv);
 }
