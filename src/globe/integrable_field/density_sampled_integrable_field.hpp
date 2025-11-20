@@ -2,34 +2,29 @@
 #define GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_DENSITY_SAMPLED_INTEGRABLE_FIELD_HPP_
 
 #include "../scalar_field/scalar_field.hpp"
+#include "../scalar_field/interval.hpp"
 #include "../globe_generator/spherical_polygon.hpp"
 #include "../globe_generator/spherical_bounding_box.hpp"
 #include "../globe_generator/sample_point_generator/bounding_box_sample_point_generator.hpp"
+#include "../globe_generator/interval_sampler.hpp"
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Kd_tree.h>
 #include <CGAL/Fuzzy_sphere.h>
 #include <vector>
-#include <random>
 #include <cmath>
 #include <iterator>
 #include <algorithm>
-#include <utility>
 
 namespace globe {
 
-template<
-    ScalarField SF,
-    typename PointGenerator = BoundingBoxSamplePointGenerator
->
+template<ScalarField ScalarFieldType>
 class DensitySampledIntegrableField {
  public:
     DensitySampledIntegrableField(
-        SF &scalar_field,
+        ScalarFieldType &scalar_field,
         size_t target_sample_count = 200'000,
-        PointGenerator point_generator = PointGenerator(),
-        double max_density = 100.0,
-        std::mt19937::result_type random_seed = std::random_device{}()
+        double max_density = 1.0
     );
 
     [[nodiscard]] double integrate(const SphericalPolygon &polygon) const;
@@ -37,112 +32,85 @@ class DensitySampledIntegrableField {
     [[nodiscard]] size_t sample_count() const;
 
  private:
-    using Kernel = CGAL::Simple_cartesian<double>;
-    using CGALPoint = Kernel::Point_3;
     using SearchTraits = CGAL::Search_traits_3<Kernel>;
     using KdTree = CGAL::Kd_tree<SearchTraits>;
     using FuzzySphere = CGAL::Fuzzy_sphere<SearchTraits>;
 
-    SF &_scalar_field;
-    PointGenerator _point_generator;
+    ScalarFieldType &_scalar_field;
+    BoundingBoxSamplePointGenerator _point_generator;
     SphericalBoundingBox _global_bounding_box;
-    std::vector<Point3> _samples;
-    std::vector<CGALPoint> _cgal_points;
+    std::vector<Point3> _points;
     KdTree _kdtree;
     double _weight_per_sample;
     double _max_density;
     size_t _sample_attempts;
-    std::mt19937 _random_engine;
+    IntervalSampler _interval_sampler;
 
     void build_samples(size_t target_sample_count);
     [[nodiscard]] double search_radius(const SphericalPolygon &polygon) const;
+    [[nodiscard]] double acceptance_threshold(const Point3 &point) const;
+    [[nodiscard]] double sample_acceptance();
+    [[nodiscard]] bool should_accept(const Point3 &candidate);
+    [[nodiscard]] Point3 generate_candidate();
+    void try_add_sample();
+    void build_kdtree();
+    [[nodiscard]] double weight_per_sample(size_t attempts) const;
 };
 
-template<ScalarField SF, typename PointGenerator>
-DensitySampledIntegrableField<SF, PointGenerator>::DensitySampledIntegrableField(
-    SF &scalar_field,
+template<ScalarField ScalarFieldType>
+DensitySampledIntegrableField<ScalarFieldType>::DensitySampledIntegrableField(
+    ScalarFieldType &scalar_field,
     size_t target_sample_count,
-    PointGenerator point_generator,
-    double max_density,
-    std::mt19937::result_type random_seed
+    double max_density
 ) :
     _scalar_field(scalar_field),
-    _point_generator(std::move(point_generator)),
+    _point_generator(),
     _global_bounding_box(),
-    _weight_per_sample(0.0),
-    _max_density(max_density),
-    _sample_attempts(0),
-    _random_engine(random_seed) {
+    _weight_per_sample(1.0),
+    _max_density(std::max(max_density, 1e-6)),
+    _sample_attempts(0) {
     build_samples(target_sample_count);
 }
 
-template<ScalarField SF, typename PointGenerator>
-void DensitySampledIntegrableField<SF, PointGenerator>::build_samples(
+template<ScalarField ScalarFieldType>
+void DensitySampledIntegrableField<ScalarFieldType>::build_samples(
     size_t target_sample_count
 ) {
     if (target_sample_count == 0) {
         return;
     }
 
-    std::uniform_real_distribution<double> acceptance_distribution(0.0, 1.0);
-
     size_t attempts = 0;
-    double safe_max_density = std::max(_max_density, 1e-6);
 
-    while (_samples.size() < target_sample_count) {
-        Point3 candidate = _point_generator.generate(_global_bounding_box);
+    while (_points.size() < target_sample_count) {
         attempts++;
-
-        double density = _scalar_field.value(candidate);
-        double acceptance_threshold = density / safe_max_density;
-        acceptance_threshold = std::clamp(acceptance_threshold, 0.0, 1.0);
-        double acceptance = acceptance_distribution(_random_engine);
-
-        if (acceptance <= acceptance_threshold) {
-            _samples.push_back(candidate);
-        }
+        try_add_sample();
     }
 
     _sample_attempts = attempts;
-    _weight_per_sample = (4.0 * M_PI * safe_max_density) / static_cast<double>(_sample_attempts);
+    _weight_per_sample = weight_per_sample(attempts);
 
-    _cgal_points.reserve(_samples.size());
-    for (const auto &point : _samples) {
-        _cgal_points.emplace_back(point.x(), point.y(), point.z());
-    }
-
-    _kdtree.insert(_cgal_points.begin(), _cgal_points.end());
-    _kdtree.build();
+    build_kdtree();
 }
 
-template<ScalarField SF, typename PointGenerator>
-double DensitySampledIntegrableField<SF, PointGenerator>::integrate(
+template<ScalarField ScalarFieldType>
+double DensitySampledIntegrableField<ScalarFieldType>::integrate(
     const SphericalPolygon &polygon
 ) const {
-    if (_samples.empty()) {
+    if (_points.empty()) {
         return 0.0;
     }
 
     double radius = search_radius(polygon);
 
-    auto bbox = polygon.bounding_box();
-    double theta_mid = (bbox.theta_interval().low() + bbox.theta_interval().high()) / 2.0;
-    double z_mid = (bbox.z_interval().low() + bbox.z_interval().high()) / 2.0;
-    double r_mid = std::sqrt(std::max(0.0, 1.0 - z_mid * z_mid));
-
-    CGALPoint center(
-        r_mid * std::cos(theta_mid),
-        r_mid * std::sin(theta_mid),
-        z_mid
-    );
-
+    auto bounding_box = polygon.bounding_box();
+    Point3 center = bounding_box.center();
     FuzzySphere query(center, radius, 0.0);
-    std::vector<CGALPoint> candidates;
+    std::vector<Point3> candidates;
     _kdtree.search(std::back_inserter(candidates), query);
 
     size_t hits = 0;
-    for (const auto &candidate : candidates) {
-        Point3 point(candidate.x(), candidate.y(), candidate.z());
+    for (const auto &point : candidates) {
         if (polygon.contains(point)) {
             hits++;
         }
@@ -151,8 +119,8 @@ double DensitySampledIntegrableField<SF, PointGenerator>::integrate(
     return static_cast<double>(hits) * _weight_per_sample;
 }
 
-template<ScalarField SF, typename PointGenerator>
-double DensitySampledIntegrableField<SF, PointGenerator>::search_radius(
+template<ScalarField ScalarFieldType>
+double DensitySampledIntegrableField<ScalarFieldType>::search_radius(
     const SphericalPolygon &polygon
 ) const {
     auto bbox = polygon.bounding_box();
@@ -169,14 +137,55 @@ double DensitySampledIntegrableField<SF, PointGenerator>::search_radius(
     return std::max(radius, 0.05);
 }
 
-template<ScalarField SF, typename PointGenerator>
-double DensitySampledIntegrableField<SF, PointGenerator>::integrate_entire_sphere() const {
-    return static_cast<double>(_samples.size()) * _weight_per_sample;
+template<ScalarField ScalarFieldType>
+double DensitySampledIntegrableField<ScalarFieldType>::acceptance_threshold(const Point3 &point) const {
+    double density = _scalar_field.value(point);
+    return std::clamp(density / _max_density, 0.0, 1.0);
 }
 
-template<ScalarField SF, typename PointGenerator>
-size_t DensitySampledIntegrableField<SF, PointGenerator>::sample_count() const {
-    return _samples.size();
+template<ScalarField ScalarFieldType>
+double DensitySampledIntegrableField<ScalarFieldType>::sample_acceptance() {
+    return _interval_sampler.sample(Interval(0.0, 1.0));
+}
+
+template<ScalarField ScalarFieldType>
+bool DensitySampledIntegrableField<ScalarFieldType>::should_accept(const Point3 &candidate) {
+    return sample_acceptance() <= acceptance_threshold(candidate);
+}
+
+template<ScalarField ScalarFieldType>
+Point3 DensitySampledIntegrableField<ScalarFieldType>::generate_candidate() {
+    return _point_generator.generate(_global_bounding_box);
+}
+
+template<ScalarField ScalarFieldType>
+void DensitySampledIntegrableField<ScalarFieldType>::try_add_sample() {
+    Point3 candidate = generate_candidate();
+
+    if (should_accept(candidate)) {
+        _points.push_back(candidate);
+    }
+}
+
+template<ScalarField ScalarFieldType>
+void DensitySampledIntegrableField<ScalarFieldType>::build_kdtree() {
+    _kdtree.insert(_points.begin(), _points.end());
+    _kdtree.build();
+}
+
+template<ScalarField ScalarFieldType>
+double DensitySampledIntegrableField<ScalarFieldType>::weight_per_sample(size_t attempts) const {
+    return (4.0 * M_PI * _max_density) / static_cast<double>(attempts);
+}
+
+template<ScalarField ScalarFieldType>
+double DensitySampledIntegrableField<ScalarFieldType>::integrate_entire_sphere() const {
+    return static_cast<double>(_points.size()) * _weight_per_sample;
+}
+
+template<ScalarField ScalarFieldType>
+size_t DensitySampledIntegrableField<ScalarFieldType>::sample_count() const {
+    return _points.size();
 }
 
 } // namespace globe

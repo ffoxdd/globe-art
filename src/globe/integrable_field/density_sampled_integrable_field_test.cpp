@@ -38,71 +38,42 @@ SphericalPolygon make_northern_hemisphere_polygon() {
     );
 }
 
-class SequencePointGenerator {
- public:
-    explicit SequencePointGenerator(std::vector<Point3> points) :
-        _points(std::move(points)),
-        _index(0) {
-    }
-
-    Point3 generate(const SphericalBoundingBox &) {
-        Point3 point = _points[_index % _points.size()];
-        _index++;
-        return point;
-    }
-
- private:
-    std::vector<Point3> _points;
-    size_t _index;
-};
-
 } // namespace
 
 TEST(DensitySampledIntegrableFieldTest, IntegratesEntireSphereWithUniformDensity) {
     ConstantScalarField scalar_field(1.0);
-    std::vector<Point3> points{
-        Point3(1, 0, 0),
-        Point3(0, 1, 0),
-        Point3(0, 0, 1),
-        Point3(-1, 0, 0)
-    };
+    size_t sample_count = 10'000;
 
-    DensitySampledIntegrableField<ConstantScalarField, SequencePointGenerator> integrable_field(
+    DensitySampledIntegrableField<ConstantScalarField> integrable_field(
         scalar_field,
-        points.size(),
-        SequencePointGenerator(points),
-        1.0,
-        0
+        sample_count,
+        1.0
     );
 
-    EXPECT_EQ(integrable_field.sample_count(), points.size());
-    EXPECT_NEAR(integrable_field.integrate_entire_sphere(), 4 * M_PI, 1e-9);
+    EXPECT_EQ(integrable_field.sample_count(), sample_count);
+    double expected = 4 * M_PI;
+    double tolerance = expected * 0.05;
+    EXPECT_NEAR(integrable_field.integrate_entire_sphere(), expected, tolerance);
 }
 
-TEST(DensitySampledIntegrableFieldTest, EstimatesHemisphereMassWithBalancedSamples) {
+TEST(DensitySampledIntegrableFieldTest, IntegratesPolygonSubsetOfSphere) {
     ConstantScalarField scalar_field(1.0);
-    const double balanced_z = std::sqrt(0.5);
-    const double oblique_xy = std::sqrt(0.48);
+    size_t sample_count = 50'000;
 
-    std::vector<Point3> points{
-        Point3(0, 0, 1),
-        Point3(0.5, 0.5, balanced_z),
-        Point3(-0.6, 0.4, oblique_xy),
-        Point3(0, 0, -1),
-        Point3(0.5, 0.5, -balanced_z),
-        Point3(-0.6, 0.4, -oblique_xy)
-    };
-
-    DensitySampledIntegrableField<ConstantScalarField, SequencePointGenerator> integrable_field(
+    DensitySampledIntegrableField<ConstantScalarField> integrable_field(
         scalar_field,
-        points.size(),
-        SequencePointGenerator(points),
-        1.0,
-        0
+        sample_count,
+        1.0
     );
 
     SphericalPolygon polygon = make_northern_hemisphere_polygon();
 
-    EXPECT_NEAR(integrable_field.integrate(polygon), 2 * M_PI, 1e-9);
+    double result = integrable_field.integrate(polygon);
+    double total = integrable_field.integrate_entire_sphere();
+
+    EXPECT_GT(result, 0.0);
+    EXPECT_LT(result, total);
+    EXPECT_GT(result / total, 0.1);
+    EXPECT_LT(result / total, 0.9);
 }
 

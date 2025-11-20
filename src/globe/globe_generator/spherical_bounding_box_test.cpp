@@ -38,3 +38,33 @@ TEST(SphericalBoundingBoxTest, ConstructsFromRanges) {
     EXPECT_DOUBLE_EQ(box.z_interval().low(), -0.3);
     EXPECT_DOUBLE_EQ(box.z_interval().high(), 0.8);
 }
+
+TEST(SphericalBoundingBoxTest, CenterReturnsPointOnUnitSphere) {
+    Interval theta_interval(0.0, M_PI / 2);
+    Interval z_interval(0.0, 0.5);
+    SphericalBoundingBox box(theta_interval, z_interval);
+
+    Point3 center = box.center();
+
+    double distance = std::sqrt(
+        center.x() * center.x() +
+        center.y() * center.y() +
+        center.z() * center.z()
+    );
+    EXPECT_NEAR(distance, 1.0, 1e-9);
+}
+
+TEST(SphericalBoundingBoxTest, CenterUsesIntervalMidpoints) {
+    Interval theta_interval(0.0, M_PI / 2);
+    Interval z_interval(-0.5, 0.5);
+    SphericalBoundingBox box(theta_interval, z_interval);
+
+    Point3 center = box.center();
+    double expected_theta = M_PI / 4;
+    double expected_z = 0.0;
+    double expected_r = 1.0;
+
+    EXPECT_NEAR(center.z(), expected_z, 1e-9);
+    EXPECT_NEAR(center.x(), expected_r * std::cos(expected_theta), 1e-9);
+    EXPECT_NEAR(center.y(), expected_r * std::sin(expected_theta), 1e-9);
+}

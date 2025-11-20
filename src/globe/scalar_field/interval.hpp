@@ -19,6 +19,7 @@ class Interval {
     [[nodiscard]] double low() const;
     [[nodiscard]] double high() const;
     [[nodiscard]] double measure() const;
+    [[nodiscard]] double midpoint() const;
     [[nodiscard]] Interval lower_half() const;
     [[nodiscard]] Interval upper_half() const;
     [[nodiscard]] bool overlaps(const Interval &other) const;
@@ -33,7 +34,6 @@ class Interval {
 
     [[nodiscard]] double t(double value) const;
     [[nodiscard]] double at(double t) const;
-    [[nodiscard]] double midpoint() const;
 
     template<DoubleRange DR> static std::pair<double, double> min_max(const DR &range);
 };

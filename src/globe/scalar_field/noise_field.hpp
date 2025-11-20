@@ -14,7 +14,7 @@ class NoiseField {
  public:
     NoiseField();
 
-    void normalize(const std::vector<Point3> &sample_points, Interval output_interval);
+    void normalize(const std::vector<Point3> &sample_points, Interval output_interval = Interval(0, 1));
     double value(const Point3 &location);
 
  private:
