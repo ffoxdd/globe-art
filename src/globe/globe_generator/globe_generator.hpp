@@ -200,20 +200,49 @@ double GlobeGenerator<PG, DF>::optimize_vertex_position(
     int objective_call_count = 0;
 
     double initial_error = previous_error;
+    SphericalPolygon original_cell(_points_collection.dual_cell_arcs(index));
+    Point3 last_position = current_position;
+    Point3 best_position = current_position;
+    double best_error = initial_error;
+
+    auto clamp_to_cell = [&](const Point3 &target) -> Point3 {
+        if (original_cell.contains(target)) {
+            return target;
+        }
+
+        Point3 inside = last_position;
+        Point3 outside = target;
+
+        for (int i = 0; i < 20; ++i) {
+            Point3 midpoint = spherical_interpolate(inside, outside, 0.5);
+
+            if (original_cell.contains(midpoint)) {
+                inside = midpoint;
+            } else {
+                outside = midpoint;
+            }
+        }
+
+        return inside;
+    };
 
     auto objective = [&](const column_vector& params) -> double {
         objective_call_count++;
         Point3 candidate = stereographic_plane_to_sphere(params(0), params(1), current_position, tangent_u, tangent_v);
-        _points_collection.update_site(index, candidate);
+        Point3 clamped_candidate = clamp_to_cell(candidate);
+        _points_collection.update_site(index, clamped_candidate);
+        last_position = clamped_candidate;
         double total_error = compute_total_error(target_mass);
-
-        if (objective_call_count % 10 == 0) {
-            std::cout <<
-                "      " <<
-                "Objective call " << objective_call_count <<
-                ": total error = " << std::sqrt(total_error) <<
-                std::endl;
+        if (total_error < best_error) {
+            best_error = total_error;
+            best_position = clamped_candidate;
         }
+
+        std::cout <<
+            "      " <<
+            "Objective call " << objective_call_count <<
+            ": total error = " << std::sqrt(total_error) <<
+            std::endl;
 
         return total_error;
     };
@@ -235,15 +264,14 @@ double GlobeGenerator<PG, DF>::optimize_vertex_position(
             dlib::uniform_matrix<double>(2, 1, 10.0),
             0.5,
             1e-5,
-            20
+            6
         );
     } catch (...) {
     }
 
-    Point3 optimal_position = stereographic_plane_to_sphere(starting_point(0), starting_point(1), current_position, tangent_u, tangent_v);
-    _points_collection.update_site(index, optimal_position);
+    _points_collection.update_site(index, best_position);
 
-    double final_error = compute_total_error(target_mass);
+    double final_error = best_error;
 
     std::cout <<
         "    " << objective_call_count << " calls" <<
@@ -321,8 +349,8 @@ void GlobeGenerator<PG, DF>::ensure_integrable_field_ready() {
         return;
     }
 
-    static constexpr size_t MIN_SAMPLE_COUNT = 50'000;
-    static constexpr size_t SAMPLES_PER_POINT = 4'000;
+    static constexpr size_t MIN_SAMPLE_COUNT = 20'000;
+    static constexpr size_t SAMPLES_PER_POINT = 1'500;
 
     size_t target_samples = std::max(
         MIN_SAMPLE_COUNT,
