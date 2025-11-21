@@ -3,6 +3,7 @@
 
 #include "../scalar_field/interval.hpp"
 #include "../types.hpp"
+#include "../geometry/helpers.hpp"
 #include <CGAL/assertions.h>
 #include <cmath>
 
@@ -24,10 +25,13 @@ class SphericalBoundingBox {
     [[nodiscard]] double theta_measure() const;
     [[nodiscard]] double z_measure() const;
     [[nodiscard]] double bounding_sphere_radius() const;
+    [[nodiscard]] bool contains(const Point3 &point) const;
 
     [[nodiscard]] static SphericalBoundingBox full_sphere();
 
  private:
+    [[nodiscard]] bool contains_theta(double theta) const;
+
     const Interval _theta_interval;
     const Interval _z_interval;
 };
@@ -103,6 +107,25 @@ inline double SphericalBoundingBox::bounding_sphere_radius() const {
     double chord = 2.0 * r_max * std::sin(theta_span / 2.0);
 
     return std::sqrt(z_span * z_span + chord * chord);
+}
+
+inline bool SphericalBoundingBox::contains_theta(double theta) const {
+    if (_theta_interval.contains(theta)) {
+        return true;
+    }
+
+    if (is_theta_wrapped()) {
+        double wrapped_high = _theta_interval.high() - 2.0 * M_PI;
+        return theta >= 0 && theta <= wrapped_high;
+    }
+
+    return false;
+}
+
+inline bool SphericalBoundingBox::contains(const Point3 &point) const {
+    double theta_val = theta(point.x(), point.y());
+    double z_val = static_cast<double>(point.z());
+    return contains_theta(theta_val) && _z_interval.contains(z_val);
 }
 
 inline SphericalBoundingBox SphericalBoundingBox::full_sphere() {

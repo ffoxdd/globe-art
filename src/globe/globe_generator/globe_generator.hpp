@@ -68,6 +68,13 @@ class GlobeGenerator {
     VoronoiSphere _points_collection;
     std::unique_ptr<IntegrableFieldType> _integrable_field;
 
+    struct OptimizationResult {
+        double error;
+        bool moved;
+    };
+
+    using CellMassHeap = std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator>;
+
     void initialize();
     void add_points(int count);
     void add_point();
@@ -75,14 +82,9 @@ class GlobeGenerator {
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
-    struct OptimizationResult {
-        double error;
-        bool moved;
-    };
-
     OptimizationResult optimize_vertex_position(size_t index, double target_mass, double previous_error);
     void adjust_mass(size_t max_passes);
-    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> build_cell_mass_heap();
+    CellMassHeap build_cell_mass_heap();
     double compute_total_error(double target_mass);
     bool perturb_most_undersized_vertex(double target_mass);
     std::optional<std::pair<size_t, double>> find_most_undersized_vertex_with_deficit(double target_mass);
@@ -284,8 +286,9 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
         } catch (...) {
         }
 
-        std::cout <<
-            "    [BOBYQA evals=" << eval_count <<
+        std::cout << "    " <<
+            "[" <<
+            "BOBYQA evals=" << eval_count <<
             ", first_error=" << std::sqrt(first_eval_error) <<
             ", last_error=" << std::sqrt(last_eval_error) <<
             ", best_error=" << std::sqrt(run_best_mass_error) <<
@@ -340,8 +343,8 @@ void GlobeGenerator<PG, IntegrableFieldType>::add_point() {
 }
 
 template<PointGenerator PG, typename IntegrableFieldType>
-std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> GlobeGenerator<PG, IntegrableFieldType>::build_cell_mass_heap() {
-    std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator> heap;
+typename GlobeGenerator<PG, IntegrableFieldType>::CellMassHeap GlobeGenerator<PG, IntegrableFieldType>::build_cell_mass_heap() {
+    CellMassHeap heap;
 
     size_t i = 0;
     for (const auto &cell : _points_collection.dual_cells()) {

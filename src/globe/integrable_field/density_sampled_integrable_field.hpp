@@ -7,7 +7,6 @@
 #include "../globe_generator/spherical_bounding_box.hpp"
 #include "../globe_generator/sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include "../globe_generator/interval_sampler.hpp"
-#include "../geometry/helpers.hpp"
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Kd_tree.h>
@@ -71,6 +70,7 @@ DensitySampledIntegrableField<ScalarFieldType>::DensitySampledIntegrableField(
     _weight_per_sample(1.0),
     _max_density(std::max(max_density, 1e-6)),
     _sample_attempts(0) {
+
     build_samples(target_sample_count);
 }
 
@@ -155,7 +155,6 @@ CGAL::Fuzzy_sphere<CGAL::Search_traits_3<Kernel>> DensitySampledIntegrableField<
     const SphericalPolygon &polygon
 ) const {
     Point3 centroid = polygon.centroid();
-
     double max_squared_distance = 0.0;
 
     for (const auto& v : polygon.points()) {
@@ -204,22 +203,10 @@ double DensitySampledIntegrableField<ScalarFieldType>::integrate(const Spherical
     std::vector<Point3> candidates;
     _kdtree.search(std::back_inserter(candidates), query);
 
-    Interval theta_interval = bbox.theta_interval();
-    Interval z_interval = bbox.z_interval();
-
     size_t hits = std::count_if(
         candidates.begin(),
         candidates.end(),
-        [&theta_interval, &z_interval](const Point3 &point) {
-            double theta_val = theta(point.x(), point.y());
-            double z_val = static_cast<double>(point.z());
-
-            bool theta_ok = (theta_interval.low() <= theta_val && theta_val <= theta_interval.high()) ||
-                           (theta_interval.high() > 2.0 * M_PI && theta_val >= 0 && theta_val <= theta_interval.high() - 2.0 * M_PI);
-            bool z_ok = z_interval.low() <= z_val && z_val <= z_interval.high();
-
-            return theta_ok && z_ok;
-        }
+        [&bbox](const Point3 &point) { return bbox.contains(point); }
     );
 
     return static_cast<double>(hits) * _weight_per_sample;

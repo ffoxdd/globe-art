@@ -11,9 +11,6 @@ class IntervalSampler {
     IntervalSampler() : _random_engine(std::random_device{}()) {
     }
 
-    IntervalSampler(IntervalSampler &&other) noexcept = default;
-    IntervalSampler& operator=(IntervalSampler &&other) noexcept = default;
-
     IntervalSampler(const IntervalSampler&) = delete;
     IntervalSampler& operator=(const IntervalSampler&) = delete;
 

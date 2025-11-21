@@ -23,6 +23,7 @@ class Interval {
     [[nodiscard]] Interval lower_half() const;
     [[nodiscard]] Interval upper_half() const;
     [[nodiscard]] bool overlaps(const Interval &other) const;
+    [[nodiscard]] bool contains(double value) const;
 
     static double map(Interval &input_range, Interval &output_range, double value);
 
@@ -104,6 +105,10 @@ inline Interval Interval::upper_half() const {
 
 inline bool Interval::overlaps(const Interval &other) const {
     return !(_high < other._low || _low > other._high);
+}
+
+inline bool Interval::contains(double value) const {
+    return _low <= value && value <= _high;
 }
 
 } // namespace globe
