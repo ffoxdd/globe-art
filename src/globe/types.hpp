@@ -4,6 +4,8 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/Exact_spherical_kernel_3.h>
+#include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>
+#include <CGAL/Delaunay_triangulation_on_sphere_2.h>
 
 namespace globe {
 
@@ -20,6 +22,10 @@ using SphericalPoint3 = SphericalKernel::Point_3;
 using SphericalVector3 = SphericalKernel::Vector_3;
 
 using CircularArc3 = SphericalKernel::Circular_arc_3;
+
+using Arc = CGAL::Delaunay_triangulation_on_sphere_2<
+    CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>
+>::Arc_on_sphere_2;
 
 template<typename T>
 concept Point3Range = std::ranges::range<T> && std::same_as<std::ranges::range_value_t<T>, Point3>;

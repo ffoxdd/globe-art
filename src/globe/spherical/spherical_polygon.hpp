@@ -2,13 +2,12 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_POLYGON_HPP_
 
 #include "spherical_bounding_box.hpp"
-#include "../spherical_voronoi/core/types.hpp"
+#include "../types.hpp"
 #include "helpers.hpp"
 #include "../std_ext/ranges.hpp"
 #include "../math/interval.hpp"
 #include <CGAL/assertions.h>
 #include <utility>
-#include <stdexcept>
 #include <vector>
 #include <cstddef>
 #include <cmath>
