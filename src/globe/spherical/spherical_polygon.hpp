@@ -2,12 +2,19 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_POLYGON_HPP_
 
 #include "spherical_bounding_box.hpp"
-#include "../geometry/helpers.hpp"
-#include "../helpers/ranges.hpp"
-#include "../scalar_field/interval.hpp" // TODO: move interval out of scalar_field
+#include "../voronoi_sphere/types.hpp"
+#include "helpers.hpp"
+#include "../std_ext/ranges.hpp"
+#include "../math/interval.hpp"
 #include <CGAL/assertions.h>
+#include <utility>
+#include <stdexcept>
+#include <vector>
 #include <cstddef>
 #include <cmath>
+#include <limits>
+#include <algorithm>
+#include <ranges>
 
 namespace globe {
 

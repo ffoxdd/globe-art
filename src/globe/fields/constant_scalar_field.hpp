@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_CONSTANT_SCALAR_FIELD_HPP_
 
 #include "../types.hpp"
-#include "interval.hpp"
+#include "../math/interval.hpp"
 #include <vector>
 
 namespace globe {

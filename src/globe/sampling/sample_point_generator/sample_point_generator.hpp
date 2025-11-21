@@ -3,7 +3,7 @@
 
 #include <concepts>
 #include "../../types.hpp"
-#include "../spherical_bounding_box.hpp"
+#include "../../spherical/spherical_bounding_box.hpp"
 
 namespace globe {
 

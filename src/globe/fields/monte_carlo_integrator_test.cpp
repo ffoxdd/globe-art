@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "./monte_carlo_integrator.hpp"
-#include "../scalar_field/mock_scalar_field.hpp"
+#include "mock_scalar_field.hpp"
 #include <utility>
 #include <vector>
 

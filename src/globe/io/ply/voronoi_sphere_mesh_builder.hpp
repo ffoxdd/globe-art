@@ -3,7 +3,7 @@
 
 #include "../../types.hpp"
 #include "../../voronoi_sphere/voronoi_sphere.hpp"
-#include "../../geometry/helpers.hpp"
+#include "../../spherical/helpers.hpp"
 #include "mesh_builder.hpp"
 
 namespace globe {

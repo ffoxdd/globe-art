@@ -1,9 +1,9 @@
 #include "globe/globe_generator/globe_generator.hpp"
 #include "globe/io/qt/voronoi_sphere_qt_renderer.hpp"
-#include "globe/scalar_field/constant_scalar_field.hpp"
-#include "globe/scalar_field/noise_field.hpp"
-#include "globe/integrable_field/density_sampled_integrable_field.hpp"
-#include "globe/scalar_field/interval.hpp"
+#include "globe/fields/constant_scalar_field.hpp"
+#include "globe/fields/noise_field.hpp"
+#include "globe/fields/density_sampled_integrable_field.hpp"
+#include "globe/math/interval.hpp"
 #include "globe/point_generator/random_sphere_point_generator.hpp"
 #include "globe/types.hpp"
 #include <CLI/CLI.hpp>

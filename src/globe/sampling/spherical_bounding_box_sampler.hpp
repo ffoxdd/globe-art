@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
 
 #include "../types.hpp"
-#include "spherical_bounding_box.hpp"
+#include "../spherical/spherical_bounding_box.hpp"
 #include "interval_sampler.hpp"
 #include <cmath>
 

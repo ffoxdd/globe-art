@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_IO_PLY_MESH_BUILDER_HPP_
 
 #include "../../types.hpp"
-#include "../../geometry/helpers.hpp"
+#include "../../spherical/helpers.hpp"
 #include <map>
 
 namespace globe {

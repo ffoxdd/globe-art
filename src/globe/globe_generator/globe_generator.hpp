@@ -2,14 +2,14 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
 
 #include "../types.hpp"
-#include "../geometry/helpers.hpp"
+#include "../spherical/helpers.hpp"
 #include "../point_generator/point_generator.hpp"
 #include "../point_generator/random_sphere_point_generator.hpp"
 #include "../voronoi_sphere/voronoi_sphere.hpp"
-#include "../scalar_field/noise_field.hpp"
-#include "spherical_polygon.hpp"
-#include "../integrable_field/density_sampled_integrable_field.hpp"
-#include "../scalar_field/interval.hpp"
+#include "../fields/noise_field.hpp"
+#include "../spherical/spherical_polygon.hpp"
+#include "../fields/density_sampled_integrable_field.hpp"
+#include "../math/interval.hpp"
 #include <algorithm>
 #include <memory>
 #include <queue>

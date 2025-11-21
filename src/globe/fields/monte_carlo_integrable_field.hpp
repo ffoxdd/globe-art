@@ -1,11 +1,11 @@
 #ifndef GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_MONTE_CARLO_INTEGRABLE_FIELD_H_
 #define GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_MONTE_CARLO_INTEGRABLE_FIELD_H_
 
-#include "../scalar_field/scalar_field.hpp"
-#include "../globe_generator/spherical_polygon.hpp"
-#include "../globe_generator/spherical_bounding_box.hpp"
-#include "../globe_generator/monte_carlo_integrator.hpp"
-#include "../globe_generator/sample_point_generator/bounding_box_sample_point_generator.hpp"
+#include "scalar_field.hpp"
+#include "../spherical/spherical_polygon.hpp"
+#include "../spherical/spherical_bounding_box.hpp"
+#include "monte_carlo_integrator.hpp"
+#include "../sampling/sample_point_generator/bounding_box_sample_point_generator.hpp"
 #include <optional>
 
 namespace globe {

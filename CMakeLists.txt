@@ -27,7 +27,7 @@ find_package(CLI11 REQUIRED CONFIG)
 # Main Executable
 
 file(GLOB_RECURSE GLOBE_HEADERS src/globe/*.hpp)
-set(GLOBE_SOURCES src/globe/scalar_field/anl_implementation.cpp)
+set(GLOBE_SOURCES src/globe/fields/anl_implementation.cpp)
 
 add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
 target_include_directories(generate_globe PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
