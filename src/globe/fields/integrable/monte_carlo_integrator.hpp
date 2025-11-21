@@ -4,8 +4,8 @@
 #include "../../types.hpp"
 #include "../../spherical/spherical_polygon.hpp"
 #include "../../spherical/spherical_bounding_box.hpp"
-#include "../../sampling/sample_point_generator/sample_point_generator.hpp"
-#include "../../sampling/sample_point_generator/bounding_box_sample_point_generator.hpp"
+#include "../../generators/point_generator.hpp"
+#include "../../generators/spherical_random_point_generator.hpp"
 #include "../scalar/scalar_field.hpp"
 #include "../scalar/noise_field.hpp"
 #include <cmath>
@@ -15,13 +15,13 @@
 
 namespace globe {
 
-template<ScalarField DF = NoiseField, SamplePointGenerator SPG = BoundingBoxSamplePointGenerator>
+template<ScalarField DF = NoiseField, PointGenerator PG = SphericalRandomPointGenerator>
 class MonteCarloIntegrator {
  public:
     MonteCarloIntegrator(
         std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
         DF &density_field,
-        SPG sample_point_generator = SPG(),
+        PG point_generator = PG(),
         std::optional<SphericalBoundingBox> bounding_box = std::nullopt
     );
 
@@ -30,43 +30,37 @@ class MonteCarloIntegrator {
  private:
     std::optional<std::reference_wrapper<const SphericalPolygon>> _spherical_polygon;
     DF &_density_field;
-    SPG _sample_point_generator;
+    PG _point_generator;
     SphericalBoundingBox _bounding_box;
 
     static constexpr double RELATIVE_CHANGE_THRESHOLD = 0.001;
     static constexpr size_t MAX_SAMPLES_GUARD = 3'000'000;
     static constexpr int CONSECUTIVE_STABLE_ITERATIONS = 15;
     static constexpr size_t MIN_HITS = 2000;
-
-    static SphericalBoundingBox unit_sphere_bounding_box() {
-        return SphericalBoundingBox(
-            Interval(0, 2 * M_PI), Interval(-1, 1)
-        );
-    }
 };
 
-template<ScalarField DF, SamplePointGenerator SPG>
-inline MonteCarloIntegrator<DF, SPG>::MonteCarloIntegrator(
+template<ScalarField DF, PointGenerator PG>
+inline MonteCarloIntegrator<DF, PG>::MonteCarloIntegrator(
     std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
     DF &density_field,
-    SPG sample_point_generator,
+    PG point_generator,
     std::optional<SphericalBoundingBox> bounding_box
 ):
     _spherical_polygon(spherical_polygon),
     _density_field(density_field),
-    _sample_point_generator(std::move(sample_point_generator)),
+    _point_generator(std::move(point_generator)),
     _bounding_box(
         bounding_box.has_value() ?
         *bounding_box :
         (
             spherical_polygon.has_value() ? spherical_polygon->get().bounding_box()
-            : unit_sphere_bounding_box()
+            : SphericalBoundingBox::full_sphere()
         )
     ) {
 }
 
-template<ScalarField DF, SamplePointGenerator SPG>
-inline double MonteCarloIntegrator<DF, SPG>::integrate() {
+template<ScalarField DF, PointGenerator PG>
+inline double MonteCarloIntegrator<DF, PG>::integrate() {
     auto contains = [&](const Point3 &point) {
         if (!_spherical_polygon) {
             return true;
@@ -87,7 +81,7 @@ inline double MonteCarloIntegrator<DF, SPG>::integrate() {
     double previous_weighted_area = 0;
 
     while (static_cast<size_t>(total_points_sampled) < MAX_SAMPLES_GUARD) {
-        Point3 sampled_point = _sample_point_generator.generate(_bounding_box);
+        Point3 sampled_point = _point_generator.generate(_bounding_box);
         total_points_sampled++;
 
         if (contains(sampled_point)) {

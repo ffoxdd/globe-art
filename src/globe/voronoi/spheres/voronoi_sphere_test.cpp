@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "voronoi_sphere.hpp"
-#include "../types.hpp"
+#include "../../types.hpp"
 
 using namespace globe;
 

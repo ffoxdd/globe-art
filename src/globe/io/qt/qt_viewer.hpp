@@ -8,7 +8,7 @@
 #include <QtGui/QKeyEvent>
 #include <functional>
 #include "../../spherical/helpers.hpp"
-#include "../../voronoi_sphere/types.hpp"
+#include "../../voronoi/spheres/types.hpp"
 
 namespace globe {
 

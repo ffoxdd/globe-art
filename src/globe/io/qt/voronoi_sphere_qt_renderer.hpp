@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_IO_QT_VORONOI_SPHERE_QT_RENDERER_HPP_
 #define GLOBEART_SRC_GLOBE_IO_QT_VORONOI_SPHERE_QT_RENDERER_HPP_
 
-#include "../../voronoi_sphere/voronoi_sphere.hpp"
+#include "../../voronoi/spheres/voronoi_sphere.hpp"
 #include "qt_viewer.hpp"
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QWidget>

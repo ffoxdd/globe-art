@@ -1,7 +1,7 @@
-#ifndef GLOBEART_SRC_GLOBE_POINTS_COLLECTION_TYPES_H_
-#define GLOBEART_SRC_GLOBE_POINTS_COLLECTION_TYPES_H_
+#ifndef GLOBEART_SRC_GLOBE_VORONOI_SPHERES_TYPES_HPP_
+#define GLOBEART_SRC_GLOBE_VORONOI_SPHERES_TYPES_HPP_
 
-#include "../types.hpp"
+#include "../../types.hpp"
 #include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_2.h>
 
@@ -28,4 +28,4 @@ struct DualNeighborhood { // TODO: move this out of here
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_POINTS_COLLECTION_TYPES_H_
+#endif //GLOBEART_SRC_GLOBE_VORONOI_SPHERES_TYPES_HPP_

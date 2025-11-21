@@ -1,15 +1,14 @@
-#ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
-#define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
+#ifndef GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_DENSITY_VORONOI_SPHERE_OPTIMIZER_HPP_
+#define GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_DENSITY_VORONOI_SPHERE_OPTIMIZER_HPP_
 
-#include "../types.hpp"
-#include "../spherical/helpers.hpp"
-#include "../point_generator/point_generator.hpp"
-#include "../point_generator/random_sphere_point_generator.hpp"
-#include "../voronoi_sphere/voronoi_sphere.hpp"
-#include "../fields/scalar/noise_field.hpp"
-#include "../spherical/spherical_polygon.hpp"
-#include "../fields/integrable/density_sampled_integrable_field.hpp"
-#include "../math/interval.hpp"
+#include "../../types.hpp"
+#include "../../spherical/helpers.hpp"
+#include "../spheres/voronoi_sphere.hpp"
+#include "../../generators/spherical_random_point_generator.hpp"
+#include "../../fields/scalar/noise_field.hpp"
+#include "../../spherical/spherical_polygon.hpp"
+#include "../../fields/integrable/density_sampled_integrable_field.hpp"
+#include "../../math/interval.hpp"
 #include <algorithm>
 #include <memory>
 #include <queue>
@@ -46,26 +45,18 @@ struct MinMassComparator {
     }
 };
 
-template<
-    PointGenerator PG = RandomSpherePointGenerator,
-    typename IntegrableFieldType = DensitySampledIntegrableField<NoiseField>
->
-class GlobeGenerator {
+template<typename IntegrableFieldType = DensitySampledIntegrableField<NoiseField>>
+class DensityVoronoiSphereOptimizer {
  public:
-    GlobeGenerator(
-        PG point_generator = PG(RandomSpherePointGenerator(1.0)),
-        VoronoiSphere points_collection = VoronoiSphere(),
-        std::unique_ptr<IntegrableFieldType> integrable_field = nullptr
+    DensityVoronoiSphereOptimizer(
+        VoronoiSphere voronoi_sphere,
+        std::unique_ptr<IntegrableFieldType> integrable_field
     );
 
-    VoronoiSphere generate(
-        int point_count = DEFAULT_POINT_COUNT,
-        size_t optimization_passes = DEFAULT_OPTIMIZATION_PASSES
-    );
+    VoronoiSphere optimize(size_t optimization_passes = DEFAULT_OPTIMIZATION_PASSES);
 
  private:
-    PG _point_generator;
-    VoronoiSphere _points_collection;
+    VoronoiSphere _voronoi_sphere;
     std::unique_ptr<IntegrableFieldType> _integrable_field;
 
     struct OptimizationResult {
@@ -74,11 +65,6 @@ class GlobeGenerator {
     };
 
     using CellMassHeap = std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator>;
-
-    void initialize();
-    void add_points(int count);
-    void add_point();
-    std::vector<Point3> sample_points(size_t n);
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
@@ -91,41 +77,25 @@ class GlobeGenerator {
     bool perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass);
 };
 
-template<PointGenerator PG, typename IntegrableFieldType>
-GlobeGenerator<PG, IntegrableFieldType>::GlobeGenerator(
-    PG point_generator,
-    VoronoiSphere points_collection,
+template<typename IntegrableFieldType>
+DensityVoronoiSphereOptimizer<IntegrableFieldType>::DensityVoronoiSphereOptimizer(
+    VoronoiSphere voronoi_sphere,
     std::unique_ptr<IntegrableFieldType> integrable_field
 ) :
-    _point_generator(std::move(point_generator)),
-    _points_collection(std::move(points_collection)),
+    _voronoi_sphere(std::move(voronoi_sphere)),
     _integrable_field(std::move(integrable_field)) {
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-VoronoiSphere GlobeGenerator<PG, IntegrableFieldType>::generate(
-    int point_count,
+template<typename IntegrableFieldType>
+VoronoiSphere DensityVoronoiSphereOptimizer<IntegrableFieldType>::optimize(
     size_t optimization_passes
 ) {
-    initialize();
-    add_points(point_count);
     adjust_mass(optimization_passes);
-    return std::move(_points_collection);
+    return std::move(_voronoi_sphere);
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-void GlobeGenerator<PG, IntegrableFieldType>::initialize() {
-}
-
-template<PointGenerator PG, typename IntegrableFieldType>
-void GlobeGenerator<PG, IntegrableFieldType>::add_points(int count) {
-    for (int i = 0; i < count; i++) {
-        add_point();
-    }
-}
-
-template<PointGenerator PG, typename IntegrableFieldType>
-void GlobeGenerator<PG, IntegrableFieldType>::adjust_mass(size_t max_passes) {
+template<typename IntegrableFieldType>
+void DensityVoronoiSphereOptimizer<IntegrableFieldType>::adjust_mass(size_t max_passes) {
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
@@ -151,7 +121,7 @@ void GlobeGenerator<PG, IntegrableFieldType>::adjust_mass(size_t max_passes) {
         std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
 
         if (!pass_made_progress) {
-            double rms_error = std::sqrt(current_error / _points_collection.size());
+            double rms_error = std::sqrt(current_error / _voronoi_sphere.size());
             if (rms_error <= ZERO_ERROR_TOLERANCE * target_mass) {
                 std::cout <<
                     "No vertex movement and RMS error " << rms_error <<
@@ -177,7 +147,7 @@ void GlobeGenerator<PG, IntegrableFieldType>::adjust_mass(size_t max_passes) {
     double max_error = 0.0;
 
     size_t i = 0;
-    for (const auto &cell : _points_collection.dual_cells()) {
+    for (const auto &cell : _voronoi_sphere.dual_cells()) {
         double cell_mass = mass(cell);
         double error = std::abs(cell_mass - target_mass);
 
@@ -188,32 +158,32 @@ void GlobeGenerator<PG, IntegrableFieldType>::adjust_mass(size_t max_passes) {
         i++;
     }
 
-    std::cout << "Average error: " << (total_error / _points_collection.size()) << std::endl;
+    std::cout << "Average error: " << (total_error / _voronoi_sphere.size()) << std::endl;
     std::cout << "Max error: " << max_error << std::endl;
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-double GlobeGenerator<PG, IntegrableFieldType>::mass(const SphericalPolygon &spherical_polygon) {
+template<typename IntegrableFieldType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType>::mass(const SphericalPolygon &spherical_polygon) {
     return _integrable_field->integrate(spherical_polygon);
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-double GlobeGenerator<PG, IntegrableFieldType>::total_mass() {
+template<typename IntegrableFieldType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType>::total_mass() {
     return _integrable_field->integrate();
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-double GlobeGenerator<PG, IntegrableFieldType>::average_mass() {
-    return total_mass() / _points_collection.size();
+template<typename IntegrableFieldType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType>::average_mass() {
+    return total_mass() / _voronoi_sphere.size();
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenerator<PG, IntegrableFieldType>::optimize_vertex_position(
+template<typename IntegrableFieldType>
+typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::OptimizationResult DensityVoronoiSphereOptimizer<IntegrableFieldType>::optimize_vertex_position(
     size_t index,
     double target_mass,
     double previous_error
 ) {
-    Point3 original_position = _points_collection.site(index);
+    Point3 original_position = _voronoi_sphere.site(index);
     Point3 north = antipodal(original_position);
     TangentBasis basis = build_tangent_basis(north);
     Point3 tangent_u = basis.tangent_u;
@@ -235,7 +205,7 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
         double run_best_mass_error = initial_error;
         double run_best_cost = initial_error;
         column_vector starting_point = initial_point;
-        _points_collection.update_site(index, original_position);
+        _voronoi_sphere.update_site(index, original_position);
 
         size_t eval_count = 0;
         double first_eval_error = -1.0;
@@ -250,7 +220,7 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
                 tangent_v
             );
 
-            _points_collection.update_site(index, candidate);
+            _voronoi_sphere.update_site(index, candidate);
 
             double total_error = compute_total_error(target_mass);
             double displacement_angle = angular_distance(original_vector, candidate - ORIGIN);
@@ -294,7 +264,7 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
             ", best_error=" << std::sqrt(run_best_mass_error) <<
             "]" << std::endl;
 
-        _points_collection.update_site(index, run_best_position);
+        _voronoi_sphere.update_site(index, run_best_position);
         return RunResult{run_best_mass_error, run_best_cost, run_best_position};
     };
 
@@ -308,7 +278,7 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
     double initial_norm = std::sqrt(initial_error);
     double final_norm = std::sqrt(final_error);
 
-    _points_collection.update_site(index, best_position);
+    _voronoi_sphere.update_site(index, best_position);
     double delta = final_norm - initial_norm;
     double movement = angular_distance(original_vector, best_position - ORIGIN);
     bool moved = movement > MOVEMENT_EPSILON;
@@ -325,29 +295,14 @@ typename GlobeGenerator<PG, IntegrableFieldType>::OptimizationResult GlobeGenera
     return {final_error, moved};
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-std::vector<Point3> GlobeGenerator<PG, IntegrableFieldType>::sample_points(size_t n) {
-    std::vector<Point3> points;
 
-    for (size_t i = 0; i < n; i++) {
-        points.push_back(_point_generator.generate());
-    }
 
-    return points;
-}
-
-template<PointGenerator PG, typename IntegrableFieldType>
-void GlobeGenerator<PG, IntegrableFieldType>::add_point() {
-    Point3 point = _point_generator.generate();
-    _points_collection.insert(point);
-}
-
-template<PointGenerator PG, typename IntegrableFieldType>
-typename GlobeGenerator<PG, IntegrableFieldType>::CellMassHeap GlobeGenerator<PG, IntegrableFieldType>::build_cell_mass_heap() {
+template<typename IntegrableFieldType>
+typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::CellMassHeap DensityVoronoiSphereOptimizer<IntegrableFieldType>::build_cell_mass_heap() {
     CellMassHeap heap;
 
     size_t i = 0;
-    for (const auto &cell : _points_collection.dual_cells()) {
+    for (const auto &cell : _voronoi_sphere.dual_cells()) {
         double cell_mass = mass(cell);
         heap.push({i, cell_mass});
         i++;
@@ -356,12 +311,12 @@ typename GlobeGenerator<PG, IntegrableFieldType>::CellMassHeap GlobeGenerator<PG
     return heap;
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-double GlobeGenerator<PG, IntegrableFieldType>::compute_total_error(double target_mass) {
+template<typename IntegrableFieldType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType>::compute_total_error(double target_mass) {
     std::vector<SphericalPolygon> cells;
-    cells.reserve(_points_collection.size());
+    cells.reserve(_voronoi_sphere.size());
 
-    for (const auto &cell : _points_collection.dual_cells()) {
+    for (const auto &cell : _voronoi_sphere.dual_cells()) {
         cells.push_back(cell);
     }
 
@@ -386,8 +341,8 @@ double GlobeGenerator<PG, IntegrableFieldType>::compute_total_error(double targe
     return total_error.load();
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-bool GlobeGenerator<PG, IntegrableFieldType>::perturb_most_undersized_vertex(double target_mass) {
+template<typename IntegrableFieldType>
+bool DensityVoronoiSphereOptimizer<IntegrableFieldType>::perturb_most_undersized_vertex(double target_mass) {
     auto candidate = find_most_undersized_vertex_with_deficit(target_mass);
 
     if (!candidate.has_value()) {
@@ -408,13 +363,13 @@ bool GlobeGenerator<PG, IntegrableFieldType>::perturb_most_undersized_vertex(dou
     return true;
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-std::optional<std::pair<size_t, double>> GlobeGenerator<PG, IntegrableFieldType>::find_most_undersized_vertex_with_deficit(double target_mass) {
-    size_t best_index = _points_collection.size();
+template<typename IntegrableFieldType>
+std::optional<std::pair<size_t, double>> DensityVoronoiSphereOptimizer<IntegrableFieldType>::find_most_undersized_vertex_with_deficit(double target_mass) {
+    size_t best_index = _voronoi_sphere.size();
     double largest_deficit = 0.0;
     size_t i = 0;
 
-    for (const auto &cell : _points_collection.dual_cells()) {
+    for (const auto &cell : _voronoi_sphere.dual_cells()) {
         double cell_mass = mass(cell);
         double deficit = target_mass - cell_mass;
 
@@ -433,26 +388,25 @@ std::optional<std::pair<size_t, double>> GlobeGenerator<PG, IntegrableFieldType>
     return std::make_pair(best_index, largest_deficit);
 }
 
-template<PointGenerator PG, typename IntegrableFieldType>
-bool GlobeGenerator<PG, IntegrableFieldType>::perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass) {
-    if (index >= _points_collection.size()) {
+template<typename IntegrableFieldType>
+bool DensityVoronoiSphereOptimizer<IntegrableFieldType>::perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass) {
+    if (index >= _voronoi_sphere.size()) {
         return false;
     }
 
     double deficit_ratio = std::clamp(deficit / target_mass, 0.0, 1.0);
     double step = MAX_PERTURBATION_STEP * deficit_ratio;
 
-    Point3 current_site = _points_collection.site(index);
-    Point3 random_point = _point_generator.generate();
+    Point3 current_site = _voronoi_sphere.site(index);
+    SphericalRandomPointGenerator random_generator;
+    Point3 random_point = random_generator.generate();
     Point3 perturbed = spherical_interpolate(current_site, random_point, step);
     Point3 normalized_point = project_to_sphere(perturbed);
-    _points_collection.update_site(index, normalized_point);
+    _voronoi_sphere.update_site(index, normalized_point);
 
     return true;
 }
 
-GlobeGenerator() -> GlobeGenerator<RandomSpherePointGenerator, DensitySampledIntegrableField<NoiseField>>;
-
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_H_
+#endif //GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_DENSITY_VORONOI_SPHERE_OPTIMIZER_HPP_

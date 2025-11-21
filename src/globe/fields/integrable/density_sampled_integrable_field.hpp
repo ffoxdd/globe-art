@@ -5,8 +5,8 @@
 #include "../../math/interval.hpp"
 #include "../../spherical/spherical_polygon.hpp"
 #include "../../spherical/spherical_bounding_box.hpp"
-#include "../../sampling/sample_point_generator/bounding_box_sample_point_generator.hpp"
-#include "../../sampling/interval_sampler.hpp"
+#include "../../generators/spherical_random_point_generator.hpp"
+#include "../../math/interval_sampler.hpp"
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Kd_tree.h>
@@ -35,7 +35,7 @@ class DensitySampledIntegrableField {
     using FuzzySphere = CGAL::Fuzzy_sphere<SearchTraits>;
 
     ScalarFieldType &_scalar_field;
-    BoundingBoxSamplePointGenerator _point_generator;
+    SphericalRandomPointGenerator _point_generator;
     SphericalBoundingBox _global_bounding_box;
     std::vector<Point3> _points;
     KdTree _kdtree;

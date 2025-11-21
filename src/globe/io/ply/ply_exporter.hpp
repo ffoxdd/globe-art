@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_IO_PLY_PLY_EXPORTER_HPP_
 
 #include "voronoi_sphere_mesh_builder.hpp"
-#include "../../voronoi_sphere/voronoi_sphere.hpp"
+#include "../../voronoi/spheres/voronoi_sphere.hpp"
 #include <CGAL/IO/PLY.h>
 #include <fstream>
 #include <stdexcept>

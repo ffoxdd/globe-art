@@ -45,6 +45,7 @@ SphericalBoundingBox hemisphere_bounding_box() {
 class ConstantSamplePointGenerator {
  public:
     explicit ConstantSamplePointGenerator(Point3 point) : _point(point) {}
+    Point3 generate() { return _point; }
     Point3 generate(const SphericalBoundingBox &) { return _point; }
  private:
     Point3 _point;
@@ -55,12 +56,16 @@ class TogglingSamplePointGenerator {
     TogglingSamplePointGenerator(Point3 first_point, Point3 subsequent_point)
         : _first_point(first_point), _subsequent_point(subsequent_point), _first_call(true) {}
 
-    Point3 generate(const SphericalBoundingBox &) {
+    Point3 generate() {
         if (_first_call) {
             _first_call = false;
             return _first_point;
         }
         return _subsequent_point;
+    }
+
+    Point3 generate(const SphericalBoundingBox &) {
+        return generate();
     }
  private:
     Point3 _first_point;
@@ -73,10 +78,14 @@ class SequenceSamplePointGenerator {
     SequenceSamplePointGenerator(std::vector<Point3> sequence)
         : _sequence(std::move(sequence)), _index(0) {}
 
-    Point3 generate(const SphericalBoundingBox &) {
+    Point3 generate() {
         Point3 result = _sequence[_index % _sequence.size()];
         _index++;
         return result;
+    }
+
+    Point3 generate(const SphericalBoundingBox &) {
+        return generate();
     }
  private:
     std::vector<Point3> _sequence;

@@ -1,8 +1,8 @@
 #ifndef GLOBEART_SRC_GLOBE_POINTS_COLLECTION_VORONOI_SPHERE_H_
 #define GLOBEART_SRC_GLOBE_POINTS_COLLECTION_VORONOI_SPHERE_H_
 
-#include "../types.hpp"
-#include "../spherical/spherical_polygon.hpp"
+#include "../../types.hpp"
+#include "../../spherical/spherical_polygon.hpp"
 #include "types.hpp"
 #include "handle_iterator.hpp"
 #include "handle_circulator_iterator.hpp"

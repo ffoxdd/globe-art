@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "./interval_sampler.hpp"
+#include "math/interval_sampler.hpp"
 
 using namespace globe;
 

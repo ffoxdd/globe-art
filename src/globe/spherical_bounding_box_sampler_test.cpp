@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
-#include "./spherical_bounding_box_sampler.hpp"
-#include "../spherical/spherical_bounding_box.hpp"
-#include "../math/interval.hpp"
+#include "spherical/spherical_bounding_box_sampler.hpp"
+#include "spherical/spherical_bounding_box.hpp"
+#include "math/interval.hpp"
 #include <cmath>
 
 using namespace globe;

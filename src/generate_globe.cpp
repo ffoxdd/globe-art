@@ -1,10 +1,11 @@
-#include "globe/globe_generator/globe_generator.hpp"
+#include "globe/voronoi/optimizers/density_voronoi_sphere_optimizer.hpp"
+#include "globe/voronoi/spheres/random_voronoi_sphere_builder.hpp"
 #include "globe/io/qt/voronoi_sphere_qt_renderer.hpp"
 #include "globe/fields/scalar/constant_scalar_field.hpp"
 #include "globe/fields/scalar/noise_field.hpp"
 #include "globe/fields/integrable/density_sampled_integrable_field.hpp"
 #include "globe/math/interval.hpp"
-#include "globe/point_generator/random_sphere_point_generator.hpp"
+#include "globe/generators/spherical_random_point_generator.hpp"
 #include "globe/types.hpp"
 #include <CLI/CLI.hpp>
 #include <CGAL/Qt/init_ogl_context.h>
@@ -23,7 +24,7 @@ template<typename SF>
 int run_with_density_field(int points_count, int optimization_passes, bool render, const std::string &program_name, int argc, char *argv[]);
 
 template<typename SF>
-GlobeGenerator<RandomSpherePointGenerator, DensitySampledIntegrableField<SF>> build_globe_generator(int expected_point_count);
+std::unique_ptr<DensitySampledIntegrableField<SF>> build_integrable_field(int expected_point_count);
 std::unique_ptr<QApplication> initialize_q_application(int &argc, char **argv);
 
 int main(int argc, char *argv[]) {
@@ -90,20 +91,28 @@ int run_with_density_field(
     const std::string &program_name,
     int argc, char *argv[]
 ) {
-    auto globe_generator = build_globe_generator<SF>(points_count);
-    VoronoiSphere voronoi_sphere = globe_generator.generate(
-        points_count,
+    RandomVoronoiSphereBuilder<> builder{};
+    VoronoiSphere initial_voronoi = builder.build(points_count);
+
+    auto integrable_field = build_integrable_field<SF>(points_count);
+
+    DensityVoronoiSphereOptimizer optimizer(
+        std::move(initial_voronoi),
+        std::move(integrable_field)
+    );
+
+    VoronoiSphere optimized = optimizer.optimize(
         static_cast<size_t>(optimization_passes)
     );
 
-    return render(voronoi_sphere, perform_render, program_name, argc, argv);
+    return render(optimized, perform_render, program_name, argc, argv);
 }
 
 template<typename SF>
-GlobeGenerator<RandomSpherePointGenerator, DensitySampledIntegrableField<SF>> build_globe_generator(int expected_point_count) {
+std::unique_ptr<DensitySampledIntegrableField<SF>> build_integrable_field(int expected_point_count) {
     SF density_field;
 
-    RandomSpherePointGenerator point_generator;
+    SphericalRandomPointGenerator point_generator;
     std::vector<Point3> sample_points;
     for (int i = 0; i < 1000; i++) {
         sample_points.push_back(point_generator.generate());
@@ -115,15 +124,9 @@ GlobeGenerator<RandomSpherePointGenerator, DensitySampledIntegrableField<SF>> bu
         static_cast<size_t>(expected_point_count) * 3'000
     );
 
-    auto integrable_field = std::make_unique<DensitySampledIntegrableField<SF>>(
+    return std::make_unique<DensitySampledIntegrableField<SF>>(
         density_field,
         target_samples
-    );
-
-    return GlobeGenerator<RandomSpherePointGenerator, DensitySampledIntegrableField<SF>>(
-        RandomSpherePointGenerator(),
-        VoronoiSphere(),
-        std::move(integrable_field)
     );
 }
 

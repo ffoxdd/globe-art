@@ -2,21 +2,14 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
 
 #include "../types.hpp"
-#include "../spherical/spherical_bounding_box.hpp"
-#include "interval_sampler.hpp"
+#include "spherical_bounding_box.hpp"
+#include "../math/interval_sampler.hpp"
 #include <cmath>
 
 namespace globe {
 
 class SphericalBoundingBoxSampler {
  public:
-    SphericalBoundingBoxSampler() = default;
-    SphericalBoundingBoxSampler(SphericalBoundingBoxSampler &&other) noexcept = default;
-    SphericalBoundingBoxSampler& operator=(SphericalBoundingBoxSampler &&other) noexcept = default;
-
-    SphericalBoundingBoxSampler(const SphericalBoundingBoxSampler&) = delete;
-    SphericalBoundingBoxSampler& operator=(const SphericalBoundingBoxSampler&) = delete;
-
     [[nodiscard]] inline Point3 sample(const SphericalBoundingBox &bounding_box) {
         double theta = sample_theta(bounding_box);
         double z = _interval_sampler.sample(bounding_box.z_interval());
