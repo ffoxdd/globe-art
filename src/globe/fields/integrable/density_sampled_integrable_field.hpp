@@ -119,6 +119,7 @@ bool DensitySampledIntegrableField<ScalarFieldType>::candidate_accepted(const Po
 template<ScalarField ScalarFieldType>
 double DensitySampledIntegrableField<ScalarFieldType>::acceptance_threshold(const Point3 &point) const {
     double density = _scalar_field.value(point);
+    CGAL_precondition(density >= 0.0 && density <= 1.0);
     return std::clamp(density / _max_density, 0.0, 1.0);
 }
 

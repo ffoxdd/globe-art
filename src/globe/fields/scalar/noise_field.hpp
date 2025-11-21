@@ -12,10 +12,11 @@ namespace globe {
 
 class NoiseField {
  public:
-    NoiseField();
+    NoiseField(Interval output_range = Interval(0, 1));
 
     void normalize(const std::vector<Point3> &sample_points, Interval output_interval = Interval(0, 1));
     double value(const Point3 &location);
+    Interval output_range() const { return _output_interval; }
 
  private:
     std::unique_ptr<anl::CKernel> _kernel;
@@ -28,11 +29,11 @@ class NoiseField {
     Interval _output_interval;
 };
 
-inline NoiseField::NoiseField() :
+inline NoiseField::NoiseField(Interval output_range) :
     _kernel(std::make_unique<anl::CKernel>()),
     _instruction_index(std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel))),
     _noise_interval(Interval(0.0, 1.0)),
-    _output_interval(Interval(0.0, 1.0)) {
+    _output_interval(output_range) {
 }
 
 inline void NoiseField::normalize(const std::vector<Point3> &sample_points, Interval output_interval) {
@@ -75,6 +76,11 @@ inline anl::CInstructionIndex NoiseField::initialize_kernel(anl::CKernel &kernel
 
     instruction_index = kernel.scaleOffset(instruction_index, 1.0 / 32.0, 0.5);
     instruction_index = kernel.gain(kernel.constant(0.95), instruction_index);
+    instruction_index = kernel.clamp(
+        instruction_index,
+        kernel.constant(0.0),
+        kernel.constant(1.0)
+    );
 
     return instruction_index;
 }
