@@ -10,7 +10,7 @@ namespace globe {
 template<PointGenerator PG = SphericalRandomPointGenerator>
 class RandomVoronoiSphereBuilder {
  public:
-    explicit RandomVoronoiSphereBuilder(PG point_generator = PG());
+    RandomVoronoiSphereBuilder(PG point_generator = PG());
     [[nodiscard]] VoronoiSphere build(int point_count);
 
  private:
