@@ -13,16 +13,6 @@
 
 namespace globe {
 
-// TODO: consider what should go here and what should go in ./types.hpp
-using VertexHandleValue = typename std::iterator_traits<FiniteVerticesIterator>::value_type::Vertex_handle;
-using VertexHandleIterator = HandleIterator<FiniteVerticesIterator, VertexHandleValue>;
-using FaceHandleValue = typename std::iterator_traits<FiniteFacesIterator>::value_type::Face_handle;
-using FaceHandleIterator = HandleIterator<FiniteFacesIterator, FaceHandleValue>;
-using VertexCirculatorIterator = CirculatorIterator<VertexCirculator, VertexHandle>;
-using EdgeCirculatorIterator = CirculatorIterator<EdgeCirculator, Edge>;
-using FaceHandleCirculatorValue = typename std::iterator_traits<FaceCirculator>::value_type::Face_handle;
-using FaceHandleCirculatorIterator = HandleCirculatorIterator<FaceCirculator, FaceHandleCirculatorValue>;
-
 class VoronoiSphere {
  public:
     explicit VoronoiSphere();
@@ -46,6 +36,24 @@ class VoronoiSphere {
     void update_site(size_t index, Point3 new_position);
 
  private:
+    using Triangulation = CGAL::Delaunay_triangulation_on_sphere_2<
+        CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>
+    >;
+
+    using VertexCirculator = Triangulation::Vertex_circulator;
+    using EdgeCirculator = Triangulation::Edge_circulator;
+    using FaceCirculator = Triangulation::Face_circulator;
+    using Edge = Triangulation::Edge;
+
+    using VertexHandleValue = typename std::iterator_traits<Triangulation::Finite_vertices_iterator>::value_type::Vertex_handle;
+    using VertexHandleIterator = HandleIterator<Triangulation::Finite_vertices_iterator, VertexHandleValue>;
+    using FaceHandleValue = typename std::iterator_traits<Triangulation::Finite_faces_iterator>::value_type::Face_handle;
+    using FaceHandleIterator = HandleIterator<Triangulation::Finite_faces_iterator, FaceHandleValue>;
+    using VertexCirculatorIterator = CirculatorIterator<VertexCirculator, VertexHandle>;
+    using EdgeCirculatorIterator = CirculatorIterator<EdgeCirculator, Edge>;
+    using FaceHandleCirculatorValue = typename std::iterator_traits<FaceCirculator>::value_type::Face_handle;
+    using FaceHandleCirculatorIterator = HandleCirculatorIterator<FaceCirculator, FaceHandleCirculatorValue>;
+
     Triangulation _triangulation;
     std::vector<Point3> _sites;
     std::vector<VertexHandle> _handles;
