@@ -91,7 +91,6 @@ inline Point3 project_to_sphere(Point3 &point, const Point3 &center = ORIGIN, do
 inline Point3 antipodal(const Point3 &point) {
     return Point3(-point.x(), -point.y(), -point.z());
 }
-
 struct TangentBasis {
     Point3 tangent_u;
     Point3 tangent_v;
