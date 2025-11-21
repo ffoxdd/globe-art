@@ -3,22 +3,8 @@
 
 using namespace globe;
 
-TEST(NoiseFieldTest, ValueMethodReturnsDouble) {
-    Point3 location = {0.1, 0.2, 0.3};
-    NoiseField noise_field;
-
-    double value = noise_field.value(location);
-
-    EXPECT_TRUE(typeid(value) == typeid(double));
-}
-
 TEST(NoiseFieldTest, ValueMethodReturnsConsistentResult) {
     Point3 location = {0.1, 0.2, 0.3};
-
-    std::vector<Point3> points;
-    points.emplace_back(location);
-    points.emplace_back(0.4, 0.5, 0.6);
-
     NoiseField noise_field;
 
     double value1 = noise_field.value(location);
@@ -30,11 +16,6 @@ TEST(NoiseFieldTest, ValueMethodReturnsConsistentResult) {
 TEST(NoiseFieldTest, ValueMethodDifferentLocations) {
     Point3 location1 = {0.1, 0.2, 0.3};
     Point3 location2 = {0.4, 0.5, 0.6};
-
-    std::vector<Point3> points;
-    points.emplace_back(location1);
-    points.emplace_back(location2);
-
     NoiseField noise_field;
 
     double value1 = noise_field.value(location1);
@@ -43,7 +24,7 @@ TEST(NoiseFieldTest, ValueMethodDifferentLocations) {
     EXPECT_NE(value1, value2);
 }
 
-TEST(NoiseFieldTest, CanNormalizeOutputOverSamplePoints) {
+TEST(NoiseFieldTest, CanConfigureOutputRange) {
     std::vector<Point3> sample_points;
     sample_points.emplace_back(0.1, 0.2, 0.3);
     sample_points.emplace_back(0.4, 0.5, 0.6);
@@ -51,8 +32,7 @@ TEST(NoiseFieldTest, CanNormalizeOutputOverSamplePoints) {
 
     Interval output_range = Interval(-0.01, 0.02);
 
-    NoiseField noise_field;
-    noise_field.normalize(sample_points, output_range);
+    NoiseField noise_field(output_range);
 
     for (auto &point : sample_points) {
         double value = noise_field.value(point);

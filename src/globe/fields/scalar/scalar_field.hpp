@@ -9,12 +9,10 @@ namespace globe {
 template<typename T>
 concept ScalarField = requires(
     T scalar_field,
-    const Point3 &location,
-    std::vector<Point3> &sample_points,
-    Interval output_range
+    const Point3 &location
 ) {
     { scalar_field.value(location) } -> std::convertible_to<double>;
-    { scalar_field.normalize(sample_points, output_range) } -> std::same_as<void>;
+    { scalar_field.output_range() } -> std::convertible_to<Interval>;
 };
 
 }

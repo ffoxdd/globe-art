@@ -4,60 +4,36 @@
 #include "../../types.hpp"
 #include "../../math/interval.hpp"
 #include <anl/anl.h>
-#include <memory>
-#include <ranges>
-#include <vector>
 
 namespace globe {
 
 class NoiseField {
  public:
     NoiseField(Interval output_range = Interval(0, 1));
-
-    void normalize(const std::vector<Point3> &sample_points, Interval output_interval = Interval(0, 1));
     double value(const Point3 &location);
-    Interval output_range() const { return _output_interval; }
+    Interval output_range() const { return _output_range; }
 
  private:
-    std::unique_ptr<anl::CKernel> _kernel;
-    std::unique_ptr<anl::CInstructionIndex> _instruction_index;
+    anl::CKernel _kernel;
+    anl::CInstructionIndex _instruction_index;
+    Interval _output_range;
 
-    static anl::CInstructionIndex initialize_kernel(anl::CKernel &kernel);
-    double noise_value(const Point3 &location);
-
-    Interval _noise_interval;
-    Interval _output_interval;
+    static anl::CInstructionIndex initialize_kernel(anl::CKernel &kernel, Interval output_range);
 };
 
 inline NoiseField::NoiseField(Interval output_range) :
-    _kernel(std::make_unique<anl::CKernel>()),
-    _instruction_index(std::make_unique<anl::CInstructionIndex>(initialize_kernel(*_kernel))),
-    _noise_interval(Interval(0.0, 1.0)),
-    _output_interval(output_range) {
-}
-
-inline void NoiseField::normalize(const std::vector<Point3> &sample_points, Interval output_interval) {
-    auto noise_samples = sample_points | std::views::transform(
-        [this](const Point3 &point) {
-            return noise_value(point);
-        }
-    );
-
-    _noise_interval = Interval(noise_samples);
-    _output_interval = output_interval;
+    _kernel(),
+    _instruction_index(initialize_kernel(_kernel, output_range)),
+    _output_range(output_range) {
 }
 
 inline double NoiseField::value(const Point3 &location) {
-    return Interval::map(_noise_interval, _output_interval, noise_value(location));
-}
-
-inline double NoiseField::noise_value(const Point3 &location) {
-    return anl::CNoiseExecutor(*_kernel).evaluateScalar(
-        location.x(), location.y(), location.z(), *_instruction_index
+    return anl::CNoiseExecutor(_kernel).evaluateScalar(
+        location.x(), location.y(), location.z(), _instruction_index
     );
 }
 
-inline anl::CInstructionIndex NoiseField::initialize_kernel(anl::CKernel &kernel) {
+inline anl::CInstructionIndex NoiseField::initialize_kernel(anl::CKernel &kernel, Interval output_range) {
     const double persistence = 0.5;
     const double lacunarity = 2.0;
     const double octaves = 2;
@@ -76,10 +52,15 @@ inline anl::CInstructionIndex NoiseField::initialize_kernel(anl::CKernel &kernel
 
     instruction_index = kernel.scaleOffset(instruction_index, 1.0 / 32.0, 0.5);
     instruction_index = kernel.gain(kernel.constant(0.95), instruction_index);
+
+    double range_scale = output_range.measure();
+    double range_offset = output_range.low();
+    instruction_index = kernel.scaleOffset(instruction_index, range_scale, range_offset);
+
     instruction_index = kernel.clamp(
         instruction_index,
-        kernel.constant(0.0),
-        kernel.constant(1.0)
+        kernel.constant(output_range.low()),
+        kernel.constant(output_range.high())
     );
 
     return instruction_index;

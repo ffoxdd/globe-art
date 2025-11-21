@@ -9,19 +9,21 @@ namespace globe {
 
 class ConstantScalarField {
 public:
-    explicit ConstantScalarField(double value = 1.0) : _value(value) {}
-
-    inline void normalize(const std::vector<Point3> &, Interval output_interval = Interval(0, 1)) {
-        const double midpoint = (output_interval.low() + output_interval.high()) / 2.0;
-        _value = midpoint;
-    }
+    explicit ConstantScalarField(double value = 1.0, Interval output_range = Interval(0, 1)) :
+        _value(value),
+        _output_range(output_range) {}
 
     inline double value(const Point3 &) const {
         return _value;
     }
 
+    inline Interval output_range() const {
+        return _output_range;
+    }
+
 private:
     double _value;
+    Interval _output_range;
 };
 
 } // namespace globe

@@ -34,9 +34,6 @@ target_include_directories(generate_globe PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DI
 target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib CLI11::CLI11)
 target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER CGAL_USE_BASIC_VIEWER_QT QT_NO_KEYWORDS)
 
-add_executable(anl_range_check src/globe/fields/scalar/anl_range_check.cpp ${GLOBE_SOURCES})
-target_link_libraries(anl_range_check PRIVATE anl)
-
 # Tests
 
 pkg_search_module(GTEST REQUIRED gtest_main)

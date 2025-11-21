@@ -79,14 +79,6 @@ inline VoronoiSphere VoronoiSphereFactory::optimize(VoronoiSphere voronoi_sphere
 template<typename SF>
 inline std::unique_ptr<DensitySampledIntegrableField<SF>> VoronoiSphereFactory::build_integrable_field() {
     SF density_field;
-    SphericalRandomPointGenerator point_generator;
-
-    std::vector<Point3> sample_points;
-    for (int i = 0; i < 1000; i++) {
-        sample_points.push_back(point_generator.generate());
-    }
-
-    density_field.normalize(sample_points);
 
     size_t target_samples = std::max(
         static_cast<size_t>(60'000),

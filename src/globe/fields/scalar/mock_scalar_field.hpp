@@ -10,7 +10,7 @@ namespace globe {
 class MockScalarField {
  public:
     MOCK_METHOD(double, value, (const Point3&), (const));
-    MOCK_METHOD(void, normalize, (std::vector<Point3> & , Interval), ());
+    MOCK_METHOD(Interval, output_range, (), (const));
 };
 
 } // namespace globe
