@@ -1,10 +1,8 @@
 #ifndef GLOBEART_SRC_GLOBE_IO_QT_VORONOI_SPHERE_QT_RENDERER_HPP_
 #define GLOBEART_SRC_GLOBE_IO_QT_VORONOI_SPHERE_QT_RENDERER_HPP_
 
-#include "../../voronoi/spheres/voronoi_sphere.hpp"
+#include "../../spherical_voronoi/core/voronoi_sphere.hpp"
 #include "qt_viewer.hpp"
-#include <QtWidgets/QApplication>
-#include <QtWidgets/QWidget>
 #include <CGAL/IO/Color.h>
 #include <memory>
 #include <string>
@@ -13,7 +11,7 @@ namespace globe {
 
 class VoronoiSphereQtRenderer {
 public:
-    explicit VoronoiSphereQtRenderer(QWidget *parent = nullptr, const std::string &window_title = "VoronoiSphere");
+    explicit VoronoiSphereQtRenderer(const std::string &window_title = "VoronoiSphere");
     std::unique_ptr<QtViewer> render(const VoronoiSphere &voronoi_sphere);
 
 private:
@@ -22,17 +20,15 @@ private:
         QtViewer &viewer
     );
 
-    QWidget *_parent;
     std::string _window_title;
 };
 
-inline VoronoiSphereQtRenderer::VoronoiSphereQtRenderer(QWidget *parent, const std::string &window_title) :
-    _parent(parent),
+inline VoronoiSphereQtRenderer::VoronoiSphereQtRenderer(const std::string &window_title) :
     _window_title(window_title) {
 }
 
 inline std::unique_ptr<QtViewer> VoronoiSphereQtRenderer::render(const VoronoiSphere &voronoi_sphere) {
-    auto viewer = std::make_unique<QtViewer>(_parent, _window_title);
+    auto viewer = std::make_unique<QtViewer>(nullptr, _window_title);
     draw_voronoi_sphere(voronoi_sphere, *viewer);
     viewer->show();
     return viewer;

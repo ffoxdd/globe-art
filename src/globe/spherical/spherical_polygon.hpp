@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_POLYGON_HPP_
 
 #include "spherical_bounding_box.hpp"
-#include "../voronoi/spheres/types.hpp"
+#include "../spherical_voronoi/core/types.hpp"
 #include "helpers.hpp"
 #include "../std_ext/ranges.hpp"
 #include "../math/interval.hpp"

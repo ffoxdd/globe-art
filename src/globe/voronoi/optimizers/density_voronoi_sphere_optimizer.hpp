@@ -3,7 +3,7 @@
 
 #include "../../types.hpp"
 #include "../../spherical/helpers.hpp"
-#include "../spheres/voronoi_sphere.hpp"
+#include "../core/voronoi_sphere.hpp"
 #include "../../generators/spherical_random_point_generator.hpp"
 #include "../../fields/scalar/noise_field.hpp"
 #include "../../spherical/spherical_polygon.hpp"

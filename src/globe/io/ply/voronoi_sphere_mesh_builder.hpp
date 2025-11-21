@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_IO_PLY_VORONOI_SPHERE_MESH_BUILDER_HPP_
 
 #include "../../types.hpp"
-#include "../../voronoi/spheres/voronoi_sphere.hpp"
+#include "../../spherical_voronoi/core/voronoi_sphere.hpp"
 #include "../../spherical/helpers.hpp"
 #include "mesh_builder.hpp"
 

@@ -1,153 +1,90 @@
-#include "globe/voronoi/optimizers/density_voronoi_sphere_optimizer.hpp"
-#include "globe/voronoi/spheres/random_voronoi_sphere_builder.hpp"
+#include "globe/spherical_voronoi/factories/voronoi_sphere_factory.hpp"
 #include "globe/io/qt/voronoi_sphere_qt_renderer.hpp"
-#include "globe/fields/scalar/constant_scalar_field.hpp"
-#include "globe/fields/scalar/noise_field.hpp"
-#include "globe/fields/integrable/density_sampled_integrable_field.hpp"
-#include "globe/math/interval.hpp"
-#include "globe/generators/spherical_random_point_generator.hpp"
-#include "globe/types.hpp"
 #include <CLI/CLI.hpp>
 #include <CGAL/Qt/init_ogl_context.h>
+#include <QtWidgets/QApplication>
 #include <iostream>
 #include <string>
-#include <memory>
-#include <vector>
-#include <algorithm>
 
 using namespace globe;
 
-int render(const VoronoiSphere &voronoi_sphere, bool render, const std::string &program_name, int argc, char *argv[]);
-int run(int points_count, const std::string &density_function, bool render, int optimization_passes, const std::string &program_name, int argc, char *argv[]);
-
-template<typename SF>
-int run_with_density_field(int points_count, int optimization_passes, bool render, const std::string &program_name, int argc, char *argv[]);
-
-template<typename SF>
-std::unique_ptr<DensitySampledIntegrableField<SF>> build_integrable_field(int expected_point_count);
-std::unique_ptr<QApplication> initialize_q_application(int &argc, char **argv);
-
-int main(int argc, char *argv[]) {
-    std::string program_name = argc > 0 ? argv[0] : "generate_globe";
-
-    CLI::App app{"Globe Art Generator"};
-
+struct Config {
     int points_count;
     std::string density_function;
     bool perform_render;
     int optimization_passes;
+};
 
-    app.add_option("--points,-p", points_count)
+Config parse_arguments(int argc, char *argv[]);
+int render(const VoronoiSphere &voronoi_sphere, bool perform_render, int argc, char *argv[]);
+
+int main(int argc, char *argv[]) {
+    Config config = parse_arguments(argc, argv);
+
+    std::cout <<
+        "Configuration:" << std::endl <<
+        "  Points: " << config.points_count << std::endl <<
+        "  Density: " << config.density_function << std::endl <<
+        "  Render: " << (config.perform_render ? "yes" : "no") << std::endl <<
+        "  Optimization passes: " << config.optimization_passes << std::endl <<
+        std::endl;
+
+    VoronoiSphereFactory factory(
+        config.points_count,
+        config.density_function,
+        config.optimization_passes
+    );
+
+    VoronoiSphere voronoi_sphere = factory.create();
+
+    return render(voronoi_sphere, config.perform_render, argc, argv);
+}
+
+Config parse_arguments(int argc, char *argv[]) {
+    CLI::App app{"Globe Art Generator"};
+
+    Config config;
+
+    app.add_option("--points,-p", config.points_count)
         ->description("Number of points to generate")
         ->default_val(10);
 
-    app.add_option("--density-function,-d", density_function)
+    app.add_option("--density-function,-d", config.density_function)
         ->description("Density function type")
         ->check(CLI::IsMember({"constant", "noise"}))
         ->default_val("noise");
 
-    app.add_option("--render", perform_render)
+    app.add_option("--render", config.perform_render)
         ->description("Enable Qt rendering")
         ->default_val(true);
 
-    app.add_option("--optimization-passes", optimization_passes)
+    app.add_option("--optimization-passes", config.optimization_passes)
         ->description("Number of optimization passes")
         ->default_val(10)
         ->check(CLI::PositiveNumber);
 
-    CLI11_PARSE(app, argc, argv);
-
-    return run(points_count, density_function, perform_render, optimization_passes, program_name, argc, argv);
-}
-
-int run(
-    int points_count,
-    const std::string &density_function,
-    bool perform_render,
-    int optimization_passes,
-    const std::string &program_name,
-    int argc, char *argv[]
-) {
-    std::cout <<
-        "Configuration:" << std::endl <<
-        "  Points: " << points_count << std::endl <<
-        "  Density: " << density_function << std::endl <<
-        "  Render: " << (perform_render ? "yes" : "no") << std::endl <<
-        "  Optimization passes: " << optimization_passes << std::endl <<
-        std::endl;
-
-    if (density_function == "constant") {
-        return run_with_density_field<ConstantScalarField>(points_count, optimization_passes, perform_render, program_name, argc, argv);
-    } else {
-        return run_with_density_field<NoiseField>(points_count, optimization_passes, perform_render, program_name, argc, argv);
+    try {
+        app.parse(argc, argv);
+    } catch (const CLI::ParseError &e) {
+        std::exit(app.exit(e));
     }
-}
 
-template<typename SF>
-int run_with_density_field(
-    int points_count,
-    int optimization_passes,
-    bool perform_render,
-    const std::string &program_name,
-    int argc, char *argv[]
-) {
-    RandomVoronoiSphereBuilder<> builder{};
-    VoronoiSphere initial_voronoi = builder.build(points_count);
-
-    auto integrable_field = build_integrable_field<SF>(points_count);
-
-    DensityVoronoiSphereOptimizer optimizer(
-        std::move(initial_voronoi),
-        std::move(integrable_field)
-    );
-
-    VoronoiSphere optimized = optimizer.optimize(
-        static_cast<size_t>(optimization_passes)
-    );
-
-    return render(optimized, perform_render, program_name, argc, argv);
-}
-
-template<typename SF>
-std::unique_ptr<DensitySampledIntegrableField<SF>> build_integrable_field(int expected_point_count) {
-    SF density_field;
-
-    SphericalRandomPointGenerator point_generator;
-    std::vector<Point3> sample_points;
-    for (int i = 0; i < 1000; i++) {
-        sample_points.push_back(point_generator.generate());
-    }
-    density_field.normalize(sample_points);
-
-    size_t target_samples = std::max(
-        static_cast<size_t>(60'000),
-        static_cast<size_t>(expected_point_count) * 3'000
-    );
-
-    return std::make_unique<DensitySampledIntegrableField<SF>>(
-        density_field,
-        target_samples
-    );
-}
-
-std::unique_ptr<QApplication> initialize_q_application(int &argc, char **argv) {
-  CGAL::Qt::init_ogl_context(4, 3);
-  return std::make_unique<QApplication>(argc, argv);
+    return config;
 }
 
 int render(
     const VoronoiSphere &voronoi_sphere,
-    bool render,
-    const std::string &program_name,
+    bool perform_render,
     int argc,
     char *argv[]
 ) {
-  if (!render) {
-    return 0;
-  }
+    if (!perform_render) {
+        return 0;
+    }
 
-  auto qt_app = initialize_q_application(argc, argv);
-  VoronoiSphereQtRenderer renderer(nullptr, program_name);
-  auto viewer = renderer.render(voronoi_sphere);
-  return qt_app->exec();
+    CGAL::Qt::init_ogl_context(4, 3);
+    QApplication qt_app(argc, argv);
+    VoronoiSphereQtRenderer renderer("Globe");
+    renderer.render(voronoi_sphere);
+    return qt_app.exec();
 }

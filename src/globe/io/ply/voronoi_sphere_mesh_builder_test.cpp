@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "voronoi_sphere_mesh_builder.hpp"
-#include "../../voronoi/spheres/voronoi_sphere.hpp"
+#include "../../spherical_voronoi/core/voronoi_sphere.hpp"
 #include "../../types.hpp"
 
 using namespace globe;
