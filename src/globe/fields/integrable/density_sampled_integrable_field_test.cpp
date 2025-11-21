@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
 #include "./density_sampled_integrable_field.hpp"
-#include "constant_scalar_field.hpp"
-#include "../spherical/spherical_polygon.hpp"
-#include "../spherical/spherical_bounding_box.hpp"
-#include "../types.hpp"
+#include "../scalar/constant_scalar_field.hpp"
+#include "../../spherical/spherical_polygon.hpp"
+#include "../../spherical/spherical_bounding_box.hpp"
+#include "../../types.hpp"
 #include <vector>
 #include <cmath>
 

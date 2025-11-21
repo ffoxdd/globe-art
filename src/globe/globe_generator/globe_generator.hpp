@@ -6,9 +6,9 @@
 #include "../point_generator/point_generator.hpp"
 #include "../point_generator/random_sphere_point_generator.hpp"
 #include "../voronoi_sphere/voronoi_sphere.hpp"
-#include "../fields/noise_field.hpp"
+#include "../fields/scalar/noise_field.hpp"
 #include "../spherical/spherical_polygon.hpp"
-#include "../fields/density_sampled_integrable_field.hpp"
+#include "../fields/integrable/density_sampled_integrable_field.hpp"
 #include "../math/interval.hpp"
 #include <algorithm>
 #include <memory>

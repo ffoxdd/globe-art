@@ -1,8 +1,8 @@
 #ifndef GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_FIELD_H_
 #define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_FIELD_H_
 
-#include "../types.hpp"
-#include "../math/interval.hpp"
+#include "../../types.hpp"
+#include "../../math/interval.hpp"
 #include <anl/anl.h>
 #include <memory>
 #include <ranges>

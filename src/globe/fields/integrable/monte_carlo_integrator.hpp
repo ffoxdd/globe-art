@@ -1,13 +1,13 @@
 #ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MONTE_CARLO_INTEGRATOR_HPP_
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MONTE_CARLO_INTEGRATOR_HPP_
 
-#include "../types.hpp"
-#include "../spherical/spherical_polygon.hpp"
-#include "../spherical/spherical_bounding_box.hpp"
-#include "../sampling/sample_point_generator/sample_point_generator.hpp"
-#include "../sampling/sample_point_generator/bounding_box_sample_point_generator.hpp"
-#include "scalar_field.hpp"
-#include "noise_field.hpp"
+#include "../../types.hpp"
+#include "../../spherical/spherical_polygon.hpp"
+#include "../../spherical/spherical_bounding_box.hpp"
+#include "../../sampling/sample_point_generator/sample_point_generator.hpp"
+#include "../../sampling/sample_point_generator/bounding_box_sample_point_generator.hpp"
+#include "../scalar/scalar_field.hpp"
+#include "../scalar/noise_field.hpp"
 #include <cmath>
 #include <optional>
 #include <cstddef>
