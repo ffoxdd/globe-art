@@ -7,10 +7,8 @@
 #include "../../fields/scalar/constant_scalar_field.hpp"
 #include "../../fields/scalar/noise_field.hpp"
 #include "../../fields/integrable/density_sampled_integrable_field.hpp"
-#include "../../generators/spherical_random_point_generator.hpp"
 #include <string>
 #include <memory>
-#include <vector>
 #include <algorithm>
 
 namespace globe {
@@ -26,6 +24,9 @@ class VoronoiSphereFactory {
     VoronoiSphere build();
 
  private:
+    static constexpr size_t MIN_DENSITY_FIELD_SAMPLES = 60'000;
+    static constexpr size_t DENSITY_FIELD_SAMPLES_PER_POINT = 3'000;
+
     int _points_count;
     std::string _density_function;
     size_t _optimization_passes;
@@ -37,6 +38,8 @@ class VoronoiSphereFactory {
 
     template<typename SF>
     std::unique_ptr<DensitySampledIntegrableField<SF>> build_integrable_field();
+
+    size_t density_field_sample_count();
 };
 
 inline VoronoiSphereFactory::VoronoiSphereFactory(
@@ -76,18 +79,21 @@ inline VoronoiSphere VoronoiSphereFactory::optimize(VoronoiSphere voronoi_sphere
     return optimizer.optimize(_optimization_passes);
 }
 
+inline size_t VoronoiSphereFactory::density_field_sample_count() {
+    return std::max(
+        MIN_DENSITY_FIELD_SAMPLES,
+        static_cast<size_t>(_points_count) * DENSITY_FIELD_SAMPLES_PER_POINT
+    );
+}
+
 template<typename SF>
 inline std::unique_ptr<DensitySampledIntegrableField<SF>> VoronoiSphereFactory::build_integrable_field() {
     SF density_field;
-
-    size_t target_samples = std::max(
-        static_cast<size_t>(60'000),
-        static_cast<size_t>(_points_count) * 3'000
-    );
+    size_t sample_count = density_field_sample_count();
 
     return std::make_unique<DensitySampledIntegrableField<SF>>(
         density_field,
-        target_samples
+        sample_count
     );
 }
 
