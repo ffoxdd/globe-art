@@ -23,7 +23,7 @@ class VoronoiSphereFactory {
         int optimization_passes
     );
 
-    VoronoiSphere create();
+    VoronoiSphere build();
 
  private:
     int _points_count;
@@ -31,7 +31,7 @@ class VoronoiSphereFactory {
     int _optimization_passes;
 
     template<typename SF>
-    VoronoiSphere create_with_field();
+    VoronoiSphere build_with_field();
 
     template<typename SF>
     std::unique_ptr<DensitySampledIntegrableField<SF>> build_integrable_field();
@@ -47,16 +47,16 @@ inline VoronoiSphereFactory::VoronoiSphereFactory(
     _optimization_passes(optimization_passes) {
 }
 
-inline VoronoiSphere VoronoiSphereFactory::create() {
+inline VoronoiSphere VoronoiSphereFactory::build() {
     if (_density_function == "constant") {
-        return create_with_field<ConstantScalarField>();
+        return build_with_field<ConstantScalarField>();
     } else {
-        return create_with_field<NoiseField>();
+        return build_with_field<NoiseField>();
     }
 }
 
 template<typename SF>
-inline VoronoiSphere VoronoiSphereFactory::create_with_field() {
+inline VoronoiSphere VoronoiSphereFactory::build_with_field() {
     RandomVoronoiSphereBuilder<> builder{};
     VoronoiSphere initial_voronoi = builder.build(_points_count);
 

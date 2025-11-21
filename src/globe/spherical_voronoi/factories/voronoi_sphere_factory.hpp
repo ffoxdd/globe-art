@@ -23,15 +23,17 @@ class VoronoiSphereFactory {
         int optimization_passes
     );
 
-    VoronoiSphere create();
+    VoronoiSphere build();
 
  private:
     int _points_count;
     std::string _density_function;
-    int _optimization_passes;
+    size_t _optimization_passes;
+
+    VoronoiSphere build_initial();
 
     template<typename SF>
-    VoronoiSphere create_with_field();
+    VoronoiSphere optimize(VoronoiSphere voronoi_sphere);
 
     template<typename SF>
     std::unique_ptr<DensitySampledIntegrableField<SF>> build_integrable_field();
@@ -44,41 +46,46 @@ inline VoronoiSphereFactory::VoronoiSphereFactory(
 ) :
     _points_count(points_count),
     _density_function(std::move(density_function)),
-    _optimization_passes(optimization_passes) {
+    _optimization_passes(static_cast<size_t>(optimization_passes)) {
 }
 
-inline VoronoiSphere VoronoiSphereFactory::create() {
+inline VoronoiSphere VoronoiSphereFactory::build() {
+    VoronoiSphere initial_voronoi_sphere = build_initial();
+
     if (_density_function == "constant") {
-        return create_with_field<ConstantScalarField>();
+        return optimize<ConstantScalarField>(std::move(initial_voronoi_sphere));
     } else {
-        return create_with_field<NoiseField>();
+        return optimize<NoiseField>(std::move(initial_voronoi_sphere));
     }
 }
 
-template<typename SF>
-inline VoronoiSphere VoronoiSphereFactory::create_with_field() {
-    RandomVoronoiSphereBuilder<> builder{};
-    VoronoiSphere initial_voronoi = builder.build(_points_count);
+inline VoronoiSphere VoronoiSphereFactory::build_initial() {
+    RandomVoronoiSphereBuilder<> builder;
+    return builder.build(_points_count);
+}
 
+template<typename SF>
+inline VoronoiSphere VoronoiSphereFactory::optimize(VoronoiSphere voronoi_sphere) {
     auto integrable_field = build_integrable_field<SF>();
 
     DensityVoronoiSphereOptimizer optimizer(
-        std::move(initial_voronoi),
+        std::move(voronoi_sphere),
         std::move(integrable_field)
     );
 
-    return optimizer.optimize(static_cast<size_t>(_optimization_passes));
+    return optimizer.optimize(_optimization_passes);
 }
 
 template<typename SF>
 inline std::unique_ptr<DensitySampledIntegrableField<SF>> VoronoiSphereFactory::build_integrable_field() {
     SF density_field;
-
     SphericalRandomPointGenerator point_generator;
+
     std::vector<Point3> sample_points;
     for (int i = 0; i < 1000; i++) {
         sample_points.push_back(point_generator.generate());
     }
+
     density_field.normalize(sample_points);
 
     size_t target_samples = std::max(
