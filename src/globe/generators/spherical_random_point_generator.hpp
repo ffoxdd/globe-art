@@ -4,7 +4,6 @@
 #include "../types.hpp"
 #include "../spherical/spherical_bounding_box.hpp"
 #include "../spherical/spherical_bounding_box_sampler.hpp"
-#include "../math/interval.hpp"
 
 namespace globe {
 

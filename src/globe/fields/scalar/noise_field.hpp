@@ -4,12 +4,13 @@
 #include "../../types.hpp"
 #include "../../math/interval.hpp"
 #include <anl/anl.h>
+#include <cmath>
 
 namespace globe {
 
 class NoiseField {
  public:
-    NoiseField(Interval output_range = Interval(0, 1));
+    NoiseField(Interval output_range = Interval(0, 1), int seed = 1546);
     double value(const Point3 &location);
     Interval output_range() const { return _output_range; }
 
@@ -17,14 +18,24 @@ class NoiseField {
     anl::CKernel _kernel;
     anl::CInstructionIndex _instruction_index;
     Interval _output_range;
+    int _seed;
 
-    static anl::CInstructionIndex initialize_kernel(anl::CKernel &kernel, Interval output_range);
+    static constexpr double NOISE_FREQUENCY = 1.0;
+    static constexpr int NOISE_OCTAVES = 2;
+    static constexpr double NOISE_PERSISTENCE = 0.5;
+    static constexpr double NOISE_LACUNARITY = 2.0;
+    static constexpr double CONTRAST_GAIN = 0.95;
+
+    static double amplitude_sum(double persistence, int octaves);
+    static double fractal_range_scale(double persistence, int octaves);
+    static anl::CInstructionIndex initialize_kernel(anl::CKernel &kernel, Interval output_range, int seed);
 };
 
-inline NoiseField::NoiseField(Interval output_range) :
+inline NoiseField::NoiseField(Interval output_range, int seed) :
     _kernel(),
-    _instruction_index(initialize_kernel(_kernel, output_range)),
-    _output_range(output_range) {
+    _instruction_index(initialize_kernel(_kernel, output_range, seed)),
+    _output_range(output_range),
+    _seed(seed) {
 }
 
 inline double NoiseField::value(const Point3 &location) {
@@ -33,25 +44,40 @@ inline double NoiseField::value(const Point3 &location) {
     );
 }
 
-inline anl::CInstructionIndex NoiseField::initialize_kernel(anl::CKernel &kernel, Interval output_range) {
-    const double persistence = 0.5;
-    const double lacunarity = 2.0;
-    const double octaves = 2;
-    const double frequency = 1.0;
+inline double NoiseField::amplitude_sum(double persistence, int octaves) {
+    double sum = 0.0;
 
-    auto seed = kernel.constant(1546);
+    for (int i = 0; i < octaves; ++i) {
+        sum += std::pow(persistence, i);
+    }
+
+    return sum;
+}
+
+inline double NoiseField::fractal_range_scale(double persistence, int octaves) {
+    constexpr double SIMPLEX_EMPIRICAL_FACTOR = 10.5;
+
+    double amplitude = amplitude_sum(persistence, octaves);
+    double range = 2.0 * SIMPLEX_EMPIRICAL_FACTOR * amplitude;
+
+    return 1.0 / range;
+}
+
+inline anl::CInstructionIndex NoiseField::initialize_kernel(anl::CKernel &kernel, Interval output_range, int seed) {
+    auto seed_instruction = kernel.constant(seed);
 
     auto instruction_index = kernel.fractal(
-        seed,
-        kernel.simplexBasis(seed),
-        kernel.constant(persistence),
-        kernel.constant(lacunarity),
-        kernel.constant(octaves),
-        kernel.constant(frequency)
+        seed_instruction,
+        kernel.simplexBasis(seed_instruction),
+        kernel.constant(NOISE_PERSISTENCE),
+        kernel.constant(NOISE_LACUNARITY),
+        kernel.constant(NOISE_OCTAVES),
+        kernel.constant(NOISE_FREQUENCY)
     );
 
-    instruction_index = kernel.scaleOffset(instruction_index, 1.0 / 32.0, 0.5);
-    instruction_index = kernel.gain(kernel.constant(0.95), instruction_index);
+    double scale = fractal_range_scale(NOISE_PERSISTENCE, NOISE_OCTAVES);
+    instruction_index = kernel.scaleOffset(instruction_index, scale, 0.5);
+    instruction_index = kernel.gain(kernel.constant(CONTRAST_GAIN), instruction_index);
 
     double range_scale = output_range.measure();
     double range_offset = output_range.low();
