@@ -14,8 +14,7 @@
         } \
     } while (0)
 
-namespace globe {
-namespace testing {
+namespace globe::testing {
 
 constexpr double DEFAULT_TOLERANCE = 1e-9;
 
@@ -41,7 +40,6 @@ inline bool points_approximately_equal(
     return distance < tolerance;
 }
 
-}
 }
 
 #endif //GLOBEART_SRC_GLOBE_TESTING_GEOMETRIC_ASSERTIONS_HPP_

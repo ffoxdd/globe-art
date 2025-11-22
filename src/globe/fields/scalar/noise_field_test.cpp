@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 #include "noise_field.hpp"
-#include <random>
-#include <functional>
-#include <limits>
+#include "../../testing/statistical_assertions.hpp"
+#include "../../math/interval.hpp"
+#include "../../generators/random_point_generator.hpp"
 #include <cstdlib>
 
 using namespace globe;
+using globe::testing::compute_statistics_with_boundary_check;
+using globe::testing::compute_range_coverage;
+using globe::testing::compute_clipping_ratio;
 
 TEST(NoiseFieldTest, ValueMethodReturnsConsistentResult) {
     Point3 location = {0.1, 0.2, 0.3};
@@ -45,117 +48,56 @@ std::vector<int> test_seeds() {
     return seeds;
 }
 
-class RandomPointGenerator {
- public:
-    RandomPointGenerator() : _random_engine(std::random_device{}()) {
-    }
-
-    Point3 generate() {
-        return Point3(
-            random_coordinate(),
-            random_coordinate(),
-            random_coordinate()
-        );
-    }
-
- private:
-    double random_coordinate() {
-        return _distribution(_random_engine);
-    }
-
-    std::mt19937 _random_engine;
-    std::uniform_real_distribution<> _distribution{-1.0, 1.0};
-};
-
-struct DistributionMetrics {
-    double min_value;
-    double max_value;
-    int values_at_min;
-    int values_at_max;
-    double range_coverage;
-    double clipping_ratio;
-};
-
-DistributionMetrics measure_distribution(
-    std::function<double(const Point3&)> field_func,
-    Interval expected_range,
-    int sample_count
-) {
-    RandomPointGenerator point_generator;
-
-    double min_value = std::numeric_limits<double>::max();
-    double max_value = std::numeric_limits<double>::lowest();
-
-    int values_at_min = 0;
-    int values_at_max = 0;
-
-    for (int i = 0; i < sample_count; ++i) {
-        Point3 point = point_generator.generate();
-        double value = field_func(point);
-
-        min_value = std::min(min_value, value);
-        max_value = std::max(max_value, value);
-
-        if (std::abs(value - expected_range.low()) < 1e-10) {
-            values_at_min++;
-        }
-
-        if (std::abs(value - expected_range.high()) < 1e-10) {
-            values_at_max++;
-        }
-    }
-
-    double range_coverage = (max_value - min_value) / expected_range.measure();
-    double clipping_ratio = static_cast<double>(values_at_min + values_at_max) / sample_count;
-
-    return {
-        min_value,
-        max_value,
-        values_at_min,
-        values_at_max,
-        range_coverage,
-        clipping_ratio,
-    };
-}
-
 TEST(NoiseFieldTest, CanConfigureOutputRange) {
     require_expensive_tests();
 
     Interval output_range = Interval(-0.01, 0.02);
+    RandomPointGenerator point_generator;
 
     for (int seed : test_seeds()) {
         NoiseField noise_field(output_range, seed);
         Interval expected_range = noise_field.output_range();
 
-        auto metrics = measure_distribution(
-            [&](const Point3& p) { return noise_field.value(p); },
+        auto metrics = compute_statistics_with_boundary_check(
+            [&]() {
+                Point3 point = point_generator.generate();
+                return noise_field.value(point);
+            },
             expected_range,
             SAMPLE_COUNT
         );
 
-        EXPECT_GE(metrics.min_value, output_range.low())
-            << "Failed for seed " << seed << " (min_value was " << metrics.min_value << ")";
+        EXPECT_GE(metrics.stats.min_value, output_range.low())
+            << "Failed for seed " << seed << " (min_value was " << metrics.stats.min_value << ")";
 
-        EXPECT_LE(metrics.max_value, output_range.high())
-            << "Failed for seed " << seed << " (max_value was " << metrics.max_value << ")";
+        EXPECT_LE(metrics.stats.max_value, output_range.high())
+            << "Failed for seed " << seed << " (max_value was " << metrics.stats.max_value << ")";
     }
 }
 
 TEST(NoiseFieldTest, OutputDistributionUsesFullRange) {
     require_expensive_tests();
 
+    RandomPointGenerator point_generator;
+
     for (int seed : test_seeds()) {
         NoiseField noise_field(Interval(0, 1), seed);
         Interval expected_range = noise_field.output_range();
 
-        auto metrics = measure_distribution(
-            [&](const Point3& p) { return noise_field.value(p); },
+        auto metrics = compute_statistics_with_boundary_check(
+            [&]() {
+                Point3 point = point_generator.generate();
+                return noise_field.value(point);
+            },
             expected_range,
             SAMPLE_COUNT
         );
 
-        EXPECT_GT(metrics.range_coverage, 0.8) << "Failed for seed " << seed;
-        EXPECT_LT(metrics.clipping_ratio, 0.1) << "Failed for seed " << seed;
+        double range_coverage = compute_range_coverage(metrics.stats, expected_range);
+        double clipping_ratio = compute_clipping_ratio(metrics);
+
+        EXPECT_GT(range_coverage, 0.8) << "Failed for seed " << seed;
+        EXPECT_LT(clipping_ratio, 0.1) << "Failed for seed " << seed;
     }
 }
 
