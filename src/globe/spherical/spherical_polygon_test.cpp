@@ -4,21 +4,20 @@
 
 using namespace globe;
 
+Arc make_arc(SphericalVector3 normal, SphericalPoint3 source, SphericalPoint3 target) {
+    return Arc(
+        SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, normal),
+        source,
+        target
+    );
+}
+
 TEST(SphericalPolygonTest, SimplePolygon) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-               SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0)),
-               SphericalPoint3(0, 1, 0), SphericalPoint3(0, 0, 1)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 1, 0)),
-               SphericalPoint3(0, 0, 1), SphericalPoint3(1, 0, 0)
-           ),
+           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
+           make_arc(SphericalVector3(1, 0, 0), SphericalPoint3(0, 1, 0), SphericalPoint3(0, 0, 1)),
+           make_arc(SphericalVector3(0, 1, 0), SphericalPoint3(0, 0, 1), SphericalPoint3(1, 0, 0)),
        }
    );
 
@@ -32,18 +31,9 @@ TEST(SphericalPolygonTest, SimplePolygon) {
 TEST(SphericalPolygonTest, InsideOutPolygon) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, -1, 0)),
-               SphericalPoint3(1, 0, 0), SphericalPoint3(0, 0, 1)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(-1, 0, 0)),
-               SphericalPoint3(0, 0, 1), SphericalPoint3(0, 1, 0)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, -1)),
-               SphericalPoint3(0, 1, 0), SphericalPoint3(1, 0, 0)
-           ),
+           make_arc(SphericalVector3(0, -1, 0), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 0, 1)),
+           make_arc(SphericalVector3(-1, 0, 0), SphericalPoint3(0, 0, 1), SphericalPoint3(0, 1, 0)),
+           make_arc(SphericalVector3(0, 0, -1), SphericalPoint3(0, 1, 0), SphericalPoint3(1, 0, 0)),
        }
    );
 
@@ -57,22 +47,10 @@ TEST(SphericalPolygonTest, InsideOutPolygon) {
 TEST(SphericalPolygonTest, Hemisphere) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-               SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-               SphericalPoint3(0, 1, 0), SphericalPoint3(-1, 0, 0)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-               SphericalPoint3(-1, 0, 0), SphericalPoint3(0, -1, 0)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-               SphericalPoint3(0, -1, 0), SphericalPoint3(1, 0, 0)
-           ),
+           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
+           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(0, 1, 0), SphericalPoint3(-1, 0, 0)),
+           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(-1, 0, 0), SphericalPoint3(0, -1, 0)),
+           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(0, -1, 0), SphericalPoint3(1, 0, 0)),
        }
    );
 
@@ -84,14 +62,8 @@ TEST(SphericalPolygonTest, Hemisphere) {
 TEST(SphericalPolygonTest, PathologicalHemisphere) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-               SphericalPoint3(1, 0, 0), SphericalPoint3(-1, 0, 0)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-               SphericalPoint3(-1, 0, 0), SphericalPoint3(1, 0, 0)
-           ),
+           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(-1, 0, 0)),
+           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(-1, 0, 0), SphericalPoint3(1, 0, 0)),
        }
    );
 
@@ -105,18 +77,9 @@ TEST(SphericalPolygonTest, PointOnArcCircumcircle) {
    // A point on the arc's supporting circle but on the arc itself should be inside
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-               SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0)),
-               SphericalPoint3(0, 1, 0), SphericalPoint3(0, 0, 1)
-           ),
-           Arc(
-               SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 1, 0)),
-               SphericalPoint3(0, 0, 1), SphericalPoint3(1, 0, 0)
-           ),
+           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
+           make_arc(SphericalVector3(1, 0, 0), SphericalPoint3(0, 1, 0), SphericalPoint3(0, 0, 1)),
+           make_arc(SphericalVector3(0, 1, 0), SphericalPoint3(0, 0, 1), SphericalPoint3(1, 0, 0)),
        }
    );
 
@@ -156,10 +119,10 @@ TEST(SphericalPolygonTest, PolygonWithWrappedThetaBoundingBox) {
     Vector3 v4 = CGAL::cross_product(position_vector(p4), position_vector(p1));
 
     SphericalPolygon polygon(std::vector<Arc>{
-        Arc(SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(v1.x(), v1.y(), v1.z())), sp1, sp2),
-        Arc(SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(v2.x(), v2.y(), v2.z())), sp2, sp3),
-        Arc(SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(v3.x(), v3.y(), v3.z())), sp3, sp4),
-        Arc(SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(v4.x(), v4.y(), v4.z())), sp4, sp1)
+        make_arc(SphericalVector3(v1.x(), v1.y(), v1.z()), sp1, sp2),
+        make_arc(SphericalVector3(v2.x(), v2.y(), v2.z()), sp2, sp3),
+        make_arc(SphericalVector3(v3.x(), v3.y(), v3.z()), sp3, sp4),
+        make_arc(SphericalVector3(v4.x(), v4.y(), v4.z()), sp4, sp1)
     });
 
     SphericalBoundingBox bbox = polygon.bounding_box();
@@ -200,10 +163,10 @@ TEST(SphericalPolygonTest, BoundingBoxWrappedThetaMeasure) {
     Vector3 v4 = CGAL::cross_product(position_vector(p4), position_vector(p1));
 
     SphericalPolygon polygon(std::vector<Arc>{
-        Arc(SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(v1.x(), v1.y(), v1.z())), sp1, sp2),
-        Arc(SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(v2.x(), v2.y(), v2.z())), sp2, sp3),
-        Arc(SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(v3.x(), v3.y(), v3.z())), sp3, sp4),
-        Arc(SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(v4.x(), v4.y(), v4.z())), sp4, sp1)
+        make_arc(SphericalVector3(v1.x(), v1.y(), v1.z()), sp1, sp2),
+        make_arc(SphericalVector3(v2.x(), v2.y(), v2.z()), sp2, sp3),
+        make_arc(SphericalVector3(v3.x(), v3.y(), v3.z()), sp3, sp4),
+        make_arc(SphericalVector3(v4.x(), v4.y(), v4.z()), sp4, sp1)
     });
 
     SphericalBoundingBox bbox = polygon.bounding_box();
@@ -235,21 +198,9 @@ TEST(SphericalPolygonTest, BoundingSphereRadiusWithWrappedTheta) {
 TEST(SphericalPolygonTest, CentroidReturnsPointOnUnitSphere) {
     SphericalPolygon polygon = SphericalPolygon(
         std::vector<Arc>{
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(1, 0, 0),
-                SphericalPoint3(0, 1, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(1, 0, 0)),
-                SphericalPoint3(0, 1, 0),
-                SphericalPoint3(0, 0, 1)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 1, 0)),
-                SphericalPoint3(0, 0, 1),
-                SphericalPoint3(1, 0, 0)
-            ),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
+            make_arc(SphericalVector3(1, 0, 0), SphericalPoint3(0, 1, 0), SphericalPoint3(0, 0, 1)),
+            make_arc(SphericalVector3(0, 1, 0), SphericalPoint3(0, 0, 1), SphericalPoint3(1, 0, 0)),
         }
     );
 
@@ -266,26 +217,10 @@ TEST(SphericalPolygonTest, CentroidReturnsPointOnUnitSphere) {
 TEST(SphericalPolygonTest, CentroidIsOnUnitSphere) {
     SphericalPolygon polygon = SphericalPolygon(
         std::vector<Arc>{
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(1, 0, 0),
-                SphericalPoint3(0, 1, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(0, 1, 0),
-                SphericalPoint3(-1, 0, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(-1, 0, 0),
-                SphericalPoint3(0, -1, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(0, -1, 0),
-                SphericalPoint3(1, 0, 0)
-            ),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(0, 1, 0), SphericalPoint3(-1, 0, 0)),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(-1, 0, 0), SphericalPoint3(0, -1, 0)),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(0, -1, 0), SphericalPoint3(1, 0, 0)),
         }
     );
 
@@ -303,36 +238,12 @@ TEST(SphericalPolygonTest, CentroidForSymmetricPolygon) {
     const double sqrt3 = std::sqrt(3);
     SphericalPolygon polygon = SphericalPolygon(
         std::vector<Arc>{
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(1, 0, 0),
-                SphericalPoint3(0.5, sqrt3 / 2, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(0.5, sqrt3 / 2, 0),
-                SphericalPoint3(-0.5, sqrt3 / 2, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(-0.5, sqrt3 / 2, 0),
-                SphericalPoint3(-1, 0, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(-1, 0, 0),
-                SphericalPoint3(-0.5, -sqrt3 / 2, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(-0.5, -sqrt3 / 2, 0),
-                SphericalPoint3(0.5, -sqrt3 / 2, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(0.5, -sqrt3 / 2, 0),
-                SphericalPoint3(1, 0, 0)
-            ),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(0.5, sqrt3 / 2, 0)),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(0.5, sqrt3 / 2, 0), SphericalPoint3(-0.5, sqrt3 / 2, 0)),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(-0.5, sqrt3 / 2, 0), SphericalPoint3(-1, 0, 0)),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(-1, 0, 0), SphericalPoint3(-0.5, -sqrt3 / 2, 0)),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(-0.5, -sqrt3 / 2, 0), SphericalPoint3(0.5, -sqrt3 / 2, 0)),
+            make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(0.5, -sqrt3 / 2, 0), SphericalPoint3(1, 0, 0)),
         }
     );
 
