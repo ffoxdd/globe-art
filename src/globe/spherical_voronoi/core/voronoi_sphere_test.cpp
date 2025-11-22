@@ -6,8 +6,6 @@
 
 using namespace globe;
 
-namespace {
-
 VoronoiSphere create_simple_voronoi_sphere() {
     VoronoiSphere sphere;
 
@@ -26,8 +24,6 @@ bool points_approximately_equal(const Point3 &a, const Point3 &b, double toleran
     double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
     return distance < tolerance;
 }
-
-} // namespace
 
 TEST(VoronoiSphereTest, DefaultConstructorCreatesEmptySphere) {
     VoronoiSphere sphere;

@@ -9,8 +9,6 @@ using namespace globe;
 using ::testing::Return;
 using ::testing::_;
 
-namespace {
-
 SphericalPolygon make_northern_hemisphere_polygon() {
     return SphericalPolygon(
         std::vector<Arc>{
@@ -91,8 +89,6 @@ class SequenceSamplePointGenerator {
     std::vector<Point3> _sequence;
     size_t _index;
 };
-
-} // namespace
 
 TEST(MonteCarloIntegratorTest, EstimatesHemisphereMassWithUniformDensity) {
     MockScalarField mock_scalar_field;

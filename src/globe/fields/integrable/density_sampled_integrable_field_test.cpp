@@ -9,8 +9,6 @@
 
 using namespace globe;
 
-namespace {
-
 SphericalPolygon make_northern_hemisphere_polygon() {
     return SphericalPolygon(
         std::vector<Arc>{
@@ -37,8 +35,6 @@ SphericalPolygon make_northern_hemisphere_polygon() {
         }
     );
 }
-
-} // namespace
 
 TEST(DensitySampledIntegrableFieldTest, IntegratesEntireSphereWithUniformDensity) {
     ConstantScalarField scalar_field(1.0);

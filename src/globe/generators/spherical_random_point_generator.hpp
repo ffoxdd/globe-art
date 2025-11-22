@@ -17,7 +17,8 @@ class SphericalRandomPointGenerator {
 };
 
 inline Point3 SphericalRandomPointGenerator::generate() {
-    return generate(SphericalBoundingBox::full_sphere());
+    static const SphericalBoundingBox full_sphere = SphericalBoundingBox::full_sphere();
+    return generate(full_sphere);
 }
 
 inline Point3 SphericalRandomPointGenerator::generate(const SphericalBoundingBox &bounding_box) {

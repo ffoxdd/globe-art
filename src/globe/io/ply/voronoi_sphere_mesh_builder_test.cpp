@@ -5,8 +5,6 @@
 
 using namespace globe;
 
-namespace {
-
 VoronoiSphere create_simple_voronoi_sphere() {
     VoronoiSphere sphere;
 
@@ -17,8 +15,6 @@ VoronoiSphere create_simple_voronoi_sphere() {
 
     return sphere;
 }
-
-} // namespace
 
 TEST(VoronoiSphereMeshBuilderTest, CreatesMeshFromVoronoiSphere) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
