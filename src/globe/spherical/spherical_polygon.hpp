@@ -30,10 +30,10 @@ class SphericalPolygon {
  private:
     std::vector<Arc> _arcs;
 
-    [[nodiscard]] bool _arcs_form_closed_loop() const;
-    [[nodiscard]] Interval _theta_interval(double theta_min, double theta_max) const;
-    [[nodiscard]] bool _is_on_arc(const Arc &arc, const Vector3 &point_vector) const;
-    [[nodiscard]] bool _is_degenerate() const;
+    [[nodiscard]] bool arcs_form_closed_loop() const;
+    [[nodiscard]] Interval theta_interval(double theta_min, double theta_max) const;
+    [[nodiscard]] bool is_on_arc(const Arc &arc, const Vector3 &point_vector) const;
+    [[nodiscard]] bool is_degenerate() const;
     [[nodiscard]] bool is_convex() const;
 };
 
@@ -47,8 +47,8 @@ inline auto SphericalPolygon::points() const {
 
 inline SphericalPolygon::SphericalPolygon(std::vector<Arc> arcs) :
     _arcs(std::move(arcs)) {
-    CGAL_precondition(!_is_degenerate());
-    CGAL_precondition(_arcs_form_closed_loop());
+    CGAL_precondition(!is_degenerate());
+    CGAL_precondition(arcs_form_closed_loop());
 }
 
 inline bool SphericalPolygon::contains(const Point3 &point) const {
@@ -70,7 +70,7 @@ inline bool SphericalPolygon::contains(const Point3 &point) const {
         double sign = CGAL::scalar_product(position_vector(normal), p);
 
         if (sign == 0) {
-            return _is_on_arc(arc, p);
+            return is_on_arc(arc, p);
         }
 
         angle_sum += (sign > 0) ? angle : -angle;
@@ -111,7 +111,7 @@ inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
     }
 
     return {
-        _theta_interval(theta_min, theta_max),
+        theta_interval(theta_min, theta_max),
         Interval(z_min, z_max),
     };
 }
@@ -138,7 +138,7 @@ inline Point3 SphericalPolygon::centroid() const {
     return ORIGIN + normalize(average);
 }
 
-inline bool SphericalPolygon::_arcs_form_closed_loop() const {
+inline bool SphericalPolygon::arcs_form_closed_loop() const {
     for (const auto &[prev, next] : circular_adjacent_pairs(_arcs)) {
         if (prev.target() != next.source()) {
             return false;
@@ -148,11 +148,11 @@ inline bool SphericalPolygon::_arcs_form_closed_loop() const {
     return true;
 }
 
-inline bool SphericalPolygon::_is_degenerate() const {
+inline bool SphericalPolygon::is_degenerate() const {
     return _arcs.empty();
 }
 
-inline Interval SphericalPolygon::_theta_interval(double theta_min, double theta_max) const {
+inline Interval SphericalPolygon::theta_interval(double theta_min, double theta_max) const {
     double theta_span = theta_max - theta_min;
 
     if (theta_span > M_PI) {
@@ -162,7 +162,7 @@ inline Interval SphericalPolygon::_theta_interval(double theta_min, double theta
     }
 }
 
-inline bool SphericalPolygon::_is_on_arc(const Arc &arc, const Vector3 &point_vector) const {
+inline bool SphericalPolygon::is_on_arc(const Arc &arc, const Vector3 &point_vector) const {
     SphericalPoint3 p_ = SphericalPoint3(point_vector.x(), point_vector.y(), point_vector.z());
     Arc p_arc = Arc(arc.supporting_circle(), arc.source(), p_);
 
