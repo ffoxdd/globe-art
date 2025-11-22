@@ -185,9 +185,9 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::OptimizationResult 
 ) {
     Point3 original_position = _voronoi_sphere.site(index);
     Point3 north = antipodal(original_position);
-    TangentBasis basis = build_tangent_basis(north);
-    Point3 tangent_u = basis.tangent_u;
-    Point3 tangent_v = basis.tangent_v;
+    TangentBasis basis = build_tangent_basis(north - ORIGIN);
+    Vector3 tangent_u = basis.tangent_u;
+    Vector3 tangent_v = basis.tangent_v;
 
     using column_vector = dlib::matrix<double, 2, 1>;
 

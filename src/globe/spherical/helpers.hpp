@@ -33,12 +33,6 @@ inline Vector3 normalize(const Vector3 &vector) {
     return {vector.x() / length, vector.y() / length, vector.z() / length};
 }
 
-inline Point3 normalize(const Point3 &point) {
-    Vector3 vec = point - ORIGIN;
-    Vector3 normalized = normalize(vec);
-    return Point3(normalized.x(), normalized.y(), normalized.z());
-}
-
 inline Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, double t, const Point3 &center = ORIGIN) {
     globe::Vector3 v1 = point1 - center;
     globe::Vector3 v2 = point2 - center;
@@ -56,10 +50,6 @@ inline Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, 
     Vector3 interpolated_vector = (alpha * v1) + (beta * v2);
 
     return center + interpolated_vector;
-}
-
-inline double distance(const Point3 &a, const Point3 &b) {
-    return std::sqrt(CGAL::squared_distance(a, b));
 }
 
 inline double theta(double x, double y) {
@@ -82,8 +72,8 @@ inline double spherical_angle(const Vector3 &a, const Vector3 &b, const Vector3 
     );
 }
 
-inline Point3 project_to_sphere(Point3 &point, const Point3 &center = ORIGIN, double radius = 1.0) {
-    auto vector = point - ORIGIN;
+inline Point3 project_to_sphere(const Point3 &point, const Point3 &center = ORIGIN, double radius = 1.0) {
+    auto vector = point - center;
     double scale = radius / std::sqrt(vector.squared_length());
     return center + (vector * scale);
 }
@@ -92,27 +82,22 @@ inline Point3 antipodal(const Point3 &point) {
     return Point3(-point.x(), -point.y(), -point.z());
 }
 struct TangentBasis {
-    Point3 tangent_u;
-    Point3 tangent_v;
+    Vector3 tangent_u;
+    Vector3 tangent_v;
 };
 
-inline TangentBasis build_tangent_basis(const Point3 &normal) {
-    Point3 tangent_u;
+inline TangentBasis build_tangent_basis(const Vector3 &normal) {
+    Vector3 tangent_u;
 
     if (std::abs(normal.z()) < 0.9) {
-        tangent_u = Point3(normal.y(), -normal.x(), 0.0);
+        tangent_u = Vector3(normal.y(), -normal.x(), 0.0);
     } else {
-        tangent_u = Point3(0.0, normal.z(), -normal.y());
+        tangent_u = Vector3(0.0, normal.z(), -normal.y());
     }
 
-    Vector3 tangent_u_vec = normalize(tangent_u - ORIGIN);
-    tangent_u = Point3(tangent_u_vec.x(), tangent_u_vec.y(), tangent_u_vec.z());
+    tangent_u = normalize(tangent_u);
 
-    Point3 tangent_v(
-        normal.y() * tangent_u.z() - normal.z() * tangent_u.y(),
-        normal.z() * tangent_u.x() - normal.x() * tangent_u.z(),
-        normal.x() * tangent_u.y() - normal.y() * tangent_u.x()
-    );
+    Vector3 tangent_v = CGAL::cross_product(normal, tangent_u);
 
     return {tangent_u, tangent_v};
 }
@@ -121,8 +106,8 @@ inline Point3 stereographic_plane_to_sphere(
     double u,
     double v,
     const Point3 &south_pole,
-    const Point3 &tangent_u,
-    const Point3 &tangent_v
+    const Vector3 &tangent_u,
+    const Vector3 &tangent_v
 ) {
     double r_squared = u * u + v * v;
     double scale = 4.0 / (4.0 + r_squared);
