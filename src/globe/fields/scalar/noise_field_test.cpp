@@ -6,9 +6,9 @@
 #include <cstdlib>
 
 using namespace globe;
-using globe::testing::compute_statistics_with_boundary_check;
-using globe::testing::compute_range_coverage;
+using globe::testing::compute_statistics;
 using globe::testing::compute_clipping_ratio;
+using globe::testing::expect_range_coverage;
 
 TEST(NoiseFieldTest, ValueMethodReturnsConsistentResult) {
     Point3 location = {0.1, 0.2, 0.3};
@@ -58,20 +58,20 @@ TEST(NoiseFieldTest, CanConfigureOutputRange) {
         NoiseField noise_field(output_range, seed);
         Interval expected_range = noise_field.output_range();
 
-        auto metrics = compute_statistics_with_boundary_check(
+        auto metrics = compute_statistics(
             [&]() {
                 Point3 point = point_generator.generate();
                 return noise_field.value(point);
             },
-            expected_range,
-            SAMPLE_COUNT
+            SAMPLE_COUNT,
+            &expected_range
         );
 
-        EXPECT_GE(metrics.stats.min_value, output_range.low())
-            << "Failed for seed " << seed << " (min_value was " << metrics.stats.min_value << ")";
+        EXPECT_GE(metrics.min_value, output_range.low())
+            << "Failed for seed " << seed << " (min_value was " << metrics.min_value << ")";
 
-        EXPECT_LE(metrics.stats.max_value, output_range.high())
-            << "Failed for seed " << seed << " (max_value was " << metrics.stats.max_value << ")";
+        EXPECT_LE(metrics.max_value, output_range.high())
+            << "Failed for seed " << seed << " (max_value was " << metrics.max_value << ")";
     }
 }
 
@@ -84,19 +84,18 @@ TEST(NoiseFieldTest, OutputDistributionUsesFullRange) {
         NoiseField noise_field(Interval(0, 1), seed);
         Interval expected_range = noise_field.output_range();
 
-        auto metrics = compute_statistics_with_boundary_check(
+        auto metrics = compute_statistics(
             [&]() {
                 Point3 point = point_generator.generate();
                 return noise_field.value(point);
             },
-            expected_range,
-            SAMPLE_COUNT
+            SAMPLE_COUNT,
+            &expected_range
         );
 
-        double range_coverage = compute_range_coverage(metrics.stats, expected_range);
         double clipping_ratio = compute_clipping_ratio(metrics);
 
-        EXPECT_GT(range_coverage, 0.8) << "Failed for seed " << seed;
+        expect_range_coverage(metrics, expected_range, 0.8);
         EXPECT_LT(clipping_ratio, 0.1) << "Failed for seed " << seed;
     }
 }
