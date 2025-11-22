@@ -4,6 +4,7 @@
 #include "voronoi_sphere.hpp"
 #include "../../generators/point_generator.hpp"
 #include "../../generators/spherical_random_point_generator.hpp"
+#include <memory>
 
 namespace globe {
 
@@ -11,7 +12,7 @@ template<PointGenerator PG = SphericalRandomPointGenerator>
 class RandomVoronoiSphereBuilder {
  public:
     RandomVoronoiSphereBuilder(PG point_generator = PG());
-    [[nodiscard]] VoronoiSphere build(int point_count);
+    [[nodiscard]] std::unique_ptr<VoronoiSphere> build(int point_count);
 
  private:
     PG _point_generator;
@@ -23,11 +24,11 @@ RandomVoronoiSphereBuilder<PG>::RandomVoronoiSphereBuilder(PG point_generator) :
 }
 
 template<PointGenerator PG>
-VoronoiSphere RandomVoronoiSphereBuilder<PG>::build(int point_count) {
-    VoronoiSphere voronoi_sphere;
+std::unique_ptr<VoronoiSphere> RandomVoronoiSphereBuilder<PG>::build(int point_count) {
+    auto voronoi_sphere = std::make_unique<VoronoiSphere>();
 
     for (int i = 0; i < point_count; i++) {
-        voronoi_sphere.insert(_point_generator.generate());
+        voronoi_sphere->insert(_point_generator.generate());
     }
 
     return voronoi_sphere;

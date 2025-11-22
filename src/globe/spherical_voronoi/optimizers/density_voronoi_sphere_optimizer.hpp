@@ -49,14 +49,14 @@ template<typename IntegrableFieldType = DensitySampledIntegrableField<NoiseField
 class DensityVoronoiSphereOptimizer {
  public:
     DensityVoronoiSphereOptimizer(
-        VoronoiSphere voronoi_sphere,
+        std::unique_ptr<VoronoiSphere> voronoi_sphere,
         std::unique_ptr<IntegrableFieldType> integrable_field
     );
 
-    VoronoiSphere optimize(size_t optimization_passes = DEFAULT_OPTIMIZATION_PASSES);
+    std::unique_ptr<VoronoiSphere> optimize(size_t optimization_passes = DEFAULT_OPTIMIZATION_PASSES);
 
  private:
-    VoronoiSphere _voronoi_sphere;
+    std::unique_ptr<VoronoiSphere> _voronoi_sphere;
     std::unique_ptr<IntegrableFieldType> _integrable_field;
 
     struct OptimizationResult {
@@ -79,7 +79,7 @@ class DensityVoronoiSphereOptimizer {
 
 template<typename IntegrableFieldType>
 DensityVoronoiSphereOptimizer<IntegrableFieldType>::DensityVoronoiSphereOptimizer(
-    VoronoiSphere voronoi_sphere,
+    std::unique_ptr<VoronoiSphere> voronoi_sphere,
     std::unique_ptr<IntegrableFieldType> integrable_field
 ) :
     _voronoi_sphere(std::move(voronoi_sphere)),
@@ -87,7 +87,7 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType>::DensityVoronoiSphereOptimize
 }
 
 template<typename IntegrableFieldType>
-VoronoiSphere DensityVoronoiSphereOptimizer<IntegrableFieldType>::optimize(
+std::unique_ptr<VoronoiSphere> DensityVoronoiSphereOptimizer<IntegrableFieldType>::optimize(
     size_t optimization_passes
 ) {
     adjust_mass(optimization_passes);
@@ -121,7 +121,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType>::adjust_mass(size_t max_
         std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
 
         if (!pass_made_progress) {
-            double rms_error = std::sqrt(current_error / _voronoi_sphere.size());
+            double rms_error = std::sqrt(current_error / _voronoi_sphere->size());
             if (rms_error <= ZERO_ERROR_TOLERANCE * target_mass) {
                 std::cout <<
                     "No vertex movement and RMS error " << rms_error <<
@@ -147,7 +147,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType>::adjust_mass(size_t max_
     double max_error = 0.0;
 
     size_t i = 0;
-    for (const auto &cell : _voronoi_sphere.dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->dual_cells()) {
         double cell_mass = mass(cell);
         double error = std::abs(cell_mass - target_mass);
 
@@ -158,7 +158,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType>::adjust_mass(size_t max_
         i++;
     }
 
-    std::cout << "Average error: " << (total_error / _voronoi_sphere.size()) << std::endl;
+    std::cout << "Average error: " << (total_error / _voronoi_sphere->size()) << std::endl;
     std::cout << "Max error: " << max_error << std::endl;
 }
 
@@ -174,7 +174,7 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType>::total_mass() {
 
 template<typename IntegrableFieldType>
 double DensityVoronoiSphereOptimizer<IntegrableFieldType>::average_mass() {
-    return total_mass() / _voronoi_sphere.size();
+    return total_mass() / _voronoi_sphere->size();
 }
 
 template<typename IntegrableFieldType>
@@ -183,7 +183,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::OptimizationResult 
     double target_mass,
     double previous_error
 ) {
-    Point3 original_position = _voronoi_sphere.site(index);
+    Point3 original_position = _voronoi_sphere->site(index);
     Point3 north = antipodal(original_position);
     TangentBasis basis = build_tangent_basis(north - ORIGIN);
     Vector3 tangent_u = basis.tangent_u;
@@ -205,7 +205,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::OptimizationResult 
         double run_best_mass_error = initial_error;
         double run_best_cost = initial_error;
         column_vector starting_point = initial_point;
-        _voronoi_sphere.update_site(index, original_position);
+        _voronoi_sphere->update_site(index, original_position);
 
         size_t eval_count = 0;
         double first_eval_error = -1.0;
@@ -220,7 +220,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::OptimizationResult 
                 tangent_v
             );
 
-            _voronoi_sphere.update_site(index, candidate);
+            _voronoi_sphere->update_site(index, candidate);
 
             double total_error = compute_total_error(target_mass);
             double displacement_angle = angular_distance(original_vector, candidate - ORIGIN);
@@ -264,7 +264,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::OptimizationResult 
             ", best_error=" << std::sqrt(run_best_mass_error) <<
             "]" << std::endl;
 
-        _voronoi_sphere.update_site(index, run_best_position);
+        _voronoi_sphere->update_site(index, run_best_position);
         return RunResult{run_best_mass_error, run_best_cost, run_best_position};
     };
 
@@ -278,7 +278,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::OptimizationResult 
     double initial_norm = std::sqrt(initial_error);
     double final_norm = std::sqrt(final_error);
 
-    _voronoi_sphere.update_site(index, best_position);
+    _voronoi_sphere->update_site(index, best_position);
     double delta = final_norm - initial_norm;
     double movement = angular_distance(original_vector, best_position - ORIGIN);
     bool moved = movement > MOVEMENT_EPSILON;
@@ -302,7 +302,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::CellMassHeap Densit
     CellMassHeap heap;
 
     size_t i = 0;
-    for (const auto &cell : _voronoi_sphere.dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->dual_cells()) {
         double cell_mass = mass(cell);
         heap.push({i, cell_mass});
         i++;
@@ -314,9 +314,9 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::CellMassHeap Densit
 template<typename IntegrableFieldType>
 double DensityVoronoiSphereOptimizer<IntegrableFieldType>::compute_total_error(double target_mass) {
     std::vector<SphericalPolygon> cells;
-    cells.reserve(_voronoi_sphere.size());
+    cells.reserve(_voronoi_sphere->size());
 
-    for (const auto &cell : _voronoi_sphere.dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->dual_cells()) {
         cells.push_back(cell);
     }
 
@@ -365,11 +365,11 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType>::perturb_most_undersized
 
 template<typename IntegrableFieldType>
 std::optional<std::pair<size_t, double>> DensityVoronoiSphereOptimizer<IntegrableFieldType>::find_most_undersized_vertex_with_deficit(double target_mass) {
-    size_t best_index = _voronoi_sphere.size();
+    size_t best_index = _voronoi_sphere->size();
     double largest_deficit = 0.0;
     size_t i = 0;
 
-    for (const auto &cell : _voronoi_sphere.dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->dual_cells()) {
         double cell_mass = mass(cell);
         double deficit = target_mass - cell_mass;
 
@@ -390,19 +390,19 @@ std::optional<std::pair<size_t, double>> DensityVoronoiSphereOptimizer<Integrabl
 
 template<typename IntegrableFieldType>
 bool DensityVoronoiSphereOptimizer<IntegrableFieldType>::perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass) {
-    if (index >= _voronoi_sphere.size()) {
+    if (index >= _voronoi_sphere->size()) {
         return false;
     }
 
     double deficit_ratio = std::clamp(deficit / target_mass, 0.0, 1.0);
     double step = MAX_PERTURBATION_STEP * deficit_ratio;
 
-    Point3 current_site = _voronoi_sphere.site(index);
+    Point3 current_site = _voronoi_sphere->site(index);
     SphericalRandomPointGenerator random_generator;
     Point3 random_point = random_generator.generate();
     Point3 perturbed = spherical_interpolate(current_site, random_point, step);
     Point3 normalized_point = project_to_sphere(perturbed);
-    _voronoi_sphere.update_site(index, normalized_point);
+    _voronoi_sphere->update_site(index, normalized_point);
 
     return true;
 }

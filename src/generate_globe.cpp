@@ -35,9 +35,9 @@ int main(int argc, char *argv[]) {
         config.optimization_passes
     );
 
-    VoronoiSphere voronoi_sphere = factory.build();
+    auto voronoi_sphere = factory.build();
 
-    return render(voronoi_sphere, config.perform_render, argc, argv);
+    return render(*voronoi_sphere, config.perform_render, argc, argv);
 }
 
 Config parse_arguments(int argc, char *argv[]) {
