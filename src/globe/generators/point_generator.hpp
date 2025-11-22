@@ -7,7 +7,7 @@
 namespace globe {
 
 template<typename T>
-concept PointGenerator = requires(T t, const SphericalBoundingBox &bbox) {
+concept SpherePointGenerator = requires(T t, const SphericalBoundingBox &bbox) {
     { t.generate() } -> std::same_as<Point3>;
     { t.generate(bbox) } -> std::same_as<Point3>;
 };

@@ -5,7 +5,7 @@
 #include "../../spherical/spherical_polygon.hpp"
 #include "../../spherical/spherical_bounding_box.hpp"
 #include "../../generators/point_generator.hpp"
-#include "../../generators/spherical_random_point_generator.hpp"
+#include "../../generators/random_sphere_point_generator.hpp"
 #include "../scalar/scalar_field.hpp"
 #include "../scalar/noise_field.hpp"
 #include <cmath>
@@ -15,7 +15,10 @@
 
 namespace globe {
 
-template<ScalarField DF = NoiseField, PointGenerator PG = SphericalRandomPointGenerator>
+template<
+    ScalarField DF = NoiseField,
+    SpherePointGenerator PG = RandomSpherePointGenerator
+>
 class MonteCarloIntegrator {
  public:
     MonteCarloIntegrator(
@@ -39,7 +42,7 @@ class MonteCarloIntegrator {
     static constexpr size_t MIN_HITS = 2000;
 };
 
-template<ScalarField DF, PointGenerator PG>
+template<ScalarField DF, SpherePointGenerator PG>
 inline MonteCarloIntegrator<DF, PG>::MonteCarloIntegrator(
     std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
     DF &density_field,
@@ -59,7 +62,7 @@ inline MonteCarloIntegrator<DF, PG>::MonteCarloIntegrator(
     ) {
 }
 
-template<ScalarField DF, PointGenerator PG>
+template<ScalarField DF, SpherePointGenerator PG>
 inline double MonteCarloIntegrator<DF, PG>::integrate() {
     auto contains = [&](const Point3 &point) {
         if (!_spherical_polygon) {

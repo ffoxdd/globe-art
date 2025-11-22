@@ -4,7 +4,7 @@
 #include "../../types.hpp"
 #include "../../spherical/helpers.hpp"
 #include "../core/voronoi_sphere.hpp"
-#include "../../generators/spherical_random_point_generator.hpp"
+#include "../../generators/random_sphere_point_generator.hpp"
 #include "../../fields/scalar/noise_field.hpp"
 #include "../../spherical/spherical_polygon.hpp"
 #include "../../fields/integrable/density_sampled_integrable_field.hpp"
@@ -398,7 +398,7 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType>::perturb_vertex_toward_r
     double step = MAX_PERTURBATION_STEP * deficit_ratio;
 
     Point3 current_site = _voronoi_sphere->site(index);
-    SphericalRandomPointGenerator random_generator;
+    RandomSpherePointGenerator random_generator;
     Point3 random_point = random_generator.generate();
     Point3 perturbed = spherical_interpolate(current_site, random_point, step);
     Point3 normalized_point = project_to_sphere(perturbed);

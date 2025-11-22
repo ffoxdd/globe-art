@@ -1,5 +1,5 @@
-#ifndef GLOBEART_SRC_GLOBE_GENERATORS_MOCK_POINT_GENERATOR_HPP_
-#define GLOBEART_SRC_GLOBE_GENERATORS_MOCK_POINT_GENERATOR_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GENERATORS_MOCK_SPHERE_POINT_GENERATOR_HPP_
+#define GLOBEART_SRC_GLOBE_GENERATORS_MOCK_SPHERE_POINT_GENERATOR_HPP_
 
 #include "../types.hpp"
 #include "../spherical/spherical_bounding_box.hpp"
@@ -7,7 +7,7 @@
 
 namespace globe {
 
-class MockPointGenerator {
+class MockSpherePointGenerator {
  public:
     MOCK_METHOD(Point3, generate, ());
     MOCK_METHOD(Point3, generate, (const SphericalBoundingBox &bbox));
@@ -15,5 +15,4 @@ class MockPointGenerator {
 
 }
 
-#endif //GLOBEART_SRC_GLOBE_GENERATORS_MOCK_POINT_GENERATOR_HPP_
-
+#endif //GLOBEART_SRC_GLOBE_GENERATORS_MOCK_SPHERE_POINT_GENERATOR_HPP_

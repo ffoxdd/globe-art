@@ -2,9 +2,10 @@
 #include "voronoi_sphere.hpp"
 #include "../../types.hpp"
 #include "../../spherical/helpers.hpp"
-#include <cmath>
+#include "../../testing/geometric_assertions.hpp"
 
 using namespace globe;
+using globe::testing::points_approximately_equal;
 
 VoronoiSphere create_simple_voronoi_sphere() {
     VoronoiSphere sphere;
@@ -15,14 +16,6 @@ VoronoiSphere create_simple_voronoi_sphere() {
     sphere.insert(Point3(-1, 0, 0));
 
     return sphere;
-}
-
-bool points_approximately_equal(const Point3 &a, const Point3 &b, double tolerance = 1e-9) {
-    double dx = a.x() - b.x();
-    double dy = a.y() - b.y();
-    double dz = a.z() - b.z();
-    double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
-    return distance < tolerance;
 }
 
 TEST(VoronoiSphereTest, DefaultConstructorCreatesEmptySphere) {

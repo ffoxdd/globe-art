@@ -5,7 +5,7 @@
 #include "../../spherical/spherical_polygon.hpp"
 #include "../../spherical/spherical_bounding_box.hpp"
 #include "monte_carlo_integrator.hpp"
-#include "../../generators/spherical_random_point_generator.hpp"
+#include "../../generators/random_sphere_point_generator.hpp"
 #include <optional>
 
 namespace globe {
@@ -34,10 +34,10 @@ template<ScalarField SF>
 double MonteCarloIntegrableField<SF>::integrate(const SphericalPolygon &polygon) {
     SphericalBoundingBox bbox = polygon.bounding_box();
 
-    MonteCarloIntegrator<SF, SphericalRandomPointGenerator> calculator(
+    MonteCarloIntegrator<SF, RandomSpherePointGenerator> calculator(
         std::ref(polygon),
         _scalar_field,
-        SphericalRandomPointGenerator(),
+        RandomSpherePointGenerator(),
         bbox
     );
 
@@ -46,10 +46,10 @@ double MonteCarloIntegrableField<SF>::integrate(const SphericalPolygon &polygon)
 
 template<ScalarField SF>
 double MonteCarloIntegrableField<SF>::integrate(const SphericalBoundingBox &bbox) {
-    MonteCarloIntegrator<SF, SphericalRandomPointGenerator> calculator(
+    MonteCarloIntegrator<SF, RandomSpherePointGenerator> calculator(
         std::nullopt,
         _scalar_field,
-        SphericalRandomPointGenerator(),
+        RandomSpherePointGenerator(),
         bbox
     );
 

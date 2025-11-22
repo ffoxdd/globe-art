@@ -1,24 +1,13 @@
 #include <gtest/gtest.h>
-#include "spherical_random_point_generator.hpp"
+#include "random_sphere_point_generator.hpp"
 #include "../spherical/spherical_bounding_box.hpp"
-#include <cmath>
+#include "../testing/geometric_assertions.hpp"
 
 using namespace globe;
+using globe::testing::is_on_unit_sphere;
 
-const double TOLERANCE = 1e-9;
-
-bool is_on_unit_sphere(const Point3 &point) {
-    double distance = std::sqrt(
-        point.x() * point.x() +
-        point.y() * point.y() +
-        point.z() * point.z()
-    );
-
-    return std::abs(distance - 1.0) < TOLERANCE;
-}
-
-TEST(SphericalRandomPointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOnSphere) {
-    SphericalRandomPointGenerator generator;
+TEST(RandomSpherePointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOnSphere) {
+    RandomSpherePointGenerator generator;
 
     for (int i = 0; i < 10; ++i) {
         Point3 point = generator.generate();
@@ -29,8 +18,8 @@ TEST(SphericalRandomPointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOn
     }
 }
 
-TEST(SphericalRandomPointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
-    SphericalRandomPointGenerator generator;
+TEST(RandomSpherePointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
+    RandomSpherePointGenerator generator;
     SphericalBoundingBox box = SphericalBoundingBox::full_sphere();
 
     for (int i = 0; i < 10; ++i) {
@@ -40,4 +29,3 @@ TEST(SphericalRandomPointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox
         EXPECT_TRUE(box.contains(point));
     }
 }
-

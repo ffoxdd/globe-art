@@ -9,6 +9,34 @@
 
 ## Testing and Development
 
+### Expensive and Integration Tests
+Tests that are statistical, slow, or integration-focused should be opt-in via environment variable:
+- Use `RUN_EXPENSIVE_TESTS` environment variable to gate expensive tests
+- Expensive tests are disabled by default (normal test runs skip them)
+- This makes expensive tests explicitly opt-in rather than opt-out
+
+Pattern:
+```cpp
+#ifdef RUN_EXPENSIVE_TESTS
+TEST(ComponentTest, EXPENSIVE_StatisticalValidation) {
+    // Test with 100k+ samples, multiple runs, etc.
+}
+#endif
+```
+
+To run expensive tests:
+```bash
+cmake -DRUN_EXPENSIVE_TESTS=ON ..
+# or
+export RUN_EXPENSIVE_TESTS=1
+```
+
+What makes a test expensive:
+- Large sample counts (10k+ samples)
+- Statistical validation requiring multiple runs
+- Integration tests involving multiple subsystems
+- Performance benchmarks
+
 ### Terminal Testing Flags
 The `generate_globe` executable supports command-line flags for terminal/AI-assisted testing:
 - `--points <N>`: Number of points to generate (default: 10)
