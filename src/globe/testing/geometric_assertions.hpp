@@ -3,6 +3,16 @@
 
 #include "../types.hpp"
 #include <cmath>
+#include <cstdlib>
+#include <gtest/gtest.h>
+
+#define SKIP_IF_EXPENSIVE() \
+    do { \
+        const char* env_var = std::getenv("RUN_EXPENSIVE_TESTS"); \
+        if (!env_var || env_var[0] == '\0') { \
+            GTEST_SKIP() << "Skipping expensive test (set RUN_EXPENSIVE_TESTS=1 to run)"; \
+        } \
+    } while (0)
 
 namespace globe {
 namespace testing {
