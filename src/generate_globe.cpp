@@ -85,6 +85,6 @@ int render(
     CGAL::Qt::init_ogl_context(4, 3);
     QApplication qt_app(argc, argv);
     VoronoiSphereQtRenderer renderer("Globe");
-    renderer.render(voronoi_sphere);
+    auto viewer = renderer.render(voronoi_sphere);
     return qt_app.exec();
 }

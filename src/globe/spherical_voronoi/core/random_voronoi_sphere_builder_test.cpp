@@ -6,7 +6,7 @@ using namespace globe;
 TEST(RandomVoronoiSphereBuilderTest, CreatesSphereWithCorrectSize) {
     RandomVoronoiSphereBuilder builder;
 
-    VoronoiSphere sphere = builder.build(10);
-    EXPECT_EQ(sphere.size(), 10);
+    auto sphere = builder.build(10);
+    EXPECT_EQ(sphere->size(), 10);
 }
 
