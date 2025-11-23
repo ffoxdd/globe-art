@@ -1,10 +1,10 @@
 #ifndef GLOBEART_SRC_GLOBE_TESTING_STATISTICAL_ASSERTIONS_HPP_
 #define GLOBEART_SRC_GLOBE_TESTING_STATISTICAL_ASSERTIONS_HPP_
 
+#include <limits>
 #include <vector>
 #include <numeric>
 #include <algorithm>
-#include <cmath>
 #include <gtest/gtest.h>
 #include "../types.hpp"
 #include "../math/interval.hpp"
@@ -31,52 +31,46 @@ struct CoordinateMetrics {
 template<typename SampleFunc>
 DistributionMetrics compute_statistics(
     SampleFunc sample_func,
-    size_t sample_count,
-    const Interval* expected_range = nullptr,
-    double epsilon = 1e-10
+    size_t sample_count
 ) {
-    std::vector<double> samples;
-    samples.reserve(sample_count);
-
+    double mean = 0.0;
+    double m2 = 0.0;
+    double min_value = std::numeric_limits<double>::max();
+    double max_value = std::numeric_limits<double>::lowest();
     size_t values_at_min = 0;
     size_t values_at_max = 0;
 
     for (size_t i = 0; i < sample_count; ++i) {
         double value = sample_func();
-        samples.push_back(value);
 
-        if (expected_range != nullptr) {
-            if (std::abs(value - expected_range->low()) < epsilon) {
-                values_at_min++;
-            }
+        double delta = value - mean;
+        mean += delta / (i + 1);
+        double delta2 = value - mean;
+        m2 += delta * delta2;
 
-            if (std::abs(value - expected_range->high()) < epsilon) {
-                values_at_max++;
-            }
+        if (value < min_value) {
+            min_value = value;
+            values_at_min = 1;
+        } else if (value == min_value) {
+            values_at_min++;
+        }
+
+        if (value > max_value) {
+            max_value = value;
+            values_at_max = 1;
+        } else if (value == max_value) {
+            values_at_max++;
         }
     }
 
-    double sum = std::accumulate(samples.begin(), samples.end(), 0.0);
-    double mean = sum / sample_count;
-
-    double variance_sum = 0.0;
-
-    for (double value : samples) {
-        double diff = value - mean;
-        variance_sum += diff * diff;
-    }
-
-    double variance = variance_sum / sample_count;
-
-    auto [min_it, max_it] = std::minmax_element(samples.begin(), samples.end());
-
-    double range_span = *max_it - *min_it;
+    double variance = m2 / sample_count;
+    double range_span = max_value - min_value;
 
     return {
         mean,
         variance,
-        *min_it,
-        *max_it,
+        min_value,
+        max_value,
         sample_count,
         values_at_min,
         values_at_max,

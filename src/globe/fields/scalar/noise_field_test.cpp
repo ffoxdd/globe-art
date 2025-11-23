@@ -57,8 +57,7 @@ TEST(NoiseFieldTest, EXPENSIVE_CanConfigureOutputRange) {
                 Point3 point = point_generator.generate();
                 return noise_field.value(point);
             },
-            SAMPLE_COUNT,
-            &expected_range
+            SAMPLE_COUNT
         );
 
         EXPECT_GE(metrics.min_value, output_range.low())
@@ -83,8 +82,7 @@ TEST(NoiseFieldTest, EXPENSIVE_OutputDistributionUsesFullRange) {
                 Point3 point = point_generator.generate();
                 return noise_field.value(point);
             },
-            SAMPLE_COUNT,
-            &expected_range
+            SAMPLE_COUNT
         );
 
         double clipping_ratio = compute_clipping_ratio(metrics);
