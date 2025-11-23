@@ -51,13 +51,14 @@ TEST(NoiseFieldTest, EXPENSIVE_CanConfigureOutputRange) {
         NoiseField noise_field(output_range, seed);
         Interval expected_range = noise_field.output_range();
 
-        auto metrics = compute_statistics(
-            [&]() {
-                Point3 point = point_generator.generate();
-                return noise_field.value(point);
-            },
-            SAMPLE_COUNT
-        );
+        auto points = point_generator.generate(SAMPLE_COUNT);
+        std::vector<double> values;
+        values.reserve(SAMPLE_COUNT);
+        for (const auto& point : points) {
+            values.push_back(noise_field.value(point));
+        }
+
+        auto metrics = compute_statistics(values);
 
         EXPECT_GE(metrics.min_value, output_range.low())
             << "Failed for seed " << seed << " (min_value was " << metrics.min_value << ")";
@@ -76,13 +77,14 @@ TEST(NoiseFieldTest, EXPENSIVE_OutputDistributionUsesFullRange) {
         NoiseField noise_field(Interval(0, 1), seed);
         Interval expected_range = noise_field.output_range();
 
-        auto metrics = compute_statistics(
-            [&]() {
-                Point3 point = point_generator.generate();
-                return noise_field.value(point);
-            },
-            SAMPLE_COUNT
-        );
+        auto points = point_generator.generate(SAMPLE_COUNT);
+        std::vector<double> values;
+        values.reserve(SAMPLE_COUNT);
+        for (const auto& point : points) {
+            values.push_back(noise_field.value(point));
+        }
+
+        auto metrics = compute_statistics(values);
 
         expect_range_coverage(metrics, expected_range, 0.8);
         EXPECT_LT(metrics.clipping_ratio, 0.1) << "Failed for seed " << seed;

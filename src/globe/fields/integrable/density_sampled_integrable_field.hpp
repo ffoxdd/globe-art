@@ -51,8 +51,6 @@ class DensitySampledIntegrableField {
     IntervalSamplerType _interval_sampler;
 
     void build_samples(size_t target_sample_count);
-    void try_add_sample();
-    [[nodiscard]] Point3 generate_candidate();
     [[nodiscard]] bool candidate_accepted(const Point3 &candidate);
     [[nodiscard]] double acceptance_threshold(const Point3 &point);
     [[nodiscard]] double sample_acceptance();
@@ -91,33 +89,29 @@ void DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSampl
         return;
     }
 
+    const size_t BATCH_SIZE = 100;
     size_t attempts = 0;
 
     while (_points.size() < target_sample_count) {
-        attempts++;
-        try_add_sample();
+        size_t remaining = target_sample_count - _points.size();
+        size_t batch_size = (remaining < BATCH_SIZE) ? remaining : BATCH_SIZE;
+        auto candidates = _point_generator.generate(batch_size, _global_bounding_box);
+        attempts += candidates.size();
+
+        for (const auto& candidate : candidates) {
+            if (_points.size() >= target_sample_count) {
+                break;
+            }
+            if (candidate_accepted(candidate)) {
+                _points.push_back(candidate);
+            }
+        }
     }
 
     _sample_attempts = attempts;
     _weight_per_sample = weight_per_sample(attempts);
 
     build_kdtree();
-}
-
-template<ScalarField ScalarFieldType, SpherePointGenerator GeneratorType, IntervalSampler IntervalSamplerType>
-void DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::try_add_sample() {
-    Point3 candidate = generate_candidate();
-
-    if (!candidate_accepted(candidate)) {
-        return;
-    }
-
-    _points.push_back(candidate);
-}
-
-template<ScalarField ScalarFieldType, SpherePointGenerator GeneratorType, IntervalSampler IntervalSamplerType>
-Point3 DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::generate_candidate() {
-    return _point_generator.generate(_global_bounding_box);
 }
 
 template<ScalarField ScalarFieldType, SpherePointGenerator GeneratorType, IntervalSampler IntervalSamplerType>

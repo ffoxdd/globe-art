@@ -5,6 +5,7 @@
 #include "../../geometry/cartesian/bounding_box.hpp"
 #include "../../geometry/cartesian/bounding_box_sampler/bounding_box_sampler.hpp"
 #include "../../geometry/cartesian/bounding_box_sampler/uniform_bounding_box_sampler.hpp"
+#include <vector>
 
 namespace globe {
 
@@ -17,22 +18,29 @@ class RandomPointGenerator {
         : _sampler(std::move(sampler)) {
     }
 
-    Point3 generate();
-    Point3 generate(const BoundingBox &bounding_box);
+    std::vector<Point3> generate(size_t count);
+    std::vector<Point3> generate(size_t count, const BoundingBox &bounding_box);
 
  private:
     BoundingBoxSamplerType _sampler;
 };
 
 template<BoundingBoxSampler BoundingBoxSamplerType>
-Point3 RandomPointGenerator<BoundingBoxSamplerType>::generate() {
+std::vector<Point3>
+RandomPointGenerator<BoundingBoxSamplerType>::generate(size_t count) {
     static const BoundingBox unit_cube = BoundingBox::unit_cube();
-    return generate(unit_cube);
+    return generate(count, unit_cube);
 }
 
 template<BoundingBoxSampler BoundingBoxSamplerType>
-Point3 RandomPointGenerator<BoundingBoxSamplerType>::generate(const BoundingBox &bounding_box) {
-    return _sampler.sample(bounding_box);
+std::vector<Point3>
+RandomPointGenerator<BoundingBoxSamplerType>::generate(size_t count, const BoundingBox &bounding_box) {
+    std::vector<Point3> points;
+    points.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        points.push_back(_sampler.sample(bounding_box));
+    }
+    return points;
 }
 
 }

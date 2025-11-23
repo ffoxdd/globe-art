@@ -406,7 +406,7 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_
     double step = MAX_PERTURBATION_STEP * deficit_ratio;
 
     Point3 current_site = _voronoi_sphere->site(index);
-    Point3 random_point = _point_generator.generate();
+    Point3 random_point = _point_generator.generate(1)[0];
     Point3 perturbed = spherical_interpolate(current_site, random_point, step);
     Point3 normalized_point = project_to_sphere(perturbed);
     _voronoi_sphere->update_site(index, normalized_point);

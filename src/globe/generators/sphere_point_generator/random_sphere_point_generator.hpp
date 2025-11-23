@@ -26,8 +26,8 @@ class RandomSpherePointGenerator {
         _spherical_sampler(std::move(spherical_sampler)) {
     }
 
-    Point3 generate();
-    Point3 generate(const SphericalBoundingBox &bounding_box);
+    std::vector<Point3> generate(size_t count);
+    std::vector<Point3> generate(size_t count, const SphericalBoundingBox &bounding_box);
 
  private:
     CartesianGeneratorType _cartesian_generator;
@@ -35,14 +35,24 @@ class RandomSpherePointGenerator {
 };
 
 template<PointGenerator CartesianGeneratorType, SphericalBoundingBoxSampler SphericalBoundingBoxSamplerType>
-Point3 RandomSpherePointGenerator<CartesianGeneratorType, SphericalBoundingBoxSamplerType>::generate() {
-    Point3 cartesian_point = _cartesian_generator.generate();
-    return project_to_sphere(cartesian_point);
+std::vector<Point3> RandomSpherePointGenerator<CartesianGeneratorType, SphericalBoundingBoxSamplerType>::generate(size_t count) {
+    auto cartesian_points = _cartesian_generator.generate(count);
+    std::vector<Point3> sphere_points;
+    sphere_points.reserve(count);
+    for (const auto& point : cartesian_points) {
+        sphere_points.push_back(project_to_sphere(point));
+    }
+    return sphere_points;
 }
 
 template<PointGenerator CartesianGeneratorType, SphericalBoundingBoxSampler SphericalBoundingBoxSamplerType>
-Point3 RandomSpherePointGenerator<CartesianGeneratorType, SphericalBoundingBoxSamplerType>::generate(const SphericalBoundingBox &bounding_box) {
-    return _spherical_sampler.sample(bounding_box);
+std::vector<Point3> RandomSpherePointGenerator<CartesianGeneratorType, SphericalBoundingBoxSamplerType>::generate(size_t count, const SphericalBoundingBox &bounding_box) {
+    std::vector<Point3> points;
+    points.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        points.push_back(_spherical_sampler.sample(bounding_box));
+    }
+    return points;
 }
 
 }

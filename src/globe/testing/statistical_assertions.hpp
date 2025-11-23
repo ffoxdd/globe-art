@@ -27,11 +27,8 @@ struct CoordinateMetrics {
     DistributionMetrics z;
 };
 
-template<typename SampleFunc>
-DistributionMetrics compute_statistics(
-    SampleFunc sample_func,
-    size_t sample_count
-) {
+inline DistributionMetrics compute_statistics(const std::vector<double>& values) {
+    size_t sample_count = values.size();
     double mean = 0.0;
     double m2 = 0.0;
     double min_value = std::numeric_limits<double>::max();
@@ -40,7 +37,7 @@ DistributionMetrics compute_statistics(
     size_t values_at_max = 0;
 
     for (size_t i = 0; i < sample_count; ++i) {
-        double value = sample_func();
+        double value = values[i];
 
         double delta = value - mean;
         mean += delta / (i + 1);
@@ -79,17 +76,23 @@ DistributionMetrics compute_statistics(
     };
 }
 
-template<typename PointFunc>
-CoordinateMetrics compute_coordinate_statistics(
-    PointFunc point_func,
+template<typename SampleFunc>
+DistributionMetrics compute_statistics(
+    SampleFunc sample_func,
     size_t sample_count
 ) {
-    std::vector<Point3> points;
-    points.reserve(sample_count);
+    std::vector<double> values;
+    values.reserve(sample_count);
 
     for (size_t i = 0; i < sample_count; ++i) {
-        points.push_back(point_func());
+        values.push_back(sample_func());
     }
+
+    return compute_statistics(values);
+}
+
+inline CoordinateMetrics compute_coordinate_statistics(const std::vector<Point3>& points) {
+    size_t sample_count = points.size();
 
     auto compute_from_coordinate = [&points, sample_count](auto coordinate_extractor) {
         size_t index = 0;
@@ -104,6 +107,21 @@ CoordinateMetrics compute_coordinate_statistics(
         compute_from_coordinate([](const Point3& p) { return p.y(); }),
         compute_from_coordinate([](const Point3& p) { return p.z(); })
     };
+}
+
+template<typename PointFunc>
+CoordinateMetrics compute_coordinate_statistics(
+    PointFunc point_func,
+    size_t sample_count
+) {
+    std::vector<Point3> points;
+    points.reserve(sample_count);
+
+    for (size_t i = 0; i < sample_count; ++i) {
+        points.push_back(point_func());
+    }
+
+    return compute_coordinate_statistics(points);
 }
 
 inline void expect_mean(

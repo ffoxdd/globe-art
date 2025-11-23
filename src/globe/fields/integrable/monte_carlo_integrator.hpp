@@ -90,15 +90,22 @@ inline double MonteCarloIntegrator<ScalarFieldType, SpherePointGeneratorType>::i
     int consecutive_stable_iterations = 0;
     double previous_weighted_area = 0;
 
-    while (static_cast<size_t>(total_points_sampled) < MAX_SAMPLES_GUARD) {
-        Point3 sampled_point = _sphere_point_generator.generate(_bounding_box);
-        total_points_sampled++;
+    const size_t BATCH_SIZE = 1000;
 
-        if (contains(sampled_point)) {
-            points_inside_polygon++;
-            double density = density_at(sampled_point);
-            sum_density += density;
-            sum_density_squared += density * density;
+    while (static_cast<size_t>(total_points_sampled) < MAX_SAMPLES_GUARD) {
+        size_t remaining = MAX_SAMPLES_GUARD - static_cast<size_t>(total_points_sampled);
+        size_t batch_size = std::min(BATCH_SIZE, remaining);
+        auto batch = _sphere_point_generator.generate(batch_size, _bounding_box);
+
+        for (const auto& sampled_point : batch) {
+            total_points_sampled++;
+
+            if (contains(sampled_point)) {
+                points_inside_polygon++;
+                double density = density_at(sampled_point);
+                sum_density += density;
+                sum_density_squared += density * density;
+            }
         }
 
         if (points_inside_polygon == 0) {
@@ -126,10 +133,6 @@ inline double MonteCarloIntegrator<ScalarFieldType, SpherePointGeneratorType>::i
             points_inside_polygon >= static_cast<int>(MIN_HITS) &&
             consecutive_stable_iterations >= CONSECUTIVE_STABLE_ITERATIONS
         ) {
-            double mean_density = sum_density / points_inside_polygon;
-            double mean_density_squared = sum_density_squared / points_inside_polygon;
-            double variance = mean_density_squared - (mean_density * mean_density);
-
             return weighted_area_estimate;
         }
     }

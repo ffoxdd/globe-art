@@ -14,7 +14,7 @@ using globe::testing::expect_mean;
 TEST(RandomSpherePointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOnSphere) {
     RandomSpherePointGenerator generator;
 
-    Point3 point = generator.generate();
+    Point3 point = generator.generate(1)[0];
 
     EXPECT_TRUE(is_on_unit_sphere(point))
         << "Point (" << point.x() << ", " << point.y() << ", " << point.z()
@@ -25,7 +25,7 @@ TEST(RandomSpherePointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
     RandomSpherePointGenerator generator;
     SphericalBoundingBox box = SphericalBoundingBox::full_sphere();
 
-    Point3 point = generator.generate(box);
+    Point3 point = generator.generate(1, box)[0];
 
     EXPECT_TRUE(is_on_unit_sphere(point));
     EXPECT_TRUE(box.contains(point));
@@ -37,8 +37,8 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_AllPointsOnUnitSphere) {
     RandomSpherePointGenerator generator;
     constexpr size_t sample_count = 10000;
 
-    for (size_t i = 0; i < sample_count; ++i) {
-        Point3 point = generator.generate();
+    auto points = generator.generate(sample_count);
+    for (const auto& point : points) {
         EXPECT_TRUE(is_on_unit_sphere(point));
     }
 }
@@ -49,10 +49,8 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_UniformDistributionOnSphere) {
     RandomSpherePointGenerator generator;
     constexpr size_t sample_count = 10000;
 
-    auto stats = compute_coordinate_statistics(
-        [&]() { return generator.generate(); },
-        sample_count
-    );
+    auto points = generator.generate(sample_count);
+    auto stats = compute_coordinate_statistics(points);
 
     expect_mean(stats.x, 0.0, 0.05);
     expect_mean(stats.y, 0.0, 0.05);
@@ -66,11 +64,10 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_BoundedPointsInBox) {
     SphericalBoundingBox box(ThetaInterval(0.0, M_PI), Interval(0.0, 1.0));
     constexpr size_t sample_count = 10000;
 
+    auto points = generator.generate(sample_count, box);
     size_t in_box_count = 0;
 
-    for (size_t i = 0; i < sample_count; ++i) {
-        Point3 point = generator.generate(box);
-
+    for (const auto& point : points) {
         EXPECT_TRUE(is_on_unit_sphere(point));
         EXPECT_TRUE(box.contains(point));
 

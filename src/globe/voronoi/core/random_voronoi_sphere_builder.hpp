@@ -27,8 +27,8 @@ template<SpherePointGenerator SpherePointGeneratorType>
 std::unique_ptr<VoronoiSphere> RandomVoronoiSphereBuilder<SpherePointGeneratorType>::build(int point_count) {
     auto voronoi_sphere = std::make_unique<VoronoiSphere>();
 
-    for (int i = 0; i < point_count; i++) {
-        voronoi_sphere->insert(_point_generator.generate());
+    for (const auto& point : _point_generator.generate(point_count)) {
+        voronoi_sphere->insert(point);
     }
 
     return voronoi_sphere;

@@ -16,7 +16,7 @@ using globe::testing::uniform_distribution_variance;
 TEST(RandomPointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointInUnitCube) {
     RandomPointGenerator generator;
 
-    Point3 point = generator.generate();
+    Point3 point = generator.generate(1)[0];
 
     EXPECT_GE(point.x(), -1.0);
     EXPECT_LE(point.x(), 1.0);
@@ -30,7 +30,7 @@ TEST(RandomPointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
     RandomPointGenerator generator;
     BoundingBox box(Interval(0.0, 1.0), Interval(0.0, 2.0), Interval(-0.5, 0.5));
 
-    Point3 point = generator.generate(box);
+    Point3 point = generator.generate(1, box)[0];
 
     EXPECT_GE(point.x(), 0.0);
     EXPECT_LE(point.x(), 1.0);
@@ -46,10 +46,8 @@ TEST(RandomPointGeneratorTest, EXPENSIVE_UniformDistributionInUnitCube) {
     RandomPointGenerator generator;
     constexpr size_t sample_count = 10000;
 
-    auto stats = compute_coordinate_statistics(
-        [&]() { return generator.generate(); },
-        sample_count
-    );
+    auto points = generator.generate(sample_count);
+    auto stats = compute_coordinate_statistics(points);
 
     expect_mean(stats.x, uniform_distribution_mean(-1.0, 1.0), 0.05);
     expect_mean(stats.y, uniform_distribution_mean(-1.0, 1.0), 0.05);
@@ -67,10 +65,8 @@ TEST(RandomPointGeneratorTest, EXPENSIVE_UniformDistributionInCustomBox) {
     BoundingBox box(Interval(0.0, 1.0), Interval(0.0, 2.0), Interval(-0.5, 0.5));
     constexpr size_t sample_count = 10000;
 
-    auto stats = compute_coordinate_statistics(
-        [&]() { return generator.generate(box); },
-        sample_count
-    );
+    auto points = generator.generate(sample_count, box);
+    auto stats = compute_coordinate_statistics(points);
 
     expect_mean(stats.x, uniform_distribution_mean(0.0, 1.0), 0.05);
     expect_mean(stats.y, uniform_distribution_mean(0.0, 2.0), 0.05);

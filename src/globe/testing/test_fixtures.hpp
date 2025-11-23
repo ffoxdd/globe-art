@@ -15,14 +15,18 @@ class SequencePointGenerator {
     explicit SequencePointGenerator(std::vector<Point3> sequence)
         : _sequence(std::move(sequence)), _index(0) {}
 
-    Point3 generate() {
-        Point3 result = _sequence[_index % _sequence.size()];
-        _index++;
+    std::vector<Point3> generate(size_t count) {
+        std::vector<Point3> result;
+        result.reserve(count);
+        for (size_t i = 0; i < count; ++i) {
+            result.push_back(_sequence[_index % _sequence.size()]);
+            _index++;
+        }
         return result;
     }
 
-    Point3 generate(const SphericalBoundingBox&) {
-        return generate();
+    std::vector<Point3> generate(size_t count, const SphericalBoundingBox&) {
+        return generate(count);
     }
 
  private:
