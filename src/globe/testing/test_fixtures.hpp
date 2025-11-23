@@ -8,7 +8,6 @@
 
 namespace globe::testing {
 
-template<typename Generator>
 class SequencePointGenerator {
  public:
     explicit SequencePointGenerator(std::vector<Point3> sequence)

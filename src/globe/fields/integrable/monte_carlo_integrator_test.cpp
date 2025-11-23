@@ -2,10 +2,11 @@
 #include "gmock/gmock.h"
 #include "./monte_carlo_integrator.hpp"
 #include "../scalar/mock_scalar_field.hpp"
-#include <utility>
+#include "../../testing/test_fixtures.hpp"
 #include <vector>
 
 using namespace globe;
+using globe::testing::SequencePointGenerator;
 using ::testing::Return;
 using ::testing::_;
 
@@ -40,55 +41,6 @@ SphericalBoundingBox hemisphere_bounding_box() {
     return {Interval(0, 2 * M_PI), Interval(0, 1)};
 }
 
-class ConstantSamplePointGenerator {
- public:
-    explicit ConstantSamplePointGenerator(Point3 point) : _point(point) {}
-    Point3 generate() { return _point; }
-    Point3 generate(const SphericalBoundingBox &) { return _point; }
- private:
-    Point3 _point;
-};
-
-class TogglingSamplePointGenerator {
- public:
-    TogglingSamplePointGenerator(Point3 first_point, Point3 subsequent_point)
-        : _first_point(first_point), _subsequent_point(subsequent_point), _first_call(true) {}
-
-    Point3 generate() {
-        if (_first_call) {
-            _first_call = false;
-            return _first_point;
-        }
-        return _subsequent_point;
-    }
-
-    Point3 generate(const SphericalBoundingBox &) {
-        return generate();
-    }
- private:
-    Point3 _first_point;
-    Point3 _subsequent_point;
-    bool _first_call;
-};
-
-class SequenceSamplePointGenerator {
- public:
-    SequenceSamplePointGenerator(std::vector<Point3> sequence)
-        : _sequence(std::move(sequence)), _index(0) {}
-
-    Point3 generate() {
-        Point3 result = _sequence[_index % _sequence.size()];
-        _index++;
-        return result;
-    }
-
-    Point3 generate(const SphericalBoundingBox &) {
-        return generate();
-    }
- private:
-    std::vector<Point3> _sequence;
-    size_t _index;
-};
 
 TEST(MonteCarloIntegratorTest, EstimatesHemisphereMassWithUniformDensity) {
     MockScalarField mock_scalar_field;
@@ -97,10 +49,10 @@ TEST(MonteCarloIntegratorTest, EstimatesHemisphereMassWithUniformDensity) {
 
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
-    MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
+    MonteCarloIntegrator<MockScalarField, SequencePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
-        ConstantSamplePointGenerator(inside_point),
+        SequencePointGenerator({inside_point}),
         hemisphere_bounding_box()
     );
 
@@ -120,10 +72,10 @@ TEST(MonteCarloIntegratorTest, HandlesSamplesOutsideBeforeInside) {
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
 
-    MonteCarloIntegrator<MockScalarField, TogglingSamplePointGenerator> monte_carlo_integrator(
+    MonteCarloIntegrator<MockScalarField, SequencePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
-        TogglingSamplePointGenerator(outside_point, inside_point),
+        SequencePointGenerator({outside_point, inside_point}),
         hemisphere_bounding_box()
     );
 
@@ -141,10 +93,10 @@ TEST(MonteCarloIntegratorTest, AppliesNoiseDensityWeighting) {
         .WillOnce(Return(3.0))
         .WillRepeatedly(Return(2.0));
 
-    MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
+    MonteCarloIntegrator<MockScalarField, SequencePointGenerator> monte_carlo_integrator(
         std::ref(spherical_polygon),
         mock_scalar_field,
-        ConstantSamplePointGenerator(inside_point),
+        SequencePointGenerator({inside_point}),
         hemisphere_bounding_box()
     );
 
@@ -162,10 +114,10 @@ TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithUniformDensity) {
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
 
-    MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
+    MonteCarloIntegrator<MockScalarField, SequencePointGenerator> monte_carlo_integrator(
         std::nullopt,
         mock_scalar_field,
-        ConstantSamplePointGenerator(arbitrary_point)
+        SequencePointGenerator({arbitrary_point})
     );
 
     EXPECT_NEAR(
@@ -185,10 +137,10 @@ TEST(MonteCarloIntegratorTest, CalculatesTotalSphereMassWithNonUniformDensity) {
         .WillRepeatedly(Return(3.0));
 
 
-    MonteCarloIntegrator<MockScalarField, ConstantSamplePointGenerator> monte_carlo_integrator(
+    MonteCarloIntegrator<MockScalarField, SequencePointGenerator> monte_carlo_integrator(
         std::nullopt,
         mock_scalar_field,
-        ConstantSamplePointGenerator(arbitrary_point)
+        SequencePointGenerator({arbitrary_point})
     );
 
     EXPECT_NEAR(

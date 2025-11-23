@@ -1,24 +1,10 @@
 #include <gtest/gtest.h>
 #include "random_voronoi_sphere_builder.hpp"
 #include "../../spherical/spherical_bounding_box.hpp"
+#include "../../testing/test_fixtures.hpp"
 
 using namespace globe;
-
-class ConstantPointGenerator {
- public:
-    explicit ConstantPointGenerator(Point3 point) : _point(point) {}
-
-    Point3 generate() {
-        return _point;
-    }
-
-    Point3 generate(const SphericalBoundingBox&) {
-        return generate();
-    }
-
- private:
-    Point3 _point;
-};
+using globe::testing::SequencePointGenerator;
 
 TEST(RandomVoronoiSphereBuilderTest, CreatesSphereWithCorrectSize) {
     RandomVoronoiSphereBuilder builder;
@@ -29,8 +15,8 @@ TEST(RandomVoronoiSphereBuilderTest, CreatesSphereWithCorrectSize) {
 
 TEST(RandomVoronoiSphereBuilderTest, UsesProvidedGenerator) {
     Point3 fixed_point(1, 0, 0);
-    ConstantPointGenerator generator(fixed_point);
-    RandomVoronoiSphereBuilder<ConstantPointGenerator> builder(generator);
+    SequencePointGenerator generator({fixed_point});
+    RandomVoronoiSphereBuilder<SequencePointGenerator> builder(generator);
 
     auto sphere = builder.build(1);
 
