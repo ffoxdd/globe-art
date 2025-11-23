@@ -3,8 +3,6 @@
 
 #include <limits>
 #include <vector>
-#include <numeric>
-#include <algorithm>
 #include <gtest/gtest.h>
 #include "../types.hpp"
 #include "../math/interval.hpp"
@@ -90,38 +88,12 @@ CoordinateMetrics compute_coordinate_statistics(
         points.push_back(point_func());
     }
 
-    auto compute_from_coordinate = [&points](auto coordinate_extractor) {
-        std::vector<double> values;
-        values.reserve(points.size());
-
-        for (const auto& point : points) {
-            values.push_back(coordinate_extractor(point));
-        }
-
-        double sum = std::accumulate(values.begin(), values.end(), 0.0);
-        double mean = sum / values.size();
-
-        double variance_sum = 0.0;
-
-        for (double value : values) {
-            double diff = value - mean;
-            variance_sum += diff * diff;
-        }
-
-        double variance = variance_sum / values.size();
-        auto [min_it, max_it] = std::minmax_element(values.begin(), values.end());
-        double range_span = *max_it - *min_it;
-
-        return DistributionMetrics{
-            mean,
-            variance,
-            *min_it,
-            *max_it,
-            values.size(),
-            0,
-            0,
-            range_span
-        };
+    auto compute_from_coordinate = [&points, sample_count](auto coordinate_extractor) {
+        size_t index = 0;
+        return compute_statistics(
+            [&]() { return coordinate_extractor(points[index++]); },
+            sample_count
+        );
     };
 
     return CoordinateMetrics{
