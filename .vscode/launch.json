@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug generate_globe",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/generate_globe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "cmake: build"
+    },
+    {
+      "name": "Debug Tests",
+      "type": "cppdbg", 
+      "request": "launch",
+      "program": "${workspaceFolder}/build/",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "cmake: build"
+    }
+  ]
+}
+
