@@ -9,7 +9,7 @@ using namespace globe;
 using globe::testing::is_on_unit_sphere;
 using globe::testing::compute_statistics;
 using globe::testing::compute_coordinate_statistics;
-using globe::testing::expect_uniform_distribution_mean;
+using globe::testing::expect_mean;
 
 TEST(RandomSpherePointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOnSphere) {
     RandomSpherePointGenerator generator;
@@ -58,9 +58,9 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_UniformDistributionOnSphere) {
         sample_count
     );
 
-    expect_uniform_distribution_mean(stats.x, 0.0, 0.05);
-    expect_uniform_distribution_mean(stats.y, 0.0, 0.05);
-    expect_uniform_distribution_mean(stats.z, 0.0, 0.05);
+    expect_mean(stats.x, 0.0, 0.05);
+    expect_mean(stats.y, 0.0, 0.05);
+    expect_mean(stats.z, 0.0, 0.05);
 }
 
 TEST(RandomSpherePointGeneratorTest, EXPENSIVE_BoundedPointsInBox) {

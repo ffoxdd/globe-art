@@ -8,8 +8,8 @@
 using namespace globe;
 using globe::testing::compute_statistics;
 using globe::testing::compute_coordinate_statistics;
-using globe::testing::expect_uniform_distribution_mean;
-using globe::testing::expect_uniform_distribution_variance;
+using globe::testing::expect_mean;
+using globe::testing::expect_variance;
 using globe::testing::uniform_distribution_mean;
 using globe::testing::uniform_distribution_variance;
 
@@ -55,13 +55,13 @@ TEST(RandomPointGeneratorTest, EXPENSIVE_UniformDistributionInUnitCube) {
         sample_count
     );
 
-    expect_uniform_distribution_mean(stats.x, uniform_distribution_mean(-1.0, 1.0), 0.05);
-    expect_uniform_distribution_mean(stats.y, uniform_distribution_mean(-1.0, 1.0), 0.05);
-    expect_uniform_distribution_mean(stats.z, uniform_distribution_mean(-1.0, 1.0), 0.05);
+    expect_mean(stats.x, uniform_distribution_mean(-1.0, 1.0), 0.05);
+    expect_mean(stats.y, uniform_distribution_mean(-1.0, 1.0), 0.05);
+    expect_mean(stats.z, uniform_distribution_mean(-1.0, 1.0), 0.05);
 
-    expect_uniform_distribution_variance(stats.x, uniform_distribution_variance(-1.0, 1.0), 0.1);
-    expect_uniform_distribution_variance(stats.y, uniform_distribution_variance(-1.0, 1.0), 0.1);
-    expect_uniform_distribution_variance(stats.z, uniform_distribution_variance(-1.0, 1.0), 0.1);
+    expect_variance(stats.x, uniform_distribution_variance(-1.0, 1.0), 0.1);
+    expect_variance(stats.y, uniform_distribution_variance(-1.0, 1.0), 0.1);
+    expect_variance(stats.z, uniform_distribution_variance(-1.0, 1.0), 0.1);
 }
 
 TEST(RandomPointGeneratorTest, EXPENSIVE_UniformDistributionInCustomBox) {
@@ -76,11 +76,11 @@ TEST(RandomPointGeneratorTest, EXPENSIVE_UniformDistributionInCustomBox) {
         sample_count
     );
 
-    expect_uniform_distribution_mean(stats.x, uniform_distribution_mean(0.0, 1.0), 0.05);
-    expect_uniform_distribution_mean(stats.y, uniform_distribution_mean(0.0, 2.0), 0.05);
-    expect_uniform_distribution_mean(stats.z, uniform_distribution_mean(-0.5, 0.5), 0.05);
+    expect_mean(stats.x, uniform_distribution_mean(0.0, 1.0), 0.05);
+    expect_mean(stats.y, uniform_distribution_mean(0.0, 2.0), 0.05);
+    expect_mean(stats.z, uniform_distribution_mean(-0.5, 0.5), 0.05);
 
-    expect_uniform_distribution_variance(stats.x, uniform_distribution_variance(0.0, 1.0), 0.1);
-    expect_uniform_distribution_variance(stats.y, uniform_distribution_variance(0.0, 2.0), 0.1);
-    expect_uniform_distribution_variance(stats.z, uniform_distribution_variance(-0.5, 0.5), 0.1);
+    expect_variance(stats.x, uniform_distribution_variance(0.0, 1.0), 0.1);
+    expect_variance(stats.y, uniform_distribution_variance(0.0, 2.0), 0.1);
+    expect_variance(stats.z, uniform_distribution_variance(-0.5, 0.5), 0.1);
 }

@@ -107,7 +107,7 @@ inline double compute_clipping_ratio(const DistributionMetrics& metrics) {
     return static_cast<double>(metrics.values_at_min + metrics.values_at_max) / metrics.sample_count;
 }
 
-inline void expect_uniform_distribution_mean(
+inline void expect_mean(
     const DistributionMetrics& metrics,
     double expected_mean,
     double tolerance
@@ -117,7 +117,7 @@ inline void expect_uniform_distribution_mean(
         << " (sample count: " << metrics.sample_count << ")";
 }
 
-inline void expect_uniform_distribution_variance(
+inline void expect_variance(
     const DistributionMetrics& metrics,
     double expected_variance,
     double tolerance
