@@ -60,7 +60,7 @@ class DensitySampledIntegrableField {
 
     void build_kdtree();
     [[nodiscard]] double weight_per_sample(size_t attempts) const;
-    [[nodiscard]] CGAL::Fuzzy_sphere<CGAL::Search_traits_3<Kernel>> query_sphere(const SphericalPolygon &polygon) const;
+    [[nodiscard]] FuzzySphere query_sphere(const SphericalPolygon &polygon) const;
     [[nodiscard]] std::vector<Point3> candidate_points(const SphericalPolygon &polygon) const;
     [[nodiscard]] size_t contained_points_count(const SphericalPolygon &polygon) const;
 };
@@ -162,7 +162,7 @@ double DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSam
 }
 
 template<ScalarField ScalarFieldType, SpherePointGenerator GeneratorType, typename IntervalSamplerType>
-CGAL::Fuzzy_sphere<CGAL::Search_traits_3<Kernel>> DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::query_sphere(
+typename DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::FuzzySphere DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::query_sphere(
     const SphericalPolygon &polygon
 ) const {
     Point3 centroid = polygon.centroid();

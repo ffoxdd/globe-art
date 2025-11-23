@@ -2,23 +2,22 @@
 #define GLOBEART_SRC_GLOBE_TYPES_H_
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Surface_mesh.h>
 #include <CGAL/Exact_spherical_kernel_3.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_2.h>
 
 namespace globe {
 
-using Vector3 = CGAL::Exact_predicates_inexact_constructions_kernel::Vector_3;
-using Point3 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_3;
-using SurfaceMesh = CGAL::Surface_mesh<Point3>;
+namespace detail {
+    using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+    using SphericalKernel = CGAL::Exact_spherical_kernel_3;
+    using DelaunayTraits = CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>;
+    using DelaunayTriangulation = CGAL::Delaunay_triangulation_on_sphere_2<DelaunayTraits>;
+}
 
-using Arc = CGAL::Delaunay_triangulation_on_sphere_2<
-    CGAL::Delaunay_triangulation_on_sphere_traits_2<
-        CGAL::Exact_predicates_inexact_constructions_kernel,
-        CGAL::Exact_spherical_kernel_3
-    >
->::Arc_on_sphere_2;
+using Vector3 = detail::Kernel::Vector_3;
+using Point3 = detail::Kernel::Point_3;
+using Arc = detail::DelaunayTriangulation::Arc_on_sphere_2;
 
 } // namespace globe
 
