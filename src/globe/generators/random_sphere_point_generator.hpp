@@ -2,9 +2,9 @@
 #define GLOBEART_SRC_GLOBE_GENERATORS_RANDOM_SPHERE_POINT_GENERATOR_HPP_
 
 #include "../types.hpp"
-#include "../spherical/spherical_bounding_box.hpp"
-#include "../spherical/spherical_bounding_box_sampler.hpp"
-#include "../spherical/helpers.hpp"
+#include "../geometry/spherical/spherical_bounding_box.hpp"
+#include "../geometry/spherical/spherical_bounding_box_sampler.hpp"
+#include "../geometry/spherical/helpers.hpp"
 #include "random_point_generator.hpp"
 
 namespace globe {

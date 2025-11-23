@@ -2,8 +2,8 @@
 #define GLOBEART_SRC_GLOBE_GENERATORS_RANDOM_POINT_GENERATOR_HPP_
 
 #include "../types.hpp"
-#include "../math/bounding_box.hpp"
-#include "../math/bounding_box_sampler.hpp"
+#include "../geometry/cartesian/bounding_box.hpp"
+#include "../geometry/cartesian/bounding_box_sampler.hpp"
 
 namespace globe {
 

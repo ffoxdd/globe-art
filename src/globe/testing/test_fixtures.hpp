@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_TESTING_TEST_FIXTURES_HPP_
 
 #include "../types.hpp"
-#include "../spherical/spherical_bounding_box.hpp"
+#include "../geometry/spherical/spherical_bounding_box.hpp"
 #include <vector>
 #include <utility>
 

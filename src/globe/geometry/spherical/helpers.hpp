@@ -1,9 +1,9 @@
-#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_HELPERS_H_
-#define GLOBEART_SRC_GLOBE_GEOMETRY_HELPERS_H_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_HELPERS_H_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_HELPERS_H_
 
 #include <cmath>
 #include <algorithm>
-#include "../types.hpp"
+#include "../../types.hpp"
 
 namespace globe {
 
@@ -129,5 +129,5 @@ inline Point3 stereographic_plane_to_sphere(
 
 }
 
-#endif //GLOBEART_SRC_GLOBE_GEOMETRY_HELPERS_H_
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_HELPERS_H_
 

@@ -2,8 +2,8 @@
 #define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_MONTE_CARLO_INTEGRATOR_HPP_
 
 #include "../../types.hpp"
-#include "../../spherical/spherical_polygon.hpp"
-#include "../../spherical/spherical_bounding_box.hpp"
+#include "../../geometry/spherical/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "../../generators/sphere_point_generator.hpp"
 #include "../../generators/random_sphere_point_generator.hpp"
 #include "../scalar/scalar_field.hpp"

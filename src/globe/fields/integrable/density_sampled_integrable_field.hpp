@@ -3,8 +3,8 @@
 
 #include "../scalar/scalar_field.hpp"
 #include "../../math/interval.hpp"
-#include "../../spherical/spherical_polygon.hpp"
-#include "../../spherical/spherical_bounding_box.hpp"
+#include "../../geometry/spherical/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "../../generators/random_sphere_point_generator.hpp"
 #include "../../math/interval_sampler.hpp"
 #include <CGAL/Simple_cartesian.h>

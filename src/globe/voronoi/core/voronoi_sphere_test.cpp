@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "voronoi_sphere.hpp"
 #include "../../types.hpp"
-#include "../../spherical/helpers.hpp"
+#include "../../geometry/spherical/helpers.hpp"
 #include "../../testing/geometric_assertions.hpp"
 
 using namespace globe;

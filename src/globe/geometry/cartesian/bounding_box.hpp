@@ -1,8 +1,8 @@
-#ifndef GLOBEART_SRC_GLOBE_MATH_BOUNDING_BOX_HPP_
-#define GLOBEART_SRC_GLOBE_MATH_BOUNDING_BOX_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_HPP_
 
-#include "interval.hpp"
-#include "../types.hpp"
+#include "../../math/interval.hpp"
+#include "../../types.hpp"
 
 namespace globe {
 
@@ -71,4 +71,4 @@ inline BoundingBox BoundingBox::unit_cube() {
 
 }
 
-#endif //GLOBEART_SRC_GLOBE_MATH_BOUNDING_BOX_HPP_
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_HPP_

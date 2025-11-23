@@ -1,8 +1,8 @@
-#ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_HPP_
-#define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_BOUNDING_BOX_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_BOUNDING_BOX_HPP_
 
-#include "../math/interval.hpp"
-#include "../types.hpp"
+#include "../../math/interval.hpp"
+#include "../../types.hpp"
 #include "helpers.hpp"
 #include <CGAL/assertions.h>
 #include <cmath>
@@ -134,4 +134,4 @@ inline SphericalBoundingBox SphericalBoundingBox::full_sphere() {
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_HPP_
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_BOUNDING_BOX_HPP_

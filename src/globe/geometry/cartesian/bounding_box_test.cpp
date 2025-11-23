@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "bounding_box.hpp"
-#include "../testing/geometric_assertions.hpp"
+#include "../../testing/geometric_assertions.hpp"
 
 using namespace globe;
 using globe::testing::expect_intervals_equal;

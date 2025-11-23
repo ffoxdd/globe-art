@@ -2,8 +2,8 @@
 #define GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_MONTE_CARLO_INTEGRABLE_FIELD_H_
 
 #include "../scalar/scalar_field.hpp"
-#include "../../spherical/spherical_polygon.hpp"
-#include "../../spherical/spherical_bounding_box.hpp"
+#include "../../geometry/spherical/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "monte_carlo_integrator.hpp"
 #include "../../generators/random_sphere_point_generator.hpp"
 #include <optional>

@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_TESTING_GEOMETRIC_ASSERTIONS_HPP_
 
 #include "../types.hpp"
-#include "../math/bounding_box.hpp"
+#include "../geometry/cartesian/bounding_box.hpp"
 #include "../math/interval.hpp"
 #include <cmath>
 #include <cstdlib>

@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "./spherical_polygon.hpp"
+#include "spherical_polygon.hpp"
 #include <cmath>
 
 using namespace globe;

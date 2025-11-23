@@ -1,9 +1,9 @@
-#ifndef GLOBEART_SRC_GLOBE_MATH_BOUNDING_BOX_SAMPLER_HPP_
-#define GLOBEART_SRC_GLOBE_MATH_BOUNDING_BOX_SAMPLER_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_SAMPLER_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_SAMPLER_HPP_
 
-#include "../types.hpp"
+#include "../../types.hpp"
 #include "bounding_box.hpp"
-#include "interval_sampler.hpp"
+#include "../../math/interval_sampler.hpp"
 
 namespace globe {
 
@@ -23,4 +23,4 @@ class BoundingBoxSampler {
 
 }
 
-#endif //GLOBEART_SRC_GLOBE_MATH_BOUNDING_BOX_SAMPLER_HPP_
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_SAMPLER_HPP_

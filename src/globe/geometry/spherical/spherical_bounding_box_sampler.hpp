@@ -1,9 +1,9 @@
-#ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
-#define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
 
-#include "../types.hpp"
+#include "../../types.hpp"
 #include "spherical_bounding_box.hpp"
-#include "../math/interval_sampler.hpp"
+#include "../../math/interval_sampler.hpp"
 #include <cmath>
 
 namespace globe {
@@ -46,4 +46,4 @@ class SphericalBoundingBoxSampler {
 
 }
 
-#endif //GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_

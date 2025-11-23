@@ -2,11 +2,11 @@
 #define GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_DENSITY_VORONOI_SPHERE_OPTIMIZER_HPP_
 
 #include "../../types.hpp"
-#include "../../spherical/helpers.hpp"
+#include "../../geometry/spherical/helpers.hpp"
 #include "../core/voronoi_sphere.hpp"
 #include "../../generators/random_sphere_point_generator.hpp"
 #include "../../fields/scalar/noise_field.hpp"
-#include "../../spherical/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_polygon.hpp"
 #include "../../fields/integrable/density_sampled_integrable_field.hpp"
 #include "../../math/interval.hpp"
 #include <algorithm>

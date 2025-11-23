@@ -1,11 +1,11 @@
-#ifndef GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_POLYGON_HPP_
-#define GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_POLYGON_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_POLYGON_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_POLYGON_HPP_
 
 #include "spherical_bounding_box.hpp"
-#include "../types.hpp"
+#include "../../types.hpp"
 #include "helpers.hpp"
-#include "../std_ext/ranges.hpp"
-#include "../math/interval.hpp"
+#include "../../std_ext/ranges.hpp"
+#include "../../math/interval.hpp"
 #include <CGAL/assertions.h>
 #include <utility>
 #include <vector>
@@ -171,4 +171,4 @@ inline bool SphericalPolygon::is_on_arc(const Arc &arc, const Vector3 &point_vec
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_GLOBE_GENERATOR_SPHERICAL_POLYGON_HPP_
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_POLYGON_HPP_
