@@ -6,21 +6,21 @@
 
 namespace globe {
 
-template<std::ranges::range R>
-auto circular_adjacent_pairs(const R &range) {
+template<std::ranges::range RangeType>
+auto circular_adjacent_pairs(const RangeType &range) {
     struct CircularPairs {
-        const R &range_ref;
+        const RangeType &range_ref;
 
         struct Iterator {
-            using iterator_t = std::ranges::iterator_t<const R>;
+            using iterator_t = std::ranges::iterator_t<const RangeType>;
             iterator_t it;
             iterator_t begin_it;
             iterator_t end_it;
             bool is_wraparound;
 
             using value_type = std::pair<
-                std::ranges::range_reference_t<const R>,
-                std::ranges::range_reference_t<const R>
+                std::ranges::range_reference_t<const RangeType>,
+                std::ranges::range_reference_t<const RangeType>
             >;
 
             value_type operator*() const {

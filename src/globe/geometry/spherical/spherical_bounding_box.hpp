@@ -14,8 +14,8 @@ class SphericalBoundingBox {
     SphericalBoundingBox();
     SphericalBoundingBox(Interval theta_interval, Interval z_interval);
 
-    template<DoubleRange DR>
-    SphericalBoundingBox(const DR &theta_values, const DR &z_values);
+    template<DoubleRange DoubleRangeType>
+    SphericalBoundingBox(const DoubleRangeType &theta_values, const DoubleRangeType &z_values);
 
     [[nodiscard]] Interval theta_interval() const;
     [[nodiscard]] Interval z_interval() const;
@@ -51,8 +51,8 @@ inline SphericalBoundingBox::SphericalBoundingBox(Interval theta_interval, Inter
     CGAL_precondition(z_interval.high() <= 1.0 + tolerance);
 }
 
-template<DoubleRange DR>
-inline SphericalBoundingBox::SphericalBoundingBox(const DR &theta_values, const DR &z_values) :
+template<DoubleRange DoubleRangeType>
+inline SphericalBoundingBox::SphericalBoundingBox(const DoubleRangeType &theta_values, const DoubleRangeType &z_values) :
     _theta_interval(theta_values),
     _z_interval(z_values) {
 }

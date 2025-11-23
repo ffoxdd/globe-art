@@ -6,7 +6,7 @@
 
 namespace globe {
 
-template<typename Circulator, typename HandleType>
+template<typename CirculatorType, typename HandleType>
 class CirculatorIterator {
  public:
     using iterator_category = std::forward_iterator_tag;
@@ -20,7 +20,7 @@ class CirculatorIterator {
         _start(true) {
     }
 
-    explicit CirculatorIterator(Circulator circulator) :
+    explicit CirculatorIterator(CirculatorType circulator) :
         _circulator(circulator),
         _start(true) {
     }
@@ -58,7 +58,7 @@ class CirculatorIterator {
     }
 
  private:
-    Circulator _circulator;
+    CirculatorType _circulator;
     bool _start;
 };
 

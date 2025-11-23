@@ -8,23 +8,23 @@
 
 namespace globe {
 
-template<SpherePointGenerator PG = RandomSpherePointGenerator<>>
+template<SpherePointGenerator SpherePointGeneratorType = RandomSpherePointGenerator<>>
 class RandomVoronoiSphereBuilder {
  public:
-    RandomVoronoiSphereBuilder(PG point_generator = PG());
+    RandomVoronoiSphereBuilder(SpherePointGeneratorType point_generator = SpherePointGeneratorType());
     [[nodiscard]] std::unique_ptr<VoronoiSphere> build(int point_count);
 
  private:
-    PG _point_generator;
+    SpherePointGeneratorType _point_generator;
 };
 
-template<SpherePointGenerator PG>
-RandomVoronoiSphereBuilder<PG>::RandomVoronoiSphereBuilder(PG point_generator) :
+template<SpherePointGenerator SpherePointGeneratorType>
+RandomVoronoiSphereBuilder<SpherePointGeneratorType>::RandomVoronoiSphereBuilder(SpherePointGeneratorType point_generator) :
     _point_generator(std::move(point_generator)) {
 }
 
-template<SpherePointGenerator PG>
-std::unique_ptr<VoronoiSphere> RandomVoronoiSphereBuilder<PG>::build(int point_count) {
+template<SpherePointGenerator SpherePointGeneratorType>
+std::unique_ptr<VoronoiSphere> RandomVoronoiSphereBuilder<SpherePointGeneratorType>::build(int point_count) {
     auto voronoi_sphere = std::make_unique<VoronoiSphere>();
 
     for (int i = 0; i < point_count; i++) {

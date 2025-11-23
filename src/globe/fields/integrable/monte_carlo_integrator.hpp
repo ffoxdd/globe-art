@@ -16,15 +16,15 @@
 namespace globe {
 
 template<
-    ScalarField DF = NoiseField,
-    SpherePointGenerator PG = RandomSpherePointGenerator<>
+    ScalarField ScalarFieldType = NoiseField,
+    SpherePointGenerator SpherePointGeneratorType = RandomSpherePointGenerator<>
 >
 class MonteCarloIntegrator {
  public:
     MonteCarloIntegrator(
         std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
-        DF &density_field,
-        PG point_generator = PG(),
+        ScalarFieldType &density_field,
+        SpherePointGeneratorType sphere_point_generator = SpherePointGeneratorType(),
         std::optional<SphericalBoundingBox> bounding_box = std::nullopt
     );
 
@@ -32,8 +32,8 @@ class MonteCarloIntegrator {
 
  private:
     std::optional<std::reference_wrapper<const SphericalPolygon>> _spherical_polygon;
-    DF &_density_field;
-    PG _point_generator;
+    ScalarFieldType &_density_field;
+    SpherePointGeneratorType _sphere_point_generator;
     SphericalBoundingBox _bounding_box;
 
     static constexpr double RELATIVE_CHANGE_THRESHOLD = 0.001;
@@ -42,16 +42,16 @@ class MonteCarloIntegrator {
     static constexpr size_t MIN_HITS = 2000;
 };
 
-template<ScalarField DF, SpherePointGenerator PG>
-inline MonteCarloIntegrator<DF, PG>::MonteCarloIntegrator(
+template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+inline MonteCarloIntegrator<ScalarFieldType, SpherePointGeneratorType>::MonteCarloIntegrator(
     std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
-    DF &density_field,
-    PG point_generator,
+    ScalarFieldType &density_field,
+    SpherePointGeneratorType sphere_point_generator,
     std::optional<SphericalBoundingBox> bounding_box
 ):
     _spherical_polygon(spherical_polygon),
     _density_field(density_field),
-    _point_generator(std::move(point_generator)),
+    _sphere_point_generator(std::move(sphere_point_generator)),
     _bounding_box(
         bounding_box.has_value() ?
         *bounding_box :
@@ -62,8 +62,8 @@ inline MonteCarloIntegrator<DF, PG>::MonteCarloIntegrator(
     ) {
 }
 
-template<ScalarField DF, SpherePointGenerator PG>
-inline double MonteCarloIntegrator<DF, PG>::integrate() {
+template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+inline double MonteCarloIntegrator<ScalarFieldType, SpherePointGeneratorType>::integrate() {
     auto contains = [&](const Point3 &point) {
         if (!_spherical_polygon) {
             return true;
@@ -84,7 +84,7 @@ inline double MonteCarloIntegrator<DF, PG>::integrate() {
     double previous_weighted_area = 0;
 
     while (static_cast<size_t>(total_points_sampled) < MAX_SAMPLES_GUARD) {
-        Point3 sampled_point = _point_generator.generate(_bounding_box);
+        Point3 sampled_point = _sphere_point_generator.generate(_bounding_box);
         total_points_sampled++;
 
         if (contains(sampled_point)) {

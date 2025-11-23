@@ -18,8 +18,8 @@ Point3 to_point(const ForeignPoint &point) {
     };
 }
 
-template<typename P>
-Vector3 position_vector(const P &point) {
+template<typename PointType>
+Vector3 position_vector(const PointType &point) {
     return to_point(point) - ORIGIN;
 }
 

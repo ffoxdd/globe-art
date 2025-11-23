@@ -34,11 +34,11 @@ class VoronoiSphereFactory {
 
     std::unique_ptr<VoronoiSphere> build_initial();
 
-    template<ScalarField SF>
+    template<ScalarField ScalarFieldType>
     std::unique_ptr<VoronoiSphere> optimize(std::unique_ptr<VoronoiSphere> voronoi_sphere);
 
-    template<ScalarField SF>
-    std::unique_ptr<DensitySampledIntegrableField<SF, RandomSpherePointGenerator<>, UniformIntervalSampler>> build_integrable_field();
+    template<ScalarField ScalarFieldType>
+    std::unique_ptr<DensitySampledIntegrableField<ScalarFieldType, RandomSpherePointGenerator<>, UniformIntervalSampler>> build_integrable_field();
 
     size_t density_field_sample_count();
 };
@@ -68,9 +68,9 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::build_initial() {
     return builder.build(_points_count);
 }
 
-template<ScalarField SF>
+template<ScalarField ScalarFieldType>
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize(std::unique_ptr<VoronoiSphere> voronoi_sphere) {
-    auto integrable_field = build_integrable_field<SF>();
+    auto integrable_field = build_integrable_field<ScalarFieldType>();
 
     DensityVoronoiSphereOptimizer optimizer(
         std::move(voronoi_sphere),
@@ -87,12 +87,12 @@ inline size_t VoronoiSphereFactory::density_field_sample_count() {
     );
 }
 
-template<ScalarField SF>
-inline std::unique_ptr<DensitySampledIntegrableField<SF, RandomSpherePointGenerator<>, UniformIntervalSampler>> VoronoiSphereFactory::build_integrable_field() {
-    SF density_field;
+template<ScalarField ScalarFieldType>
+inline std::unique_ptr<DensitySampledIntegrableField<ScalarFieldType, RandomSpherePointGenerator<>, UniformIntervalSampler>> VoronoiSphereFactory::build_integrable_field() {
+    ScalarFieldType density_field;
     size_t sample_count = density_field_sample_count();
 
-    return std::make_unique<DensitySampledIntegrableField<SF, RandomSpherePointGenerator<>, UniformIntervalSampler>>(
+    return std::make_unique<DensitySampledIntegrableField<ScalarFieldType, RandomSpherePointGenerator<>, UniformIntervalSampler>>(
         density_field,
         RandomSpherePointGenerator<>(),
         sample_count
