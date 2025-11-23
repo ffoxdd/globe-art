@@ -46,7 +46,7 @@ struct MinMassComparator {
 };
 
 template<
-    typename IntegrableFieldType = DensitySampledIntegrableField<NoiseField, RandomSpherePointGenerator>,
+    typename IntegrableFieldType = DensitySampledIntegrableField<NoiseField, RandomSpherePointGenerator, IntervalSampler>,
     SpherePointGenerator GeneratorType = RandomSpherePointGenerator
 >
 class DensityVoronoiSphereOptimizer {

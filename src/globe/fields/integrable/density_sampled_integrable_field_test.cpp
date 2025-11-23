@@ -52,7 +52,7 @@ TEST(DensitySampledIntegrableFieldTest, AcceptsAllPointsWithConstantDensity) {
     SequencePointGenerator generator(sequence);
     IntervalSampler sampler(42);
 
-    DensitySampledIntegrableField<ConstantScalarField, SequencePointGenerator> integrable_field(
+    DensitySampledIntegrableField<ConstantScalarField, SequencePointGenerator, IntervalSampler> integrable_field(
         scalar_field,
         std::move(generator),
         6,

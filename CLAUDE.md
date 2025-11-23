@@ -34,9 +34,6 @@ ctest
 
 # Run expensive tests too
 EXPENSIVE=1 ctest
-
-# Run ONLY expensive tests
-EXPENSIVE=1 ctest -R "EXPENSIVE"
 ```
 
 What makes a test expensive:
@@ -51,6 +48,59 @@ Before making a commit, always verify:
 2. All tests pass, including expensive tests: `EXPENSIVE=1 ctest`
 
 These checks ensure that expensive tests are not accidentally broken and remain executable.
+
+### Dependency Injection via Templates
+Classes that depend on random number generators or other slow/non-deterministic dependencies should template those dependencies for testability:
+- Template random number generators (e.g., `SpherePointGenerator`, `IntervalSampler`)
+- Template slow dependencies (e.g., expensive computations, external services)
+- Provide default template parameters for production use
+- This enables dependency injection of test doubles for unit testing
+
+Pattern:
+```cpp
+template<
+    ScalarField ScalarFieldType,
+    SpherePointGenerator GeneratorType = RandomSpherePointGenerator,
+    typename IntervalSamplerType = IntervalSampler
+>
+class MyClass {
+ public:
+    MyClass(
+        ScalarFieldType field,
+        GeneratorType generator,
+        IntervalSamplerType sampler = IntervalSamplerType()
+    );
+};
+```
+
+### Unit Test Design Principles
+Unit tests should be minimal, deterministic, and fast:
+- Use 1-3 data points to create contrived situations that exhibit specific behaviors
+- Use test doubles (mocks, sequences, seeded samplers) instead of real random dependencies
+- Each test should verify a single behavior with a minimal scenario
+- Avoid loops and large sample counts in unit tests
+- Place pure unit tests at the top of test files
+
+What belongs in unit tests:
+- Edge cases with minimal data (empty inputs, single elements, boundary values)
+- Specific behaviors with contrived scenarios (e.g., "filters outside points" with 1 inside + 1 outside)
+- Error conditions and validation
+- Deterministic calculations with known inputs/outputs
+
+### Integration Test Design Principles
+Integration tests should use real collaborators and realistic scenarios:
+- Mark with `EXPENSIVE_` prefix and `REQUIRE_EXPENSIVE()` macro
+- Use real random generators (optionally seeded for reproducibility)
+- Use realistic sample counts (10k+ samples)
+- Test convergence, statistical properties, and system-level behaviors
+- Place integration tests at the bottom of test files
+
+What belongs in integration tests:
+- Statistical validation requiring many samples
+- Convergence tests for numerical algorithms
+- System-level behaviors involving multiple components working together
+- Performance benchmarks
+- End-to-end workflows with realistic data volumes
 
 ### Terminal Testing Flags
 The `generate_globe` executable supports command-line flags for terminal/AI-assisted testing:

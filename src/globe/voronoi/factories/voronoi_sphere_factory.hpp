@@ -38,7 +38,7 @@ class VoronoiSphereFactory {
     std::unique_ptr<VoronoiSphere> optimize(std::unique_ptr<VoronoiSphere> voronoi_sphere);
 
     template<typename SF>
-    std::unique_ptr<DensitySampledIntegrableField<SF, RandomSpherePointGenerator>> build_integrable_field();
+    std::unique_ptr<DensitySampledIntegrableField<SF, RandomSpherePointGenerator, IntervalSampler>> build_integrable_field();
 
     size_t density_field_sample_count();
 };
@@ -88,11 +88,11 @@ inline size_t VoronoiSphereFactory::density_field_sample_count() {
 }
 
 template<typename SF>
-inline std::unique_ptr<DensitySampledIntegrableField<SF, RandomSpherePointGenerator>> VoronoiSphereFactory::build_integrable_field() {
+inline std::unique_ptr<DensitySampledIntegrableField<SF, RandomSpherePointGenerator, IntervalSampler>> VoronoiSphereFactory::build_integrable_field() {
     SF density_field;
     size_t sample_count = density_field_sample_count();
 
-    return std::make_unique<DensitySampledIntegrableField<SF, RandomSpherePointGenerator>>(
+    return std::make_unique<DensitySampledIntegrableField<SF, RandomSpherePointGenerator, IntervalSampler>>(
         density_field,
         RandomSpherePointGenerator(),
         sample_count
