@@ -14,8 +14,6 @@ class BoundingBox {
     [[nodiscard]] Interval x_interval() const;
     [[nodiscard]] Interval y_interval() const;
     [[nodiscard]] Interval z_interval() const;
-    [[nodiscard]] Point3 center() const;
-    [[nodiscard]] bool contains(const Point3 &point) const;
 
     [[nodiscard]] static BoundingBox unit_cube();
 
@@ -49,20 +47,6 @@ inline Interval BoundingBox::y_interval() const {
 
 inline Interval BoundingBox::z_interval() const {
     return _z_interval;
-}
-
-inline Point3 BoundingBox::center() const {
-    return Point3(
-        _x_interval.midpoint(),
-        _y_interval.midpoint(),
-        _z_interval.midpoint()
-    );
-}
-
-inline bool BoundingBox::contains(const Point3 &point) const {
-    return _x_interval.contains(point.x()) &&
-           _y_interval.contains(point.y()) &&
-           _z_interval.contains(point.z());
 }
 
 inline BoundingBox BoundingBox::unit_cube() {

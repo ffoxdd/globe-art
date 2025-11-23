@@ -21,7 +21,6 @@ class SphericalPolygon {
  public:
     explicit SphericalPolygon(std::vector<Arc> arcs);
 
-    [[nodiscard]] auto arcs() const;
     [[nodiscard]] auto points() const;
     [[nodiscard]] SphericalBoundingBox bounding_box() const;
     [[nodiscard]] Point3 centroid() const;
@@ -36,8 +35,6 @@ class SphericalPolygon {
     [[nodiscard]] bool is_degenerate() const;
     [[nodiscard]] bool is_convex() const;
 };
-
-inline auto SphericalPolygon::arcs() const { return _arcs; }
 
 inline auto SphericalPolygon::points() const {
     return _arcs | std::views::transform(

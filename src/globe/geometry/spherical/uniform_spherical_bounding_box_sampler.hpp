@@ -36,7 +36,7 @@ class UniformSphericalBoundingBoxSampler {
             return _interval_sampler.sample(theta_interval);
         }
 
-        double span = bounding_box.theta_measure();
+        double span = bounding_box.theta_interval().measure();
         double offset = _interval_sampler.sample(Interval(0.0, span));
         double theta = theta_interval.low() + offset;
 

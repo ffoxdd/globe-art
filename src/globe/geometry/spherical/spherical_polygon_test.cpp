@@ -158,7 +158,7 @@ TEST(SphericalPolygonTest, BoundingBoxWrappedThetaMeasure) {
     EXPECT_TRUE(bbox.is_theta_wrapped());
 
     double expected_theta_measure = (2.0 * M_PI - 5.8) + 0.2;
-    EXPECT_NEAR(bbox.theta_measure(), expected_theta_measure, 0.05);
+    EXPECT_NEAR(bbox.theta_interval().measure(), expected_theta_measure, 0.05);
 }
 
 TEST(SphericalPolygonTest, BoundingSphereRadiusWithWrappedTheta) {
@@ -170,8 +170,8 @@ TEST(SphericalPolygonTest, BoundingSphereRadiusWithWrappedTheta) {
 
     EXPECT_GT(radius, 0.0);
 
-    double theta_span = bbox.theta_measure();
-    double z_span = bbox.z_measure();
+    double theta_span = bbox.theta_interval().measure();
+    double z_span = bbox.z_interval().measure();
     double r_max = std::sqrt(1.0 - z_interval.low() * z_interval.low());
     double chord = 2.0 * r_max * std::sin(theta_span / 2.0);
     double expected_radius = std::sqrt(z_span * z_span + chord * chord);

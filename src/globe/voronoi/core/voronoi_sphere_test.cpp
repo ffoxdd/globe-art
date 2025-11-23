@@ -113,7 +113,7 @@ TEST(VoronoiSphereTest, DualCellsReturnsSphericalPolygons) {
     size_t cell_count = 0;
     for (const auto &cell : sphere.dual_cells()) {
         // Constructor already validates with CGAL_precondition
-        EXPECT_GT(cell.arcs().size(), 0);
+        EXPECT_GT(std::ranges::distance(cell.points()), 0);
         cell_count++;
     }
 
