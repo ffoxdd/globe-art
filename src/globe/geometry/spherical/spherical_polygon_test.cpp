@@ -1,23 +1,17 @@
 #include "gtest/gtest.h"
 #include "spherical_polygon.hpp"
+#include "../../testing/arc_factory.hpp"
 #include <cmath>
 
 using namespace globe;
-
-Arc make_arc(SphericalVector3 normal, SphericalPoint3 source, SphericalPoint3 target) {
-    return Arc(
-        SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, normal),
-        source,
-        target
-    );
-}
+using globe::testing::make_arc;
 
 TEST(SphericalPolygonTest, SimplePolygon) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
-           make_arc(SphericalVector3(1, 0, 0), SphericalPoint3(0, 1, 0), SphericalPoint3(0, 0, 1)),
-           make_arc(SphericalVector3(0, 1, 0), SphericalPoint3(0, 0, 1), SphericalPoint3(1, 0, 0)),
+           make_arc(0, 0, 1, 1, 0, 0, 0, 1, 0),
+           make_arc(1, 0, 0, 0, 1, 0, 0, 0, 1),
+           make_arc(0, 1, 0, 0, 0, 1, 1, 0, 0),
        }
    );
 
@@ -31,9 +25,9 @@ TEST(SphericalPolygonTest, SimplePolygon) {
 TEST(SphericalPolygonTest, InsideOutPolygon) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           make_arc(SphericalVector3(0, -1, 0), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 0, 1)),
-           make_arc(SphericalVector3(-1, 0, 0), SphericalPoint3(0, 0, 1), SphericalPoint3(0, 1, 0)),
-           make_arc(SphericalVector3(0, 0, -1), SphericalPoint3(0, 1, 0), SphericalPoint3(1, 0, 0)),
+           make_arc(0, -1, 0, 1, 0, 0, 0, 0, 1),
+           make_arc(-1, 0, 0, 0, 0, 1, 0, 1, 0),
+           make_arc(0, 0, -1, 0, 1, 0, 1, 0, 0),
        }
    );
 
@@ -47,10 +41,10 @@ TEST(SphericalPolygonTest, InsideOutPolygon) {
 TEST(SphericalPolygonTest, Hemisphere) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
-           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(0, 1, 0), SphericalPoint3(-1, 0, 0)),
-           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(-1, 0, 0), SphericalPoint3(0, -1, 0)),
-           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(0, -1, 0), SphericalPoint3(1, 0, 0)),
+           make_arc(0, 0, 1, 1, 0, 0, 0, 1, 0),
+           make_arc(0, 0, 1, 0, 1, 0, -1, 0, 0),
+           make_arc(0, 0, 1, -1, 0, 0, 0, -1, 0),
+           make_arc(0, 0, 1, 0, -1, 0, 1, 0, 0),
        }
    );
 
@@ -62,8 +56,8 @@ TEST(SphericalPolygonTest, Hemisphere) {
 TEST(SphericalPolygonTest, PathologicalHemisphere) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(-1, 0, 0)),
-           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(-1, 0, 0), SphericalPoint3(1, 0, 0)),
+           make_arc(0, 0, 1, 1, 0, 0, -1, 0, 0),
+           make_arc(0, 0, 1, -1, 0, 0, 1, 0, 0),
        }
    );
 
@@ -77,9 +71,9 @@ TEST(SphericalPolygonTest, PointOnArcCircumcircle) {
    // A point on the arc's supporting circle but on the arc itself should be inside
    SphericalPolygon spherical_polygon = SphericalPolygon(
        std::vector<Arc>{
-           make_arc(SphericalVector3(0, 0, 1), SphericalPoint3(1, 0, 0), SphericalPoint3(0, 1, 0)),
-           make_arc(SphericalVector3(1, 0, 0), SphericalPoint3(0, 1, 0), SphericalPoint3(0, 0, 1)),
-           make_arc(SphericalVector3(0, 1, 0), SphericalPoint3(0, 0, 1), SphericalPoint3(1, 0, 0)),
+           make_arc(0, 0, 1, 1, 0, 0, 0, 1, 0),
+           make_arc(1, 0, 0, 0, 1, 0, 0, 0, 1),
+           make_arc(0, 1, 0, 0, 0, 1, 1, 0, 0),
        }
    );
 
@@ -108,21 +102,16 @@ TEST(SphericalPolygonTest, PolygonWithWrappedThetaBoundingBox) {
     Point3 p3(r_high * std::cos(theta2), r_high * std::sin(theta2), z_high);
     Point3 p4(r_high * std::cos(theta1), r_high * std::sin(theta1), z_high);
 
-    SphericalPoint3 sp1(p1.x(), p1.y(), p1.z());
-    SphericalPoint3 sp2(p2.x(), p2.y(), p2.z());
-    SphericalPoint3 sp3(p3.x(), p3.y(), p3.z());
-    SphericalPoint3 sp4(p4.x(), p4.y(), p4.z());
-
     Vector3 v1 = CGAL::cross_product(position_vector(p1), position_vector(p2));
     Vector3 v2 = CGAL::cross_product(position_vector(p2), position_vector(p3));
     Vector3 v3 = CGAL::cross_product(position_vector(p3), position_vector(p4));
     Vector3 v4 = CGAL::cross_product(position_vector(p4), position_vector(p1));
 
     SphericalPolygon polygon(std::vector<Arc>{
-        make_arc(SphericalVector3(v1.x(), v1.y(), v1.z()), sp1, sp2),
-        make_arc(SphericalVector3(v2.x(), v2.y(), v2.z()), sp2, sp3),
-        make_arc(SphericalVector3(v3.x(), v3.y(), v3.z()), sp3, sp4),
-        make_arc(SphericalVector3(v4.x(), v4.y(), v4.z()), sp4, sp1)
+        make_arc(v1, p1, p2),
+        make_arc(v2, p2, p3),
+        make_arc(v3, p3, p4),
+        make_arc(v4, p4, p1)
     });
 
     SphericalBoundingBox bbox = polygon.bounding_box();
@@ -152,21 +141,16 @@ TEST(SphericalPolygonTest, BoundingBoxWrappedThetaMeasure) {
     Point3 p3(r_high * std::cos(theta2), r_high * std::sin(theta2), z_high);
     Point3 p4(r_high * std::cos(theta1), r_high * std::sin(theta1), z_high);
 
-    SphericalPoint3 sp1(p1.x(), p1.y(), p1.z());
-    SphericalPoint3 sp2(p2.x(), p2.y(), p2.z());
-    SphericalPoint3 sp3(p3.x(), p3.y(), p3.z());
-    SphericalPoint3 sp4(p4.x(), p4.y(), p4.z());
-
     Vector3 v1 = CGAL::cross_product(position_vector(p1), position_vector(p2));
     Vector3 v2 = CGAL::cross_product(position_vector(p2), position_vector(p3));
     Vector3 v3 = CGAL::cross_product(position_vector(p3), position_vector(p4));
     Vector3 v4 = CGAL::cross_product(position_vector(p4), position_vector(p1));
 
     SphericalPolygon polygon(std::vector<Arc>{
-        make_arc(SphericalVector3(v1.x(), v1.y(), v1.z()), sp1, sp2),
-        make_arc(SphericalVector3(v2.x(), v2.y(), v2.z()), sp2, sp3),
-        make_arc(SphericalVector3(v3.x(), v3.y(), v3.z()), sp3, sp4),
-        make_arc(SphericalVector3(v4.x(), v4.y(), v4.z()), sp4, sp1)
+        make_arc(v1, p1, p2),
+        make_arc(v2, p2, p3),
+        make_arc(v3, p3, p4),
+        make_arc(v4, p4, p1)
     });
 
     SphericalBoundingBox bbox = polygon.bounding_box();

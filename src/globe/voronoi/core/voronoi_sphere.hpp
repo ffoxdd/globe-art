@@ -22,6 +22,8 @@ class VoronoiSphere {
     void update_site(size_t index, Point3 new_position);
 
  private:
+    using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+    using SphericalKernel = CGAL::Exact_spherical_kernel_3;
     using Triangulation = CGAL::Delaunay_triangulation_on_sphere_2<
         CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>
     >;

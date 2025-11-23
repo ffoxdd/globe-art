@@ -6,36 +6,22 @@
 #include "../../generators/random_sphere_point_generator.hpp"
 #include "../../testing/test_fixtures.hpp"
 #include "../../testing/geometric_assertions.hpp"
+#include "../../testing/arc_factory.hpp"
 #include <vector>
 
 using namespace globe;
 using globe::testing::SequencePointGenerator;
+using globe::testing::make_arc;
 using ::testing::Return;
 using ::testing::_;
 
 SphericalPolygon make_northern_hemisphere_polygon() {
     return SphericalPolygon(
         std::vector<Arc>{
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(1, 0, 0),
-                SphericalPoint3(0, 1, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(0, 1, 0),
-                SphericalPoint3(-1, 0, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(-1, 0, 0),
-                SphericalPoint3(0, -1, 0)
-            ),
-            Arc(
-                SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(0, 0, 1)),
-                SphericalPoint3(0, -1, 0),
-                SphericalPoint3(1, 0, 0)
-            ),
+            make_arc(0, 0, 1, 1, 0, 0, 0, 1, 0),
+            make_arc(0, 0, 1, 0, 1, 0, -1, 0, 0),
+            make_arc(0, 0, 1, -1, 0, 0, 0, -1, 0),
+            make_arc(0, 0, 1, 0, -1, 0, 1, 0, 0),
         }
     );
 }

@@ -36,6 +36,7 @@ class DensitySampledIntegrableField {
     [[nodiscard]] double integrate(const SphericalBoundingBox &bbox = SphericalBoundingBox::full_sphere()) const;
 
  private:
+    using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
     using SearchTraits = CGAL::Search_traits_3<Kernel>;
     using KdTree = CGAL::Kd_tree<SearchTraits>;
     using FuzzySphere = CGAL::Fuzzy_sphere<SearchTraits>;

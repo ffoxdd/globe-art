@@ -163,6 +163,9 @@ inline Interval SphericalPolygon::theta_interval(double theta_min, double theta_
 }
 
 inline bool SphericalPolygon::is_on_arc(const Arc &arc, const Vector3 &point_vector) const {
+    using SphericalKernel = CGAL::Exact_spherical_kernel_3;
+    using SphericalPoint3 = SphericalKernel::Point_3;
+
     SphericalPoint3 p_ = SphericalPoint3(point_vector.x(), point_vector.y(), point_vector.z());
     Arc p_arc = Arc(arc.supporting_circle(), arc.source(), p_);
 
