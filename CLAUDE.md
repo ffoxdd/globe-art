@@ -12,16 +12,16 @@
 ### Expensive and Integration Tests
 Tests that are statistical, slow, or integration-focused should use the `EXPENSIVE_` prefix with environment variable gating:
 - Prefix expensive test names with `EXPENSIVE_`
-- Use `SKIP_IF_EXPENSIVE()` macro at the start of the test (defined in `src/globe/testing/geometric_assertions.hpp`)
+- Use `REQUIRE_EXPENSIVE()` macro at the start of the test (defined in `src/globe/testing/geometric_assertions.hpp`)
 - All tests are always compiled
 - Skipped by default (normal runs skip them)
-- Opt-in to run by setting environment variable: `RUN_EXPENSIVE_TESTS=1`
+- Opt-in to run by setting environment variable: `EXPENSIVE=1`
 - No recompilation needed
 
 Pattern:
 ```cpp
 TEST(ComponentTest, EXPENSIVE_StatisticalValidation) {
-    SKIP_IF_EXPENSIVE();
+    REQUIRE_EXPENSIVE();
 
     // Test with 100k+ samples, multiple runs, etc.
 }
@@ -33,10 +33,10 @@ Running tests:
 ctest
 
 # Run expensive tests too
-RUN_EXPENSIVE_TESTS=1 ctest
+EXPENSIVE=1 ctest
 
 # Run ONLY expensive tests
-RUN_EXPENSIVE_TESTS=1 ctest -R "EXPENSIVE"
+EXPENSIVE=1 ctest -R "EXPENSIVE"
 ```
 
 What makes a test expensive:
@@ -48,7 +48,7 @@ What makes a test expensive:
 ### Pre-Commit Checklist
 Before making a commit, always verify:
 1. The code builds successfully: `cmake --build .` (or `make`)
-2. All tests pass, including expensive tests: `RUN_EXPENSIVE_TESTS=1 ctest`
+2. All tests pass, including expensive tests: `EXPENSIVE=1 ctest`
 
 These checks ensure that expensive tests are not accidentally broken and remain executable.
 

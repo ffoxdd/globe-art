@@ -8,6 +8,7 @@
 using namespace globe;
 using globe::testing::is_on_unit_sphere;
 using globe::testing::compute_statistics;
+using globe::testing::compute_coordinate_statistics;
 using globe::testing::expect_uniform_distribution_mean;
 
 TEST(RandomSpherePointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOnSphere) {
@@ -35,7 +36,7 @@ TEST(RandomSpherePointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
 }
 
 TEST(RandomSpherePointGeneratorTest, EXPENSIVE_AllPointsOnUnitSphere) {
-    SKIP_IF_EXPENSIVE();
+    REQUIRE_EXPENSIVE();
 
     RandomSpherePointGenerator generator;
     constexpr size_t sample_count = 10000;
@@ -47,45 +48,23 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_AllPointsOnUnitSphere) {
 }
 
 TEST(RandomSpherePointGeneratorTest, EXPENSIVE_UniformDistributionOnSphere) {
-    SKIP_IF_EXPENSIVE();
+    REQUIRE_EXPENSIVE();
 
     RandomSpherePointGenerator generator;
     constexpr size_t sample_count = 10000;
 
-    auto x_stats = compute_statistics(
-        [&]() {
-            Point3 point = generator.generate();
-            EXPECT_TRUE(is_on_unit_sphere(point));
-            return point.x();
-        },
+    auto stats = compute_coordinate_statistics(
+        [&]() { return generator.generate(); },
         sample_count
     );
 
-    auto y_stats = compute_statistics(
-        [&]() {
-            Point3 point = generator.generate();
-            EXPECT_TRUE(is_on_unit_sphere(point));
-            return point.y();
-        },
-        sample_count
-    );
-
-    auto z_stats = compute_statistics(
-        [&]() {
-            Point3 point = generator.generate();
-            EXPECT_TRUE(is_on_unit_sphere(point));
-            return point.z();
-        },
-        sample_count
-    );
-
-    expect_uniform_distribution_mean(x_stats, 0.0, 0.05);
-    expect_uniform_distribution_mean(y_stats, 0.0, 0.05);
-    expect_uniform_distribution_mean(z_stats, 0.0, 0.05);
+    expect_uniform_distribution_mean(stats.x, 0.0, 0.05);
+    expect_uniform_distribution_mean(stats.y, 0.0, 0.05);
+    expect_uniform_distribution_mean(stats.z, 0.0, 0.05);
 }
 
 TEST(RandomSpherePointGeneratorTest, EXPENSIVE_BoundedPointsInBox) {
-    SKIP_IF_EXPENSIVE();
+    REQUIRE_EXPENSIVE();
 
     RandomSpherePointGenerator generator;
     SphericalBoundingBox box(Interval(0.0, M_PI), Interval(0.0, 1.0));

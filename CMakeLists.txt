@@ -47,7 +47,7 @@ foreach (TEST_SRC ${TEST_SOURCES})
     target_link_libraries(${TEST_NAME} PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib ${GTEST_LDFLAGS} ${GMOCK_LDFLAGS})
     target_compile_options(${TEST_NAME} PRIVATE ${GTEST_CFLAGS} ${GMOCK_CFLAGS})
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
-    set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "RUN_EXPENSIVE_TESTS=$ENV{RUN_EXPENSIVE_TESTS}")
+    set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "EXPENSIVE=$ENV{EXPENSIVE}")
 endforeach ()
 
 enable_testing()

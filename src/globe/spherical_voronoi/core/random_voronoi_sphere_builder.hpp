@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_VORONOI_CORE_RANDOM_VORONOI_SPHERE_BUILDER_HPP_
 
 #include "voronoi_sphere.hpp"
-#include "../../generators/point_generator.hpp"
+#include "../../generators/sphere_point_generator.hpp"
 #include "../../generators/random_sphere_point_generator.hpp"
 #include <memory>
 

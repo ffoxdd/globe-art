@@ -1,5 +1,5 @@
-#ifndef GLOBEART_SRC_GLOBE_GENERATORS_POINT_GENERATOR_HPP_
-#define GLOBEART_SRC_GLOBE_GENERATORS_POINT_GENERATOR_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GENERATORS_SPHERE_POINT_GENERATOR_HPP_
+#define GLOBEART_SRC_GLOBE_GENERATORS_SPHERE_POINT_GENERATOR_HPP_
 
 #include "../types.hpp"
 #include "../spherical/spherical_bounding_box.hpp"
@@ -14,5 +14,5 @@ concept SpherePointGenerator = requires(T t, const SphericalBoundingBox &bbox) {
 
 }
 
-#endif //GLOBEART_SRC_GLOBE_GENERATORS_POINT_GENERATOR_HPP_
+#endif //GLOBEART_SRC_GLOBE_GENERATORS_SPHERE_POINT_GENERATOR_HPP_
 

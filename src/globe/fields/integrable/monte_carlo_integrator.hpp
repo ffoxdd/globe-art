@@ -4,7 +4,7 @@
 #include "../../types.hpp"
 #include "../../spherical/spherical_polygon.hpp"
 #include "../../spherical/spherical_bounding_box.hpp"
-#include "../../generators/point_generator.hpp"
+#include "../../generators/sphere_point_generator.hpp"
 #include "../../generators/random_sphere_point_generator.hpp"
 #include "../scalar/scalar_field.hpp"
 #include "../scalar/noise_field.hpp"

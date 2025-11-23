@@ -2,15 +2,16 @@
 #define GLOBEART_SRC_GLOBE_TESTING_GEOMETRIC_ASSERTIONS_HPP_
 
 #include "../types.hpp"
+#include "../math/bounding_box.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <gtest/gtest.h>
 
-#define SKIP_IF_EXPENSIVE() \
+#define REQUIRE_EXPENSIVE() \
     do { \
-        const char* env_var = std::getenv("RUN_EXPENSIVE_TESTS"); \
+        const char* env_var = std::getenv("EXPENSIVE"); \
         if (!env_var || env_var[0] == '\0') { \
-            GTEST_SKIP() << "Skipping expensive test (set RUN_EXPENSIVE_TESTS=1 to run)"; \
+            GTEST_SKIP() << "Skipping expensive test (set EXPENSIVE=1 to run)"; \
         } \
     } while (0)
 
@@ -38,6 +39,41 @@ inline bool points_approximately_equal(
     double dz = a.z() - b.z();
     double distance = std::sqrt(dx * dx + dy * dy + dz * dz);
     return distance < tolerance;
+}
+
+inline void expect_points_equal(
+    const Point3 &actual,
+    const Point3 &expected,
+    double tolerance = DEFAULT_TOLERANCE
+) {
+    EXPECT_TRUE(points_approximately_equal(actual, expected, tolerance))
+        << "Expected point (" << expected.x() << ", " << expected.y() << ", " << expected.z() << ") "
+        << "but got (" << actual.x() << ", " << actual.y() << ", " << actual.z() << ") "
+        << "(distance: " << std::sqrt(
+            (actual.x() - expected.x()) * (actual.x() - expected.x()) +
+            (actual.y() - expected.y()) * (actual.y() - expected.y()) +
+            (actual.z() - expected.z()) * (actual.z() - expected.z())
+        ) << ", tolerance: " << tolerance << ")";
+}
+
+inline void expect_point_in_box(const Point3 &point, const BoundingBox &box) {
+    EXPECT_GE(point.x(), box.x_interval().low())
+        << "Point x-coordinate " << point.x() << " is below box minimum " << box.x_interval().low();
+
+    EXPECT_LE(point.x(), box.x_interval().high())
+        << "Point x-coordinate " << point.x() << " is above box maximum " << box.x_interval().high();
+
+    EXPECT_GE(point.y(), box.y_interval().low())
+        << "Point y-coordinate " << point.y() << " is below box minimum " << box.y_interval().low();
+
+    EXPECT_LE(point.y(), box.y_interval().high())
+        << "Point y-coordinate " << point.y() << " is above box maximum " << box.y_interval().high();
+
+    EXPECT_GE(point.z(), box.z_interval().low())
+        << "Point z-coordinate " << point.z() << " is below box minimum " << box.z_interval().low();
+
+    EXPECT_LE(point.z(), box.z_interval().high())
+        << "Point z-coordinate " << point.z() << " is above box maximum " << box.z_interval().high();
 }
 
 }

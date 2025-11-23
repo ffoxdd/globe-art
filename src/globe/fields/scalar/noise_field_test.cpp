@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include "noise_field.hpp"
+#include "../../testing/geometric_assertions.hpp"
 #include "../../testing/statistical_assertions.hpp"
 #include "../../math/interval.hpp"
 #include "../../generators/random_point_generator.hpp"
-#include <cstdlib>
 
 using namespace globe;
 using globe::testing::compute_statistics;
@@ -34,12 +34,6 @@ TEST(NoiseFieldTest, ValueMethodDifferentLocations) {
 constexpr int SAMPLE_COUNT = 200;
 constexpr int TEST_SEED_COUNT = 5000;
 
-void require_expensive_tests() {
-    if (!std::getenv("EXPENSIVE")) {
-        GTEST_SKIP() << "Skipping expensive test. Set EXPENSIVE=1 to enable.";
-    }
-}
-
 std::vector<int> test_seeds() {
     std::vector<int> seeds;
     for (int i = 0; i < TEST_SEED_COUNT; ++i) {
@@ -48,8 +42,8 @@ std::vector<int> test_seeds() {
     return seeds;
 }
 
-TEST(NoiseFieldTest, CanConfigureOutputRange) {
-    require_expensive_tests();
+TEST(NoiseFieldTest, EXPENSIVE_CanConfigureOutputRange) {
+    REQUIRE_EXPENSIVE();
 
     Interval output_range = Interval(-0.01, 0.02);
     RandomPointGenerator point_generator;
@@ -75,8 +69,8 @@ TEST(NoiseFieldTest, CanConfigureOutputRange) {
     }
 }
 
-TEST(NoiseFieldTest, OutputDistributionUsesFullRange) {
-    require_expensive_tests();
+TEST(NoiseFieldTest, EXPENSIVE_OutputDistributionUsesFullRange) {
+    REQUIRE_EXPENSIVE();
 
     RandomPointGenerator point_generator;
 

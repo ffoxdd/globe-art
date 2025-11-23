@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <gtest/gtest.h>
+#include "../types.hpp"
 #include "../math/interval.hpp"
 
 namespace globe::testing {
@@ -19,6 +20,12 @@ struct DistributionMetrics {
     size_t values_at_min;
     size_t values_at_max;
     double range_span;
+};
+
+struct CoordinateMetrics {
+    DistributionMetrics x;
+    DistributionMetrics y;
+    DistributionMetrics z;
 };
 
 template<typename SampleFunc>
@@ -74,6 +81,59 @@ DistributionMetrics compute_statistics(
         values_at_min,
         values_at_max,
         range_span
+    };
+}
+
+template<typename PointFunc>
+CoordinateMetrics compute_coordinate_statistics(
+    PointFunc point_func,
+    size_t sample_count
+) {
+    std::vector<Point3> points;
+    points.reserve(sample_count);
+
+    for (size_t i = 0; i < sample_count; ++i) {
+        points.push_back(point_func());
+    }
+
+    auto compute_from_coordinate = [&points](auto coordinate_extractor) {
+        std::vector<double> values;
+        values.reserve(points.size());
+
+        for (const auto& point : points) {
+            values.push_back(coordinate_extractor(point));
+        }
+
+        double sum = std::accumulate(values.begin(), values.end(), 0.0);
+        double mean = sum / values.size();
+
+        double variance_sum = 0.0;
+
+        for (double value : values) {
+            double diff = value - mean;
+            variance_sum += diff * diff;
+        }
+
+        double variance = variance_sum / values.size();
+        auto [min_it, max_it] = std::minmax_element(values.begin(), values.end());
+        double range_span = *max_it - *min_it;
+
+        return DistributionMetrics{
+            mean,
+            variance,
+            *min_it,
+            *max_it,
+            values.size(),
+            0,
+            0,
+            range_span
+        };
+    };
+
+    return CoordinateMetrics{
+        compute_from_coordinate([](const Point3& p) { return p.x(); }),
+        compute_from_coordinate([](const Point3& p) { return p.y(); }),
+        compute_from_coordinate([](const Point3& p) { return p.z(); })
     };
 }
 
