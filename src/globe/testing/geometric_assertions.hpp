@@ -3,6 +3,7 @@
 
 #include "../types.hpp"
 #include "../math/bounding_box.hpp"
+#include "../math/interval.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <gtest/gtest.h>
@@ -74,6 +75,17 @@ inline void expect_point_in_box(const Point3 &point, const BoundingBox &box) {
 
     EXPECT_LE(point.z(), box.z_interval().high())
         << "Point z-coordinate " << point.z() << " is above box maximum " << box.z_interval().high();
+}
+
+inline void expect_intervals_equal(
+    const Interval &actual,
+    const Interval &expected,
+    double tolerance = DEFAULT_TOLERANCE
+) {
+    EXPECT_NEAR(actual.low(), expected.low(), tolerance)
+        << "Expected interval low " << expected.low() << " but got " << actual.low();
+    EXPECT_NEAR(actual.high(), expected.high(), tolerance)
+        << "Expected interval high " << expected.high() << " but got " << actual.high();
 }
 
 }

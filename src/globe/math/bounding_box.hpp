@@ -14,7 +14,6 @@ class BoundingBox {
     [[nodiscard]] Interval x_interval() const;
     [[nodiscard]] Interval y_interval() const;
     [[nodiscard]] Interval z_interval() const;
-    [[nodiscard]] double volume() const;
     [[nodiscard]] Point3 center() const;
     [[nodiscard]] bool contains(const Point3 &point) const;
 
@@ -50,10 +49,6 @@ inline Interval BoundingBox::y_interval() const {
 
 inline Interval BoundingBox::z_interval() const {
     return _z_interval;
-}
-
-inline double BoundingBox::volume() const {
-    return _x_interval.measure() * _y_interval.measure() * _z_interval.measure();
 }
 
 inline Point3 BoundingBox::center() const {

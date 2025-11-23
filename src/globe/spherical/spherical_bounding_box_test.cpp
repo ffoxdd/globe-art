@@ -1,16 +1,16 @@
 #include "gtest/gtest.h"
 #include "./spherical_bounding_box.hpp"
+#include "../testing/geometric_assertions.hpp"
 #include <vector>
 
 using namespace globe;
+using globe::testing::expect_intervals_equal;
 
 TEST(SphericalBoundingBoxTest, DefaultsToFullSphere) {
     SphericalBoundingBox box;
 
-    EXPECT_DOUBLE_EQ(box.theta_interval().low(), 0.0);
-    EXPECT_DOUBLE_EQ(box.theta_interval().high(), 2 * M_PI);
-    EXPECT_DOUBLE_EQ(box.z_interval().low(), -1.0);
-    EXPECT_DOUBLE_EQ(box.z_interval().high(), 1.0);
+    expect_intervals_equal(box.theta_interval(), Interval(0.0, 2 * M_PI));
+    expect_intervals_equal(box.z_interval(), Interval(-1.0, 1.0));
     EXPECT_NEAR(box.area(), 4 * M_PI, 1e-9);
 }
 
@@ -20,10 +20,8 @@ TEST(SphericalBoundingBoxTest, RespectsExplicitIntervals) {
 
     SphericalBoundingBox box(theta_interval, z_interval);
 
-    EXPECT_DOUBLE_EQ(box.theta_interval().low(), theta_interval.low());
-    EXPECT_DOUBLE_EQ(box.theta_interval().high(), theta_interval.high());
-    EXPECT_DOUBLE_EQ(box.z_interval().low(), z_interval.low());
-    EXPECT_DOUBLE_EQ(box.z_interval().high(), z_interval.high());
+    expect_intervals_equal(box.theta_interval(), theta_interval);
+    expect_intervals_equal(box.z_interval(), z_interval);
     EXPECT_DOUBLE_EQ(box.area(), theta_interval.measure() * z_interval.measure());
 }
 
@@ -33,10 +31,8 @@ TEST(SphericalBoundingBoxTest, ConstructsFromRanges) {
 
     SphericalBoundingBox box(theta_values, z_values);
 
-    EXPECT_DOUBLE_EQ(box.theta_interval().low(), -M_PI / 2);
-    EXPECT_DOUBLE_EQ(box.theta_interval().high(), M_PI / 4);
-    EXPECT_DOUBLE_EQ(box.z_interval().low(), -0.3);
-    EXPECT_DOUBLE_EQ(box.z_interval().high(), 0.8);
+    expect_intervals_equal(box.theta_interval(), Interval(-M_PI / 2, M_PI / 4));
+    expect_intervals_equal(box.z_interval(), Interval(-0.3, 0.8));
 }
 
 TEST(SphericalBoundingBoxTest, CenterReturnsPointOnUnitSphere) {
