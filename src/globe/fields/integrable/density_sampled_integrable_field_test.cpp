@@ -4,9 +4,11 @@
 #include "../../geometry/spherical/spherical_polygon.hpp"
 #include "../../generators/random_sphere_point_generator.hpp"
 #include "../../testing/test_fixtures.hpp"
+#include "../../testing/geometric_assertions.hpp"
 #include <vector>
 
 using namespace globe;
+using globe::testing::SequencePointGenerator;
 
 SphericalPolygon make_northern_hemisphere_polygon() {
     return SphericalPolygon(
@@ -35,7 +37,37 @@ SphericalPolygon make_northern_hemisphere_polygon() {
     );
 }
 
-TEST(DensitySampledIntegrableFieldTest, IntegratesEntireSphereWithUniformDensity) {
+TEST(DensitySampledIntegrableFieldTest, AcceptsAllPointsWithConstantDensity) {
+    ConstantScalarField scalar_field(1.0);
+
+    std::vector<Point3> sequence = {
+        Point3(1, 0, 0),
+        Point3(0, 1, 0),
+        Point3(0, 0, 1),
+        Point3(-1, 0, 0),
+        Point3(0, -1, 0),
+        Point3(0, 0, -1)
+    };
+
+    SequencePointGenerator generator(sequence);
+    IntervalSampler sampler(42);
+
+    DensitySampledIntegrableField<ConstantScalarField, SequencePointGenerator> integrable_field(
+        scalar_field,
+        std::move(generator),
+        6,
+        1.0,
+        std::move(sampler)
+    );
+
+    double result = integrable_field.integrate();
+
+    double expected_sphere_surface_area = 4.0 * M_PI;
+    EXPECT_NEAR(result, expected_sphere_surface_area, 0.1);
+}
+
+TEST(DensitySampledIntegrableFieldTest, EXPENSIVE_IntegratesEntireSphereWithUniformDensity) {
+    REQUIRE_EXPENSIVE();
     ConstantScalarField scalar_field(1.0);
     size_t sample_count = 10'000;
 
@@ -51,7 +83,9 @@ TEST(DensitySampledIntegrableFieldTest, IntegratesEntireSphereWithUniformDensity
     EXPECT_NEAR(integrable_field.integrate(), expected, tolerance);
 }
 
-TEST(DensitySampledIntegrableFieldTest, IntegratesPolygonSubsetOfSphere) {
+TEST(DensitySampledIntegrableFieldTest, EXPENSIVE_IntegratesPolygonSubsetOfSphere) {
+    REQUIRE_EXPENSIVE();
+
     ConstantScalarField scalar_field(1.0);
     size_t sample_count = 50'000;
 
@@ -71,32 +105,5 @@ TEST(DensitySampledIntegrableFieldTest, IntegratesPolygonSubsetOfSphere) {
     EXPECT_LT(result, total);
     EXPECT_GT(result / total, 0.1);
     EXPECT_LT(result / total, 0.9);
-}
-
-TEST(DensitySampledIntegrableFieldTest, WorksWithMockGenerator) {
-    using globe::testing::SequencePointGenerator;
-
-    ConstantScalarField scalar_field(1.0);
-
-    std::vector<Point3> sequence = {
-        Point3(1, 0, 0),
-        Point3(0, 1, 0),
-        Point3(0, 0, 1),
-        Point3(-1, 0, 0),
-        Point3(0, -1, 0),
-        Point3(0, 0, -1)
-    };
-
-    SequencePointGenerator generator(sequence);
-
-    DensitySampledIntegrableField<ConstantScalarField, SequencePointGenerator> integrable_field(
-        scalar_field,
-        std::move(generator),
-        6,
-        1.0
-    );
-
-    double result = integrable_field.integrate();
-    EXPECT_GT(result, 0.0);
 }
 

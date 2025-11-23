@@ -11,6 +11,9 @@ class IntervalSampler {
     IntervalSampler() : _random_engine(std::random_device{}()) {
     }
 
+    explicit IntervalSampler(unsigned int seed) : _random_engine(seed) {
+    }
+
     [[nodiscard]] inline double sample(const Interval& interval) {
         return distribution(interval)(_random_engine);
     }

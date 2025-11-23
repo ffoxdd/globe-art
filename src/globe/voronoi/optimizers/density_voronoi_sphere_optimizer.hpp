@@ -45,12 +45,16 @@ struct MinMassComparator {
     }
 };
 
-template<typename IntegrableFieldType = DensitySampledIntegrableField<NoiseField, RandomSpherePointGenerator>>
+template<
+    typename IntegrableFieldType = DensitySampledIntegrableField<NoiseField, RandomSpherePointGenerator>,
+    SpherePointGenerator GeneratorType = RandomSpherePointGenerator
+>
 class DensityVoronoiSphereOptimizer {
  public:
     DensityVoronoiSphereOptimizer(
         std::unique_ptr<VoronoiSphere> voronoi_sphere,
-        std::unique_ptr<IntegrableFieldType> integrable_field
+        std::unique_ptr<IntegrableFieldType> integrable_field,
+        GeneratorType point_generator = GeneratorType()
     );
 
     std::unique_ptr<VoronoiSphere> optimize(size_t optimization_passes = DEFAULT_OPTIMIZATION_PASSES);
@@ -58,6 +62,7 @@ class DensityVoronoiSphereOptimizer {
  private:
     std::unique_ptr<VoronoiSphere> _voronoi_sphere;
     std::unique_ptr<IntegrableFieldType> _integrable_field;
+    GeneratorType _point_generator;
 
     struct OptimizationResult {
         double error;
@@ -77,25 +82,27 @@ class DensityVoronoiSphereOptimizer {
     bool perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass);
 };
 
-template<typename IntegrableFieldType>
-DensityVoronoiSphereOptimizer<IntegrableFieldType>::DensityVoronoiSphereOptimizer(
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::DensityVoronoiSphereOptimizer(
     std::unique_ptr<VoronoiSphere> voronoi_sphere,
-    std::unique_ptr<IntegrableFieldType> integrable_field
+    std::unique_ptr<IntegrableFieldType> integrable_field,
+    GeneratorType point_generator
 ) :
     _voronoi_sphere(std::move(voronoi_sphere)),
-    _integrable_field(std::move(integrable_field)) {
+    _integrable_field(std::move(integrable_field)),
+    _point_generator(std::move(point_generator)) {
 }
 
-template<typename IntegrableFieldType>
-std::unique_ptr<VoronoiSphere> DensityVoronoiSphereOptimizer<IntegrableFieldType>::optimize(
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+std::unique_ptr<VoronoiSphere> DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize(
     size_t optimization_passes
 ) {
     adjust_mass(optimization_passes);
     return std::move(_voronoi_sphere);
 }
 
-template<typename IntegrableFieldType>
-void DensityVoronoiSphereOptimizer<IntegrableFieldType>::adjust_mass(size_t max_passes) {
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_mass(size_t max_passes) {
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
@@ -162,23 +169,23 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType>::adjust_mass(size_t max_
     std::cout << "Max error: " << max_error << std::endl;
 }
 
-template<typename IntegrableFieldType>
-double DensityVoronoiSphereOptimizer<IntegrableFieldType>::mass(const SphericalPolygon &spherical_polygon) {
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::mass(const SphericalPolygon &spherical_polygon) {
     return _integrable_field->integrate(spherical_polygon);
 }
 
-template<typename IntegrableFieldType>
-double DensityVoronoiSphereOptimizer<IntegrableFieldType>::total_mass() {
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::total_mass() {
     return _integrable_field->integrate();
 }
 
-template<typename IntegrableFieldType>
-double DensityVoronoiSphereOptimizer<IntegrableFieldType>::average_mass() {
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::average_mass() {
     return total_mass() / _voronoi_sphere->size();
 }
 
-template<typename IntegrableFieldType>
-typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::OptimizationResult DensityVoronoiSphereOptimizer<IntegrableFieldType>::optimize_vertex_position(
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::OptimizationResult DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vertex_position(
     size_t index,
     double target_mass,
     double previous_error
@@ -297,8 +304,8 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::OptimizationResult 
 
 
 
-template<typename IntegrableFieldType>
-typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::CellMassHeap DensityVoronoiSphereOptimizer<IntegrableFieldType>::build_cell_mass_heap() {
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::CellMassHeap DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::build_cell_mass_heap() {
     CellMassHeap heap;
 
     size_t i = 0;
@@ -311,8 +318,8 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType>::CellMassHeap Densit
     return heap;
 }
 
-template<typename IntegrableFieldType>
-double DensityVoronoiSphereOptimizer<IntegrableFieldType>::compute_total_error(double target_mass) {
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::compute_total_error(double target_mass) {
     std::vector<SphericalPolygon> cells;
     cells.reserve(_voronoi_sphere->size());
 
@@ -341,8 +348,8 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType>::compute_total_error(d
     return total_error.load();
 }
 
-template<typename IntegrableFieldType>
-bool DensityVoronoiSphereOptimizer<IntegrableFieldType>::perturb_most_undersized_vertex(double target_mass) {
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_most_undersized_vertex(double target_mass) {
     auto candidate = find_most_undersized_vertex_with_deficit(target_mass);
 
     if (!candidate.has_value()) {
@@ -363,8 +370,8 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType>::perturb_most_undersized
     return true;
 }
 
-template<typename IntegrableFieldType>
-std::optional<std::pair<size_t, double>> DensityVoronoiSphereOptimizer<IntegrableFieldType>::find_most_undersized_vertex_with_deficit(double target_mass) {
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+std::optional<std::pair<size_t, double>> DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::find_most_undersized_vertex_with_deficit(double target_mass) {
     size_t best_index = _voronoi_sphere->size();
     double largest_deficit = 0.0;
     size_t i = 0;
@@ -388,8 +395,8 @@ std::optional<std::pair<size_t, double>> DensityVoronoiSphereOptimizer<Integrabl
     return std::make_pair(best_index, largest_deficit);
 }
 
-template<typename IntegrableFieldType>
-bool DensityVoronoiSphereOptimizer<IntegrableFieldType>::perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass) {
+template<typename IntegrableFieldType, SpherePointGenerator GeneratorType>
+bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass) {
     if (index >= _voronoi_sphere->size()) {
         return false;
     }
@@ -398,8 +405,7 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType>::perturb_vertex_toward_r
     double step = MAX_PERTURBATION_STEP * deficit_ratio;
 
     Point3 current_site = _voronoi_sphere->site(index);
-    RandomSpherePointGenerator random_generator;
-    Point3 random_point = random_generator.generate();
+    Point3 random_point = _point_generator.generate();
     Point3 perturbed = spherical_interpolate(current_site, random_point, step);
     Point3 normalized_point = project_to_sphere(perturbed);
     _voronoi_sphere->update_site(index, normalized_point);

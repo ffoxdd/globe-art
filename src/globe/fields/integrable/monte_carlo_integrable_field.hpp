@@ -5,51 +5,54 @@
 #include "../../geometry/spherical/spherical_polygon.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "monte_carlo_integrator.hpp"
-#include "../../generators/random_sphere_point_generator.hpp"
+#include "../../generators/sphere_point_generator.hpp"
 #include <optional>
 
 namespace globe {
 
-template<ScalarField SF>
+template<ScalarField SF, SpherePointGenerator GeneratorType>
 class MonteCarloIntegrableField {
  public:
-    explicit MonteCarloIntegrableField(SF scalar_field);
+    MonteCarloIntegrableField(SF scalar_field, GeneratorType point_generator);
 
     double integrate(const SphericalPolygon &polygon);
     double integrate(const SphericalBoundingBox &bbox = SphericalBoundingBox::full_sphere());
 
 private:
     SF _scalar_field;
+    GeneratorType _point_generator;
 
 };
 
-template<ScalarField SF>
-MonteCarloIntegrableField<SF>::MonteCarloIntegrableField(
-    SF scalar_field
+template<ScalarField SF, SpherePointGenerator GeneratorType>
+MonteCarloIntegrableField<SF, GeneratorType>::MonteCarloIntegrableField(
+    SF scalar_field,
+    GeneratorType point_generator
 ) :
-    _scalar_field(scalar_field) {
+    _scalar_field(scalar_field),
+    _point_generator(std::move(point_generator)) {
 }
 
-template<ScalarField SF>
-double MonteCarloIntegrableField<SF>::integrate(const SphericalPolygon &polygon) {
+template<ScalarField SF, SpherePointGenerator GeneratorType>
+double MonteCarloIntegrableField<SF, GeneratorType>::integrate(const SphericalPolygon &polygon) {
     SphericalBoundingBox bbox = polygon.bounding_box();
 
-    MonteCarloIntegrator<SF, RandomSpherePointGenerator> calculator(
+    MonteCarloIntegrator<SF, GeneratorType> calculator(
         std::ref(polygon),
         _scalar_field,
-        RandomSpherePointGenerator(),
+        _point_generator,
         bbox
     );
 
     return calculator.integrate();
 }
 
-template<ScalarField SF>
-double MonteCarloIntegrableField<SF>::integrate(const SphericalBoundingBox &bbox) {
-    MonteCarloIntegrator<SF, RandomSpherePointGenerator> calculator(
+template<ScalarField SF, SpherePointGenerator GeneratorType>
+double MonteCarloIntegrableField<SF, GeneratorType>::integrate(const SphericalBoundingBox &bbox) {
+    MonteCarloIntegrator<SF, GeneratorType> calculator(
         std::nullopt,
         _scalar_field,
-        RandomSpherePointGenerator(),
+        _point_generator,
         bbox
     );
 

@@ -24,7 +24,8 @@ class DensitySampledIntegrableField {
         ScalarFieldType &scalar_field,
         GeneratorType point_generator,
         size_t target_sample_count = 200'000,
-        double max_density = 1.0
+        double max_density = 1.0,
+        IntervalSampler interval_sampler = IntervalSampler()
     );
 
     [[nodiscard]] double integrate(const SphericalPolygon &polygon) const;
@@ -64,14 +65,16 @@ DensitySampledIntegrableField<ScalarFieldType, GeneratorType>::DensitySampledInt
     ScalarFieldType &scalar_field,
     GeneratorType point_generator,
     size_t target_sample_count,
-    double max_density
+    double max_density,
+    IntervalSampler interval_sampler
 ) :
     _scalar_field(scalar_field),
     _point_generator(std::move(point_generator)),
     _global_bounding_box(),
     _weight_per_sample(1.0),
     _max_density(std::max(max_density, 1e-6)),
-    _sample_attempts(0) {
+    _sample_attempts(0),
+    _interval_sampler(std::move(interval_sampler)) {
 
     build_samples(target_sample_count);
 }
