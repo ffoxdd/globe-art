@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include "random_voronoi_sphere_builder.hpp"
-#include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "../../testing/test_fixtures.hpp"
 
 using namespace globe;

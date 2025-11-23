@@ -45,7 +45,7 @@ struct MinMassComparator {
     }
 };
 
-template<typename IntegrableFieldType = DensitySampledIntegrableField<NoiseField>>
+template<typename IntegrableFieldType = DensitySampledIntegrableField<NoiseField, RandomSpherePointGenerator>>
 class DensityVoronoiSphereOptimizer {
  public:
     DensityVoronoiSphereOptimizer(

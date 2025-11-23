@@ -2,10 +2,9 @@
 #include "./density_sampled_integrable_field.hpp"
 #include "../scalar/constant_scalar_field.hpp"
 #include "../../geometry/spherical/spherical_polygon.hpp"
-#include "../../geometry/spherical/spherical_bounding_box.hpp"
-#include "../../types.hpp"
+#include "../../generators/random_sphere_point_generator.hpp"
+#include "../../testing/test_fixtures.hpp"
 #include <vector>
-#include <cmath>
 
 using namespace globe;
 
@@ -40,8 +39,9 @@ TEST(DensitySampledIntegrableFieldTest, IntegratesEntireSphereWithUniformDensity
     ConstantScalarField scalar_field(1.0);
     size_t sample_count = 10'000;
 
-    DensitySampledIntegrableField<ConstantScalarField> integrable_field(
+    DensitySampledIntegrableField<ConstantScalarField, RandomSpherePointGenerator> integrable_field(
         scalar_field,
+        RandomSpherePointGenerator(),
         sample_count,
         1.0
     );
@@ -55,8 +55,9 @@ TEST(DensitySampledIntegrableFieldTest, IntegratesPolygonSubsetOfSphere) {
     ConstantScalarField scalar_field(1.0);
     size_t sample_count = 50'000;
 
-    DensitySampledIntegrableField<ConstantScalarField> integrable_field(
+    DensitySampledIntegrableField<ConstantScalarField, RandomSpherePointGenerator> integrable_field(
         scalar_field,
+        RandomSpherePointGenerator(),
         sample_count,
         1.0
     );
@@ -70,5 +71,32 @@ TEST(DensitySampledIntegrableFieldTest, IntegratesPolygonSubsetOfSphere) {
     EXPECT_LT(result, total);
     EXPECT_GT(result / total, 0.1);
     EXPECT_LT(result / total, 0.9);
+}
+
+TEST(DensitySampledIntegrableFieldTest, WorksWithMockGenerator) {
+    using globe::testing::SequencePointGenerator;
+
+    ConstantScalarField scalar_field(1.0);
+
+    std::vector<Point3> sequence = {
+        Point3(1, 0, 0),
+        Point3(0, 1, 0),
+        Point3(0, 0, 1),
+        Point3(-1, 0, 0),
+        Point3(0, -1, 0),
+        Point3(0, 0, -1)
+    };
+
+    SequencePointGenerator generator(sequence);
+
+    DensitySampledIntegrableField<ConstantScalarField, SequencePointGenerator> integrable_field(
+        scalar_field,
+        std::move(generator),
+        6,
+        1.0
+    );
+
+    double result = integrable_field.integrate();
+    EXPECT_GT(result, 0.0);
 }
 
