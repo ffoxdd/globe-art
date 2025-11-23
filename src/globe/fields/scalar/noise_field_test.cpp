@@ -7,7 +7,6 @@
 
 using namespace globe;
 using globe::testing::compute_statistics;
-using globe::testing::compute_clipping_ratio;
 using globe::testing::expect_range_coverage;
 
 TEST(NoiseFieldTest, ValueMethodReturnsConsistentResult) {
@@ -85,10 +84,8 @@ TEST(NoiseFieldTest, EXPENSIVE_OutputDistributionUsesFullRange) {
             SAMPLE_COUNT
         );
 
-        double clipping_ratio = compute_clipping_ratio(metrics);
-
         expect_range_coverage(metrics, expected_range, 0.8);
-        EXPECT_LT(clipping_ratio, 0.1) << "Failed for seed " << seed;
+        EXPECT_LT(metrics.clipping_ratio, 0.1) << "Failed for seed " << seed;
     }
 }
 

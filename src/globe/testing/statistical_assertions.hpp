@@ -18,6 +18,7 @@ struct DistributionMetrics {
     size_t values_at_min;
     size_t values_at_max;
     double range_span;
+    double clipping_ratio;
 };
 
 struct CoordinateMetrics {
@@ -63,6 +64,7 @@ DistributionMetrics compute_statistics(
 
     double variance = m2 / sample_count;
     double range_span = max_value - min_value;
+    double clipping_ratio = static_cast<double>(values_at_min + values_at_max) / sample_count;
 
     return {
         mean,
@@ -72,7 +74,8 @@ DistributionMetrics compute_statistics(
         sample_count,
         values_at_min,
         values_at_max,
-        range_span
+        range_span,
+        clipping_ratio
     };
 }
 
@@ -101,10 +104,6 @@ CoordinateMetrics compute_coordinate_statistics(
         compute_from_coordinate([](const Point3& p) { return p.y(); }),
         compute_from_coordinate([](const Point3& p) { return p.z(); })
     };
-}
-
-inline double compute_clipping_ratio(const DistributionMetrics& metrics) {
-    return static_cast<double>(metrics.values_at_min + metrics.values_at_max) / metrics.sample_count;
 }
 
 inline void expect_mean(
