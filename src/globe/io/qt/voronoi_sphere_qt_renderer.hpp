@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_IO_QT_VORONOI_SPHERE_QT_RENDERER_HPP_
 #define GLOBEART_SRC_GLOBE_IO_QT_VORONOI_SPHERE_QT_RENDERER_HPP_
 
-#include "../../spherical_voronoi/core/voronoi_sphere.hpp"
+#include "../../voronoi/core/voronoi_sphere.hpp"
 #include "qt_viewer.hpp"
 #include <CGAL/IO/Color.h>
 #include <memory>

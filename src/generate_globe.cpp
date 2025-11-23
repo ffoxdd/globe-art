@@ -1,4 +1,4 @@
-#include "globe/spherical_voronoi/factories/voronoi_sphere_factory.hpp"
+#include "globe/voronoi/factories/voronoi_sphere_factory.hpp"
 #include "globe/io/qt/voronoi_sphere_qt_renderer.hpp"
 #include <CLI/CLI.hpp>
 #include <CGAL/Qt/init_ogl_context.h>
