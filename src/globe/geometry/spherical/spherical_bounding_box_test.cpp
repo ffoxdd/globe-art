@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include "spherical_bounding_box.hpp"
 #include "../../testing/geometric_assertions.hpp"
-#include <vector>
 
 using namespace globe;
 using globe::testing::expect_intervals_equal;
@@ -25,14 +24,14 @@ TEST(SphericalBoundingBoxTest, RespectsExplicitIntervals) {
     EXPECT_DOUBLE_EQ(box.area(), theta_interval.measure() * z_interval.measure());
 }
 
-TEST(SphericalBoundingBoxTest, ConstructsFromRanges) {
-    std::vector<double> theta_values{-M_PI / 2, 0.0, M_PI / 4};
-    std::vector<double> z_values{-0.3, 0.1, 0.8};
+TEST(SphericalBoundingBoxTest, ConstructsFromIntervals) {
+    Interval theta_interval(-M_PI / 2, M_PI / 4);
+    Interval z_interval(-0.3, 0.8);
 
-    SphericalBoundingBox box(theta_values, z_values);
+    SphericalBoundingBox box(theta_interval, z_interval);
 
-    expect_intervals_equal(box.theta_interval(), Interval(-M_PI / 2, M_PI / 4));
-    expect_intervals_equal(box.z_interval(), Interval(-0.3, 0.8));
+    expect_intervals_equal(box.theta_interval(), theta_interval);
+    expect_intervals_equal(box.z_interval(), z_interval);
 }
 
 TEST(SphericalBoundingBoxTest, CenterReturnsPointOnUnitSphere) {
