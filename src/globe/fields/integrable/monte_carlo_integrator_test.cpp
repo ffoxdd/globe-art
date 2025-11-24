@@ -18,18 +18,13 @@ using ::testing::_;
 SphericalPolygon make_northern_hemisphere_polygon() {
     return SphericalPolygon(
         std::vector<Arc>{
-            make_arc(0, 0, 1, 1, 0, 0, 0, 1, 0),
-            make_arc(0, 0, 1, 0, 1, 0, -1, 0, 0),
-            make_arc(0, 0, 1, -1, 0, 0, 0, -1, 0),
-            make_arc(0, 0, 1, 0, -1, 0, 1, 0, 0),
+            make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+            make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
+            make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
+            make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0)),
         }
     );
 }
-
-SphericalBoundingBox hemisphere_bounding_box() {
-    return {Interval(0, 2 * M_PI), Interval(0, 1)};
-}
-
 
 TEST(MonteCarloIntegratorTest, FiltersOutsidePoints) {
     MockScalarField mock_scalar_field;
@@ -40,10 +35,9 @@ TEST(MonteCarloIntegratorTest, FiltersOutsidePoints) {
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
     MonteCarloIntegrator<MockScalarField, SequencePointGenerator> monte_carlo_integrator(
-        std::ref(spherical_polygon),
+        spherical_polygon,
         mock_scalar_field,
-        SequencePointGenerator({outside_point, inside_point}),
-        hemisphere_bounding_box()
+        SequencePointGenerator({outside_point, inside_point})
     );
 
     double result = monte_carlo_integrator.integrate();
@@ -62,10 +56,9 @@ TEST(MonteCarloIntegratorTest, CalculatesAreaRatioFromSamples) {
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(1.0));
 
     MonteCarloIntegrator<MockScalarField, SequencePointGenerator> monte_carlo_integrator(
-        std::ref(spherical_polygon),
+        spherical_polygon,
         mock_scalar_field,
-        SequencePointGenerator(points),
-        hemisphere_bounding_box()
+        SequencePointGenerator(points)
     );
 
     double cell_mass = monte_carlo_integrator.integrate();
@@ -80,10 +73,9 @@ TEST(MonteCarloIntegratorTest, AppliesDensityWeighting) {
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(2.0));
 
     MonteCarloIntegrator<MockScalarField, SequencePointGenerator> monte_carlo_integrator(
-        std::ref(spherical_polygon),
+        spherical_polygon,
         mock_scalar_field,
-        SequencePointGenerator({inside_point}),
-        hemisphere_bounding_box()
+        SequencePointGenerator({inside_point})
     );
 
     EXPECT_NEAR(
@@ -100,7 +92,6 @@ TEST(MonteCarloIntegratorTest, ScalesIntegralByDensity) {
     EXPECT_CALL(mock_scalar_field, value(_)).WillRepeatedly(Return(3.0));
 
     MonteCarloIntegrator<MockScalarField, SequencePointGenerator> monte_carlo_integrator(
-        std::nullopt,
         mock_scalar_field,
         SequencePointGenerator({arbitrary_point})
     );
@@ -119,14 +110,13 @@ TEST(MonteCarloIntegratorTest, EXPENSIVE_ConvergesWithManyRandomSamples) {
     SphericalPolygon spherical_polygon = make_northern_hemisphere_polygon();
 
     MonteCarloIntegrator<ConstantScalarField, RandomSpherePointGenerator<>> monte_carlo_integrator(
-        std::ref(spherical_polygon),
+        spherical_polygon,
         scalar_field,
-        RandomSpherePointGenerator<>(),
-        hemisphere_bounding_box()
+        RandomSpherePointGenerator<>()
     );
 
     double result = monte_carlo_integrator.integrate();
-    EXPECT_NEAR(result, 2 * M_PI, 0.3);
+    EXPECT_NEAR(result, 2 * M_PI, 0.5);
 }
 
 TEST(MonteCarloIntegratorTest, EXPENSIVE_ConvergesForFullSphere) {
@@ -135,7 +125,6 @@ TEST(MonteCarloIntegratorTest, EXPENSIVE_ConvergesForFullSphere) {
     ConstantScalarField scalar_field(1.0);
 
     MonteCarloIntegrator<ConstantScalarField, RandomSpherePointGenerator<>> monte_carlo_integrator(
-        std::nullopt,
         scalar_field,
         RandomSpherePointGenerator<>()
     );

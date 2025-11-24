@@ -22,17 +22,21 @@ template<
 class MonteCarloIntegrator {
  public:
     MonteCarloIntegrator(
-        std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
-        ScalarFieldType &density_field,
-        SpherePointGeneratorType sphere_point_generator = SpherePointGeneratorType(),
-        std::optional<SphericalBoundingBox> bounding_box = std::nullopt
+        const SphericalPolygon& polygon,
+        ScalarFieldType& density_field,
+        SpherePointGeneratorType sphere_point_generator = SpherePointGeneratorType()
+    );
+
+    MonteCarloIntegrator(
+        ScalarFieldType& density_field,
+        SpherePointGeneratorType sphere_point_generator = SpherePointGeneratorType()
     );
 
     [[nodiscard]] double integrate();
 
  private:
     std::optional<std::reference_wrapper<const SphericalPolygon>> _spherical_polygon;
-    ScalarFieldType &_density_field;
+    ScalarFieldType& _density_field;
     SpherePointGeneratorType _sphere_point_generator;
     SphericalBoundingBox _bounding_box;
 
@@ -44,22 +48,25 @@ class MonteCarloIntegrator {
 
 template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
 inline MonteCarloIntegrator<ScalarFieldType, SpherePointGeneratorType>::MonteCarloIntegrator(
-    std::optional<std::reference_wrapper<const SphericalPolygon>> spherical_polygon,
-    ScalarFieldType &density_field,
-    SpherePointGeneratorType sphere_point_generator,
-    std::optional<SphericalBoundingBox> bounding_box
+    const SphericalPolygon& polygon,
+    ScalarFieldType& density_field,
+    SpherePointGeneratorType sphere_point_generator
 ):
-    _spherical_polygon(spherical_polygon),
+    _spherical_polygon(std::ref(polygon)),
     _density_field(density_field),
     _sphere_point_generator(std::move(sphere_point_generator)),
-    _bounding_box(
-        bounding_box.has_value() ?
-        *bounding_box :
-        (
-            spherical_polygon.has_value() ? spherical_polygon->get().bounding_box()
-            : SphericalBoundingBox::full_sphere()
-        )
-    ) {
+    _bounding_box(polygon.bounding_box()) {
+}
+
+template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+inline MonteCarloIntegrator<ScalarFieldType, SpherePointGeneratorType>::MonteCarloIntegrator(
+    ScalarFieldType& density_field,
+    SpherePointGeneratorType sphere_point_generator
+):
+    _spherical_polygon(std::nullopt),
+    _density_field(density_field),
+    _sphere_point_generator(std::move(sphere_point_generator)),
+    _bounding_box(SphericalBoundingBox::full_sphere()) {
 }
 
 template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>

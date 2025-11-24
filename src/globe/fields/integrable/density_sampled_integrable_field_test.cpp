@@ -15,10 +15,10 @@ using globe::testing::make_arc;
 SphericalPolygon make_northern_hemisphere_polygon() {
     return SphericalPolygon(
         std::vector<Arc>{
-            make_arc(0, 0, 1, 1, 0, 0, 0, 1, 0),
-            make_arc(0, 0, 1, 0, 1, 0, -1, 0, 0),
-            make_arc(0, 0, 1, -1, 0, 0, 0, -1, 0),
-            make_arc(0, 0, 1, 0, -1, 0, 1, 0, 0),
+            make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+            make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
+            make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
+            make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0)),
         }
     );
 }

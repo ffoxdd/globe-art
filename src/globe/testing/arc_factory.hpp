@@ -6,24 +6,20 @@
 
 namespace globe::testing {
 
-inline Arc make_arc(double nx, double ny, double nz, double sx, double sy, double sz, double tx, double ty, double tz) {
+inline Arc make_arc(const Vector3 &normal, const Point3 &source, const Point3 &target) {
     using SphericalKernel = CGAL::Exact_spherical_kernel_3;
     using SphericalCircle3 = SphericalKernel::Circle_3;
     using SphericalPoint3 = SphericalKernel::Point_3;
     using SphericalVector3 = SphericalKernel::Vector_3;
 
     return Arc(
-        SphericalCircle3(SphericalPoint3(0, 0, 0), 1.0, SphericalVector3(nx, ny, nz)),
-        SphericalPoint3(sx, sy, sz),
-        SphericalPoint3(tx, ty, tz)
-    );
-}
-
-inline Arc make_arc(const Vector3 &normal, const Point3 &source, const Point3 &target) {
-    return make_arc(
-        normal.x(), normal.y(), normal.z(),
-        source.x(), source.y(), source.z(),
-        target.x(), target.y(), target.z()
+        SphericalCircle3(
+            SphericalPoint3(0, 0, 0),
+            1.0,
+            SphericalVector3(normal.x(), normal.y(), normal.z())
+        ),
+        SphericalPoint3(source.x(), source.y(), source.z()),
+        SphericalPoint3(target.x(), target.y(), target.z())
     );
 }
 

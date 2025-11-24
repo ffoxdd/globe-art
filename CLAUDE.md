@@ -49,6 +49,12 @@ Before making a commit, always verify:
 
 These checks ensure that expensive tests are not accidentally broken and remain executable.
 
+### Build System Behavior
+- CMakeLists.txt automatically picks up all `*_test.cpp` files using `GLOB_RECURSE`
+- New test files are discovered at cmake configuration time, not build time
+- After adding a new test file, run `cmake ..` from the build directory to reconfigure
+- The build system will then automatically compile and register the new test
+
 ### Dependency Injection via Concepts
 **ALL injected dependencies must use concepts** - not just random/slow ones. Any dependency injected via template parameter should be constrained by a concept:
 - Use concepts to constrain ALL injected template parameters (e.g., `SpherePointGenerator`, `IntervalSampler`, `ScalarField`, `IntegrableField`)

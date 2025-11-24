@@ -35,13 +35,10 @@ MonteCarloIntegrableField<SF, GeneratorType>::MonteCarloIntegrableField(
 
 template<ScalarField SF, SpherePointGenerator GeneratorType>
 double MonteCarloIntegrableField<SF, GeneratorType>::integrate(const SphericalPolygon &polygon) {
-    SphericalBoundingBox bbox = polygon.bounding_box();
-
     MonteCarloIntegrator<SF, GeneratorType> calculator(
-        std::ref(polygon),
+        polygon,
         _scalar_field,
-        _point_generator,
-        bbox
+        _point_generator
     );
 
     return calculator.integrate();
@@ -50,10 +47,8 @@ double MonteCarloIntegrableField<SF, GeneratorType>::integrate(const SphericalPo
 template<ScalarField SF, SpherePointGenerator GeneratorType>
 double MonteCarloIntegrableField<SF, GeneratorType>::integrate(const SphericalBoundingBox &bbox) {
     MonteCarloIntegrator<SF, GeneratorType> calculator(
-        std::nullopt,
         _scalar_field,
-        _point_generator,
-        bbox
+        _point_generator
     );
 
     return calculator.integrate();
