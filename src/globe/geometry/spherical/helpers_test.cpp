@@ -141,14 +141,6 @@ TEST(ProjectToSphereTest, ProjectsPointToUnitSphere) {
     EXPECT_DOUBLE_EQ(result.z(), 0.0);
 }
 
-TEST(ProjectToSphereTest, ProjectsToCustomRadius) {
-    Point3 p = {1, 0, 0};
-    Point3 result = project_to_sphere(p, ORIGIN, 2.0);
-
-    EXPECT_DOUBLE_EQ(result.x(), 2.0);
-    EXPECT_DOUBLE_EQ(result.y(), 0.0);
-    EXPECT_DOUBLE_EQ(result.z(), 0.0);
-}
 
 TEST(ProjectToSphereTest, PreservesDirection) {
     Point3 p = {3, 4, 0};
@@ -159,15 +151,6 @@ TEST(ProjectToSphereTest, PreservesDirection) {
     EXPECT_NEAR(result.z(), 0.0, 1e-10);
 }
 
-TEST(ProjectToSphereTest, WorksWithCustomCenter) {
-    Point3 center = {1, 0, 0};
-    Point3 p = {2, 0, 0};
-    Point3 result = project_to_sphere(p, center, 2.0);
-
-    EXPECT_DOUBLE_EQ(result.x(), 3.0);
-    EXPECT_DOUBLE_EQ(result.y(), 0.0);
-    EXPECT_DOUBLE_EQ(result.z(), 0.0);
-}
 
 TEST(AntipodalTest, ComputesOppositePoint) {
     Point3 p = {1, 0, 0};

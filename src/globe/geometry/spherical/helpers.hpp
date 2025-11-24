@@ -20,7 +20,11 @@ Point3 to_point(const ForeignPoint &point) {
 
 template<typename PointType>
 Vector3 position_vector(const PointType &point) {
-    return to_point(point) - ORIGIN;
+    return Vector3(
+        CGAL::to_double(point.x()),
+        CGAL::to_double(point.y()),
+        CGAL::to_double(point.z())
+    );
 }
 
 inline Vector3 normalize(const Vector3 &vector) {
@@ -33,28 +37,32 @@ inline Vector3 normalize(const Vector3 &vector) {
     return {vector.x() / length, vector.y() / length, vector.z() / length};
 }
 
-inline Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, double t, const Point3 &center = ORIGIN) {
-    globe::Vector3 v1 = point1 - center;
-    globe::Vector3 v2 = point2 - center;
+inline Point3 spherical_interpolate(const Point3 &point1, const Point3 &point2, double t) {
+    Vector3 v1 = position_vector(point1);
+    Vector3 v2 = position_vector(point2);
 
-    globe::Vector3 v1_ = normalize(v1);
-    globe::Vector3 v2_ = normalize(v2);
+    Vector3 v1_normalized = normalize(v1);
+    Vector3 v2_normalized = normalize(v2);
 
-    double dot_product = v1_ * v2_;
-    double theta = acos(dot_product);
+    double dot_product = v1_normalized * v2_normalized;
+    double theta = std::acos(dot_product);
 
-    double sin_theta = sin(theta);
-    double alpha = sin((1 - t) * theta) / sin_theta;
-    double beta = sin(t * theta) / sin_theta;
+    double sin_theta = std::sin(theta);
+    double alpha = std::sin((1 - t) * theta) / sin_theta;
+    double beta = std::sin(t * theta) / sin_theta;
 
     Vector3 interpolated_vector = (alpha * v1) + (beta * v2);
 
-    return center + interpolated_vector;
+    return Point3(interpolated_vector.x(), interpolated_vector.y(), interpolated_vector.z());
 }
 
 inline double theta(double x, double y) {
     double t = std::atan2(y, x);
     return t < 0.0 ? t + 2.0 * M_PI : t;
+}
+
+inline double theta(const Point3 &point) {
+    return theta(point.x(), point.y());
 }
 
 inline double angular_distance(const Vector3 &a, const Vector3 &b) {
@@ -72,10 +80,10 @@ inline double spherical_angle(const Vector3 &a, const Vector3 &b, const Vector3 
     );
 }
 
-inline Point3 project_to_sphere(const Point3 &point, const Point3 &center = ORIGIN, double radius = 1.0) {
-    auto vector = point - center;
-    double scale = radius / std::sqrt(vector.squared_length());
-    return center + (vector * scale);
+inline Point3 project_to_sphere(const Point3 &point) {
+    Vector3 v = position_vector(point);
+    Vector3 normalized = normalize(v);
+    return Point3(normalized.x(), normalized.y(), normalized.z());
 }
 
 inline Point3 antipodal(const Point3 &point) {

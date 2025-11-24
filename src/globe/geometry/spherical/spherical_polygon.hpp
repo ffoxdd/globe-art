@@ -11,7 +11,6 @@
 #include <vector>
 #include <cstddef>
 #include <cmath>
-#include <limits>
 #include <algorithm>
 #include <ranges>
 
@@ -83,30 +82,25 @@ inline bool SphericalPolygon::is_convex() const {
 
 
 inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
-    double theta_min = std::numeric_limits<double>::max();
-    double theta_max = std::numeric_limits<double>::lowest();
-
-    double z_min = std::numeric_limits<double>::max();
-    double z_max = std::numeric_limits<double>::lowest();
-
-    bool has_points = false;
-
-    for (const auto &point : points()) {
-        has_points = true;
-
-        double t = theta(point.x(), point.y());
-        double z = static_cast<double>(point.z());
-
-        theta_min = std::min(theta_min, t);
-        theta_max = std::max(theta_max, t);
-
-        z_min = std::min(z_min, z);
-        z_max = std::max(z_max, z);
-    }
-
-    if (!has_points) {
+    if (_arcs.empty()) {
         return SphericalBoundingBox::full_sphere();
     }
+
+    auto theta_values = points() | std::views::transform(
+        [](const Point3 &point) { return theta(point); }
+    );
+
+    auto [theta_min_it, theta_max_it] = std::ranges::minmax_element(theta_values);
+
+    double theta_min = *theta_min_it;
+    double theta_max = *theta_max_it;
+
+    auto z_values = points() | std::views::transform(
+        [](const Point3 &point) { return static_cast<double>(point.z()); }
+    );
+    auto [z_min_it, z_max_it] = std::ranges::minmax_element(z_values);
+    double z_min = *z_min_it;
+    double z_max = *z_max_it;
 
     for (const auto &arc : _arcs) {
         Interval arc_z_range = arc_z_extrema(arc);
@@ -154,7 +148,8 @@ inline Point3 SphericalPolygon::centroid() const {
         return bounding_box().center();
     }
 
-    return ORIGIN + normalize(average);
+    Vector3 normalized = normalize(average);
+    return Point3(normalized.x(), normalized.y(), normalized.z());
 }
 
 inline bool SphericalPolygon::arcs_form_closed_loop() const {

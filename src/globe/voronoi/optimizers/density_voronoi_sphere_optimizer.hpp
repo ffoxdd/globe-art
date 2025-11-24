@@ -193,14 +193,14 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::Opti
 ) {
     Point3 original_position = _voronoi_sphere->site(index);
     Point3 north = antipodal(original_position);
-    TangentBasis basis = build_tangent_basis(north - ORIGIN);
+    TangentBasis basis = build_tangent_basis(position_vector(north));
     Vector3 tangent_u = basis.tangent_u;
     Vector3 tangent_v = basis.tangent_v;
 
     using column_vector = dlib::matrix<double, 2, 1>;
 
     double initial_error = previous_error;
-    Vector3 original_vector = original_position - ORIGIN;
+    Vector3 original_vector = position_vector(original_position);
 
     auto run_bobyqa = [&](const column_vector& initial_point, int max_function_calls) {
         struct RunResult {
@@ -231,7 +231,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::Opti
             _voronoi_sphere->update_site(index, candidate);
 
             double total_error = compute_total_error(target_mass);
-            double displacement_angle = angular_distance(original_vector, candidate - ORIGIN);
+            double displacement_angle = angular_distance(original_vector, position_vector(candidate));
             double penalty = DISPLACEMENT_PENALTY_SCALE * target_mass * target_mass * displacement_angle * displacement_angle;
             double cost = total_error + penalty;
 
@@ -288,7 +288,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::Opti
 
     _voronoi_sphere->update_site(index, best_position);
     double delta = final_norm - initial_norm;
-    double movement = angular_distance(original_vector, best_position - ORIGIN);
+    double movement = angular_distance(original_vector, position_vector(best_position));
     bool moved = movement > MOVEMENT_EPSILON;
 
     std::cout <<

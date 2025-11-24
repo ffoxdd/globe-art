@@ -142,14 +142,14 @@ inline SurfaceMesh::Vertex_index MeshBuilder::get_or_create_vertex(
 }
 
 inline Vector3 MeshBuilder::arc_normal(const Point3 &source, const Point3 &target) const {
-    Vector3 source_vec = normalize(source - ORIGIN);
-    Vector3 target_vec = normalize(target - ORIGIN);
+    Vector3 source_vec = position_vector(source);
+    Vector3 target_vec = position_vector(target);
 
     return normalize(CGAL::cross_product(source_vec, target_vec));
 }
 
 inline Point3 MeshBuilder::create_offset_point(const Point3 &point, const Vector3 &arc_normal) const {
-    Vector3 radius_vec = normalize(point - ORIGIN);
+    Vector3 radius_vec = position_vector(point);
     Vector3 perpendicular = normalize(CGAL::cross_product(arc_normal, radius_vec));
     Point3 offset_point = point + (perpendicular * _arc_thickness);
 
