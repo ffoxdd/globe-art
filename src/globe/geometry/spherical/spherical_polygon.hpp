@@ -34,6 +34,7 @@ class SphericalPolygon {
     [[nodiscard]] bool is_on_arc(const Arc &arc, const Vector3 &point_vector) const;
     [[nodiscard]] bool is_degenerate() const;
     [[nodiscard]] bool is_convex() const;
+    [[nodiscard]] Interval arc_z_extrema(const Arc &arc) const;
 };
 
 inline auto SphericalPolygon::points() const {
@@ -107,8 +108,29 @@ inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
         return SphericalBoundingBox::full_sphere();
     }
 
+    for (const auto &arc : _arcs) {
+        Interval arc_z_range = arc_z_extrema(arc);
+        z_min = std::min(z_min, arc_z_range.low());
+        z_max = std::max(z_max, arc_z_range.high());
+    }
+
+    bool contains_north_pole = contains(Point3(0, 0, 1));
+    bool contains_south_pole = contains(Point3(0, 0, -1));
+
+    if (contains_north_pole) {
+        z_max = 1.0;
+    }
+
+    if (contains_south_pole) {
+        z_min = -1.0;
+    }
+
+    Interval theta_range = (contains_north_pole || contains_south_pole) ?
+        Interval(0, 2 * M_PI) :
+        theta_interval(theta_min, theta_max);
+
     return {
-        theta_interval(theta_min, theta_max),
+        theta_range,
         Interval(z_min, z_max),
     };
 }
@@ -167,6 +189,54 @@ inline bool SphericalPolygon::is_on_arc(const Arc &arc, const Vector3 &point_vec
     Arc p_arc = Arc(arc.supporting_circle(), arc.source(), p_);
 
     return p_arc.approximate_angle() < arc.approximate_angle();
+}
+
+inline Interval SphericalPolygon::arc_z_extrema(const Arc &arc) const {
+    auto normal = arc.supporting_circle().supporting_plane().orthogonal_vector();
+    Vector3 n = position_vector(normal);
+
+    Vector3 source_vec = position_vector(arc.source());
+    Vector3 target_vec = position_vector(arc.target());
+
+    double source_z = static_cast<double>(source_vec.z());
+    double target_z = static_cast<double>(target_vec.z());
+
+    double z_min = std::min(source_z, target_z);
+    double z_max = std::max(source_z, target_z);
+
+    Vector3 z_axis(0, 0, 1);
+    Vector3 n_cross_z = CGAL::cross_product(n, z_axis);
+    double cross_length_squared = static_cast<double>(n_cross_z.squared_length());
+
+    if (cross_length_squared < 1e-10) {
+        return Interval(z_min, z_max);
+    }
+
+    Vector3 critical_dir = CGAL::cross_product(n_cross_z, n);
+    double critical_length_squared = static_cast<double>(critical_dir.squared_length());
+
+    if (critical_length_squared < 1e-10) {
+        return Interval(z_min, z_max);
+    }
+
+    double critical_length = std::sqrt(critical_length_squared);
+    Vector3 critical_point_up = critical_dir / critical_length;
+    Vector3 critical_point_down = -critical_point_up;
+
+    double critical_z_up = static_cast<double>(critical_point_up.z());
+    double critical_z_down = static_cast<double>(critical_point_down.z());
+
+    if (is_on_arc(arc, critical_point_up)) {
+        z_max = std::max(z_max, critical_z_up);
+        z_min = std::min(z_min, critical_z_up);
+    }
+
+    if (is_on_arc(arc, critical_point_down)) {
+        z_max = std::max(z_max, critical_z_down);
+        z_min = std::min(z_min, critical_z_down);
+    }
+
+    return Interval(z_min, z_max);
 }
 
 } // namespace globe

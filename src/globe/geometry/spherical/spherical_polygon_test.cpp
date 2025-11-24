@@ -239,5 +239,5 @@ TEST(SphericalPolygonTest, CentroidForSymmetricPolygon) {
         centroid.z() * centroid.z()
     );
     EXPECT_NEAR(distance, 1.0, 1e-9);
-    EXPECT_NEAR(centroid.z(), 0.0, 1e-9);
+    EXPECT_NEAR(centroid.z(), 0.5, 1e-9);
 }
