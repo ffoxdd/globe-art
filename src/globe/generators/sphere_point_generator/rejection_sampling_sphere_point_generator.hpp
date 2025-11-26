@@ -1,0 +1,114 @@
+#ifndef GLOBEART_SRC_GLOBE_GENERATORS_REJECTION_SAMPLING_SPHERE_POINT_GENERATOR_HPP_
+#define GLOBEART_SRC_GLOBE_GENERATORS_REJECTION_SAMPLING_SPHERE_POINT_GENERATOR_HPP_
+
+#include "../../types.hpp"
+#include "../../geometry/spherical/spherical_bounding_box.hpp"
+#include "../../fields/scalar/scalar_field.hpp"
+#include "../../fields/scalar/constant_scalar_field.hpp"
+#include "../../math/interval_sampler/interval_sampler.hpp"
+#include "sphere_point_generator.hpp"
+#include "random_sphere_point_generator.hpp"
+#include <vector>
+#include <cmath>
+
+namespace globe {
+
+template<
+    ScalarField DensityFieldType = ConstantScalarField,
+    SpherePointGenerator UnderlyingGeneratorType = RandomSpherePointGenerator<>,
+    IntervalSampler IntervalSamplerType = UniformIntervalSampler
+>
+class RejectionSamplingSpherePointGenerator {
+ public:
+    RejectionSamplingSpherePointGenerator() = default;
+
+    explicit RejectionSamplingSpherePointGenerator(
+        DensityFieldType density_field,
+        double max_density = 1.0,
+        UnderlyingGeneratorType generator = UnderlyingGeneratorType(),
+        IntervalSamplerType interval_sampler = IntervalSamplerType()
+    ) : _density_field(std::move(density_field)),
+        _max_density(std::max(max_density, 1e-6)),
+        _generator(std::move(generator)),
+        _interval_sampler(std::move(interval_sampler)) {
+    }
+
+    std::vector<Point3> generate(
+        size_t count,
+        const SphericalBoundingBox &bounding_box = SphericalBoundingBox::full_sphere()
+    );
+
+    [[nodiscard]] size_t last_attempt_count() const { return _last_attempt_count; }
+
+ private:
+    DensityFieldType _density_field;
+    double _max_density = 1.0;
+    UnderlyingGeneratorType _generator;
+    IntervalSamplerType _interval_sampler;
+    size_t _last_attempt_count = 0;
+
+    static constexpr size_t BATCH_SIZE = 100;
+
+    [[nodiscard]] bool candidate_accepted(const Point3 &candidate);
+    [[nodiscard]] double acceptance_threshold(const Point3 &point) const;
+    [[nodiscard]] double sample_acceptance();
+};
+
+template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
+std::vector<Point3> RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::generate(
+    size_t count,
+    const SphericalBoundingBox &bounding_box
+) {
+    if (count == 0) {
+        _last_attempt_count = 0;
+        return {};
+    }
+
+    std::vector<Point3> points;
+    points.reserve(count);
+    size_t attempts = 0;
+
+    while (points.size() < count) {
+        size_t remaining = count - points.size();
+        size_t batch_size = std::min(remaining, BATCH_SIZE);
+        auto candidates = _generator.generate(batch_size, bounding_box);
+        attempts += candidates.size();
+
+        for (const auto &candidate : candidates) {
+            if (points.size() >= count) {
+                break;
+            }
+
+            if (candidate_accepted(candidate)) {
+                points.push_back(candidate);
+            }
+        }
+    }
+
+    _last_attempt_count = attempts;
+    return points;
+}
+
+template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
+bool RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::candidate_accepted(
+    const Point3 &candidate
+) {
+    return sample_acceptance() <= acceptance_threshold(candidate);
+}
+
+template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
+double RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::acceptance_threshold(
+    const Point3 &point
+) const {
+    double density = _density_field.value(point);
+    return std::clamp(density / _max_density, 0.0, 1.0);
+}
+
+template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
+double RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::sample_acceptance() {
+    return _interval_sampler.sample(Interval(0.0, 1.0));
+}
+
+}
+
+#endif //GLOBEART_SRC_GLOBE_GENERATORS_REJECTION_SAMPLING_SPHERE_POINT_GENERATOR_HPP_
