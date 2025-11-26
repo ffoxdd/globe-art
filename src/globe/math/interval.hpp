@@ -1,20 +1,23 @@
 #ifndef GLOBEART_SRC_GLOBE_NOISE_GENERATOR_RANGE_H_
 #define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_RANGE_H_
 
+#include "../std_ext/ranges.hpp"
+#include <CGAL/assertions.h>
 #include <limits>
 #include <concepts>
 #include <ranges>
+#include <algorithm>
+#include <numeric>
 
 namespace globe {
 
-template<typename T>
-concept DoubleRange = std::ranges::range<T> && std::same_as<std::ranges::range_value_t<T>, double>;
+class Interval;
 
 class Interval {
  public:
     Interval();
     Interval(double low, double high);
-    template<DoubleRange DoubleRangeType> explicit Interval(const DoubleRangeType &range);
+    template<RangeOf<double> DoubleRange> explicit Interval(const DoubleRange &range);
 
     [[nodiscard]] double low() const;
     [[nodiscard]] double high() const;
@@ -22,13 +25,16 @@ class Interval {
     [[nodiscard]] double midpoint() const;
     [[nodiscard]] bool contains(double value) const;
 
+    [[nodiscard]] static Interval hull(const Interval &a, const Interval &b);
+    [[nodiscard]] static Interval hull(const Interval &interval, double value);
+    [[nodiscard]] static Interval hull(double a, double b);
+
+    template<RangeOf<Interval> IntervalRange>
+    [[nodiscard]] static Interval hull(const IntervalRange &intervals);
+
  private:
     double _low;
     double _high;
-
-    explicit Interval(const std::pair<double, double> &min_max);
-
-    template<DoubleRange DoubleRangeType> static std::pair<double, double> min_max(const DoubleRangeType &range);
 };
 
 inline Interval::Interval() :
@@ -41,13 +47,12 @@ inline Interval::Interval(double low, double high) :
     _high(high) {
 };
 
-template<DoubleRange DoubleRangeType>
-Interval::Interval(const DoubleRangeType &range): Interval(min_max(range)) {
-}
+template<RangeOf<double> DoubleRange>
+Interval::Interval(const DoubleRange &range) {
+    auto [min_it, max_it] = std::ranges::minmax_element(range);
 
-inline Interval::Interval(const std::pair<double, double> &min_max) :
-    _low(min_max.first),
-    _high(min_max.second) {
+    _low = *min_it;
+    _high = *max_it;
 }
 
 inline double Interval::low() const {
@@ -56,11 +61,6 @@ inline double Interval::low() const {
 
 inline double Interval::high() const {
     return _high;
-}
-
-template<DoubleRange DoubleRangeType> std::pair<double, double> Interval::min_max(const DoubleRangeType &range) {
-    auto [min_it, max_it] = std::ranges::minmax_element(range);
-    return {*min_it, *max_it};
 }
 
 inline double Interval::measure() const {
@@ -73,6 +73,39 @@ inline double Interval::midpoint() const {
 
 inline bool Interval::contains(double value) const {
     return _low <= value && value <= _high;
+}
+
+inline Interval Interval::hull(const Interval &a, const Interval &b) {
+    return Interval(
+        std::min(a._low, b._low),
+        std::max(a._high, b._high)
+    );
+}
+
+inline Interval Interval::hull(const Interval &interval, double value) {
+    return Interval(
+        std::min(interval._low, value),
+        std::max(interval._high, value)
+    );
+}
+
+inline Interval Interval::hull(double a, double b) {
+    return Interval(
+        std::min(a, b),
+        std::max(a, b)
+    );
+}
+
+template<RangeOf<Interval> IntervalRange>
+Interval Interval::hull(const IntervalRange &intervals) {
+    CGAL_precondition(!std::ranges::empty(intervals));
+
+    return std::accumulate(
+        std::next(std::ranges::begin(intervals)),
+        std::ranges::end(intervals),
+        *std::ranges::begin(intervals),
+        [](const Interval &a, const Interval &b) { return hull(a, b); }
+    );
 }
 
 } // namespace globe

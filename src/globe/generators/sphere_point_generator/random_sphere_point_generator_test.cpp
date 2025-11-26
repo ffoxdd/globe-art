@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include "random_sphere_point_generator.hpp"
-#include "../geometry/spherical/spherical_bounding_box.hpp"
-#include "../testing/geometric_assertions.hpp"
-#include "../testing/statistical_assertions.hpp"
-#include "../math/interval.hpp"
+#include "../../geometry/spherical/spherical_bounding_box.hpp"
+#include "../../testing/geometric_assertions.hpp"
+#include "../../testing/statistical_assertions.hpp"
+#include "../../math/interval.hpp"
 
 using namespace globe;
 using globe::testing::is_on_unit_sphere;
@@ -63,7 +63,7 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_BoundedPointsInBox) {
     REQUIRE_EXPENSIVE();
 
     RandomSpherePointGenerator generator;
-    SphericalBoundingBox box(Interval(0.0, M_PI), Interval(0.0, 1.0));
+    SphericalBoundingBox box(ThetaInterval(0.0, M_PI), Interval(0.0, 1.0));
     constexpr size_t sample_count = 10000;
 
     size_t in_box_count = 0;

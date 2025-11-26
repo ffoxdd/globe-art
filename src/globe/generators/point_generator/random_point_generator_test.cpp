@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include "random_point_generator.hpp"
-#include "../geometry/cartesian/bounding_box.hpp"
-#include "../math/interval.hpp"
-#include "../testing/geometric_assertions.hpp"
-#include "../testing/statistical_assertions.hpp"
+#include "../../geometry/cartesian/bounding_box.hpp"
+#include "../../math/interval.hpp"
+#include "../../testing/geometric_assertions.hpp"
+#include "../../testing/statistical_assertions.hpp"
 
 using namespace globe;
 using globe::testing::compute_statistics;
