@@ -54,6 +54,8 @@ inline QtViewer::QtViewer(
 )
     : ::CGAL::Qt::Basic_viewer(parent, _scene, window_title.c_str()),
     _key_press_callback(key_press_callback) {
+    draw_vertices(true);
+    size_vertices(5.0f);
 }
 
 inline void QtViewer::add_point(const Point3 &point, const CGAL::IO::Color &color) {
