@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "./density_sampled_integrable_field.hpp"
+#include "./sampled_integrable_field.hpp"
 #include "../scalar/constant_scalar_field.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
@@ -24,7 +24,7 @@ SphericalPolygon make_northern_hemisphere_polygon() {
     );
 }
 
-TEST(DensitySampledIntegrableFieldTest, AcceptsAllPointsWithConstantDensity) {
+TEST(SampledIntegrableFieldTest, AcceptsAllPointsWithConstantDensity) {
     std::vector<Point3> sequence = {
         Point3(1, 0, 0),
         Point3(0, 1, 0),
@@ -36,7 +36,7 @@ TEST(DensitySampledIntegrableFieldTest, AcceptsAllPointsWithConstantDensity) {
 
     SequencePointGenerator generator(sequence);
 
-    DensitySampledIntegrableField<SequencePointGenerator> integrable_field(
+    SampledIntegrableField<SequencePointGenerator> integrable_field(
         std::move(generator),
         6,
         1.0
@@ -48,14 +48,14 @@ TEST(DensitySampledIntegrableFieldTest, AcceptsAllPointsWithConstantDensity) {
     EXPECT_NEAR(result, expected_sphere_surface_area, 0.1);
 }
 
-TEST(DensitySampledIntegrableFieldTest, EXPENSIVE_IntegratesEntireSphereWithUniformDensity) {
+TEST(SampledIntegrableFieldTest, EXPENSIVE_IntegratesEntireSphereWithUniformDensity) {
     REQUIRE_EXPENSIVE();
     ConstantScalarField density_field(1.0);
     size_t sample_count = 10'000;
 
     RejectionSamplingSpherePointGenerator<ConstantScalarField> generator(density_field, 1.0);
 
-    DensitySampledIntegrableField<RejectionSamplingSpherePointGenerator<ConstantScalarField>> integrable_field(
+    SampledIntegrableField<RejectionSamplingSpherePointGenerator<ConstantScalarField>> integrable_field(
         std::move(generator),
         sample_count,
         1.0
@@ -66,7 +66,7 @@ TEST(DensitySampledIntegrableFieldTest, EXPENSIVE_IntegratesEntireSphereWithUnif
     EXPECT_NEAR(integrable_field.integrate(), expected, tolerance);
 }
 
-TEST(DensitySampledIntegrableFieldTest, EXPENSIVE_IntegratesPolygonSubsetOfSphere) {
+TEST(SampledIntegrableFieldTest, EXPENSIVE_IntegratesPolygonSubsetOfSphere) {
     REQUIRE_EXPENSIVE();
 
     ConstantScalarField density_field(1.0);
@@ -74,7 +74,7 @@ TEST(DensitySampledIntegrableFieldTest, EXPENSIVE_IntegratesPolygonSubsetOfSpher
 
     RejectionSamplingSpherePointGenerator<ConstantScalarField> generator(density_field, 1.0);
 
-    DensitySampledIntegrableField<RejectionSamplingSpherePointGenerator<ConstantScalarField>> integrable_field(
+    SampledIntegrableField<RejectionSamplingSpherePointGenerator<ConstantScalarField>> integrable_field(
         std::move(generator),
         sample_count,
         1.0

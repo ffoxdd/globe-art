@@ -6,7 +6,7 @@
 #include "../optimizers/density_voronoi_sphere_optimizer.hpp"
 #include "../../fields/scalar/constant_scalar_field.hpp"
 #include "../../fields/scalar/noise_field.hpp"
-#include "../../fields/integrable/density_sampled_integrable_field.hpp"
+#include "../../fields/integrable/sampled_integrable_field.hpp"
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../../generators/sphere_point_generator/rejection_sampling_sphere_point_generator.hpp"
 #include <string>
@@ -39,7 +39,7 @@ class VoronoiSphereFactory {
     std::unique_ptr<VoronoiSphere> optimize(std::unique_ptr<VoronoiSphere> voronoi_sphere);
 
     template<ScalarField ScalarFieldType>
-    std::unique_ptr<DensitySampledIntegrableField<RejectionSamplingSpherePointGenerator<ScalarFieldType>>> build_integrable_field();
+    std::unique_ptr<SampledIntegrableField<RejectionSamplingSpherePointGenerator<ScalarFieldType>>> build_integrable_field();
 
     size_t density_field_sample_count();
 };
@@ -89,13 +89,13 @@ inline size_t VoronoiSphereFactory::density_field_sample_count() {
 }
 
 template<ScalarField ScalarFieldType>
-inline std::unique_ptr<DensitySampledIntegrableField<RejectionSamplingSpherePointGenerator<ScalarFieldType>>> VoronoiSphereFactory::build_integrable_field() {
+inline std::unique_ptr<SampledIntegrableField<RejectionSamplingSpherePointGenerator<ScalarFieldType>>> VoronoiSphereFactory::build_integrable_field() {
     ScalarFieldType density_field;
     size_t sample_count = density_field_sample_count();
 
     RejectionSamplingSpherePointGenerator<ScalarFieldType> generator(density_field, 1.0);
 
-    return std::make_unique<DensitySampledIntegrableField<RejectionSamplingSpherePointGenerator<ScalarFieldType>>>(
+    return std::make_unique<SampledIntegrableField<RejectionSamplingSpherePointGenerator<ScalarFieldType>>>(
         std::move(generator),
         sample_count,
         1.0

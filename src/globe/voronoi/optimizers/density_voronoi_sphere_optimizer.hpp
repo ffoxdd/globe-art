@@ -8,7 +8,7 @@
 #include "../../generators/sphere_point_generator/rejection_sampling_sphere_point_generator.hpp"
 #include "../../fields/scalar/noise_field.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
-#include "../../fields/integrable/density_sampled_integrable_field.hpp"
+#include "../../fields/integrable/sampled_integrable_field.hpp"
 #include "../../fields/integrable/integrable_field.hpp"
 #include "../../math/interval.hpp"
 #include <algorithm>
@@ -48,7 +48,7 @@ struct MinMassComparator {
 };
 
 template<
-    IntegrableField IntegrableFieldType = DensitySampledIntegrableField<RejectionSamplingSpherePointGenerator<NoiseField>>,
+    IntegrableField IntegrableFieldType = SampledIntegrableField<RejectionSamplingSpherePointGenerator<NoiseField>>,
     SpherePointGenerator GeneratorType = RandomSpherePointGenerator<>
 >
 class DensityVoronoiSphereOptimizer {

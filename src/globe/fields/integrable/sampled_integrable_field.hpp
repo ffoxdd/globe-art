@@ -1,5 +1,5 @@
-#ifndef GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_DENSITY_SAMPLED_INTEGRABLE_FIELD_HPP_
-#define GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_DENSITY_SAMPLED_INTEGRABLE_FIELD_HPP_
+#ifndef GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_SAMPLED_INTEGRABLE_FIELD_HPP_
+#define GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_SAMPLED_INTEGRABLE_FIELD_HPP_
 
 #include "../../math/interval.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
@@ -14,9 +14,9 @@
 namespace globe {
 
 template<SpherePointGenerator GeneratorType = RejectionSamplingSpherePointGenerator<>>
-class DensitySampledIntegrableField {
+class SampledIntegrableField {
  public:
-    DensitySampledIntegrableField(
+    SampledIntegrableField(
         GeneratorType point_generator,
         size_t target_sample_count = 200'000,
         double max_density = 1.0
@@ -43,7 +43,7 @@ class DensitySampledIntegrableField {
 };
 
 template<SpherePointGenerator GeneratorType>
-DensitySampledIntegrableField<GeneratorType>::DensitySampledIntegrableField(
+SampledIntegrableField<GeneratorType>::SampledIntegrableField(
     GeneratorType point_generator,
     size_t target_sample_count,
     double max_density
@@ -57,7 +57,7 @@ DensitySampledIntegrableField<GeneratorType>::DensitySampledIntegrableField(
 }
 
 template<SpherePointGenerator GeneratorType>
-void DensitySampledIntegrableField<GeneratorType>::build_samples(
+void SampledIntegrableField<GeneratorType>::build_samples(
     size_t target_sample_count
 ) {
     if (target_sample_count == 0) {
@@ -72,7 +72,7 @@ void DensitySampledIntegrableField<GeneratorType>::build_samples(
 }
 
 template<SpherePointGenerator GeneratorType>
-double DensitySampledIntegrableField<GeneratorType>::integrate(
+double SampledIntegrableField<GeneratorType>::integrate(
     const SphericalPolygon &polygon
 ) const {
     if (_points.empty()) {
@@ -84,25 +84,25 @@ double DensitySampledIntegrableField<GeneratorType>::integrate(
 }
 
 template<SpherePointGenerator GeneratorType>
-void DensitySampledIntegrableField<GeneratorType>::build_kdtree() {
+void SampledIntegrableField<GeneratorType>::build_kdtree() {
     _kdtree.insert(_points.begin(), _points.end());
     _kdtree.build();
 }
 
 template<SpherePointGenerator GeneratorType>
-double DensitySampledIntegrableField<GeneratorType>::weight_per_sample(size_t attempts) const {
+double SampledIntegrableField<GeneratorType>::weight_per_sample(size_t attempts) const {
     return (4.0 * M_PI * _max_density) / static_cast<double>(attempts);
 }
 
 template<SpherePointGenerator GeneratorType>
-FuzzySphere DensitySampledIntegrableField<GeneratorType>::query_sphere(
+FuzzySphere SampledIntegrableField<GeneratorType>::query_sphere(
     const SphericalPolygon &polygon
 ) const {
     return FuzzySphere(polygon.centroid(), polygon.bounding_sphere_radius(), GEOMETRIC_EPSILON);
 }
 
 template<SpherePointGenerator GeneratorType>
-std::vector<Point3> DensitySampledIntegrableField<GeneratorType>::candidate_points(
+std::vector<Point3> SampledIntegrableField<GeneratorType>::candidate_points(
     const SphericalPolygon &polygon
 ) const {
     FuzzySphere query = query_sphere(polygon);
@@ -113,7 +113,7 @@ std::vector<Point3> DensitySampledIntegrableField<GeneratorType>::candidate_poin
 }
 
 template<SpherePointGenerator GeneratorType>
-size_t DensitySampledIntegrableField<GeneratorType>::contained_points_count(
+size_t SampledIntegrableField<GeneratorType>::contained_points_count(
     const SphericalPolygon &polygon
 ) const {
     auto candidates = candidate_points(polygon);
@@ -126,7 +126,7 @@ size_t DensitySampledIntegrableField<GeneratorType>::contained_points_count(
 }
 
 template<SpherePointGenerator GeneratorType>
-double DensitySampledIntegrableField<GeneratorType>::integrate(const SphericalBoundingBox &bounding_box) const {
+double SampledIntegrableField<GeneratorType>::integrate(const SphericalBoundingBox &bounding_box) const {
     if (_points.empty()) {
         return 0.0;
     }
@@ -149,5 +149,5 @@ double DensitySampledIntegrableField<GeneratorType>::integrate(const SphericalBo
 
 } // namespace globe
 
-#endif //GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_DENSITY_SAMPLED_INTEGRABLE_FIELD_HPP_
+#endif //GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_SAMPLED_INTEGRABLE_FIELD_HPP_
 
