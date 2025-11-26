@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_VORONOI_CORE_VORONOI_SPHERE_HPP_
 
 #include "../../types.hpp"
-#include "../../geometry/spherical/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "circulator_iterator.hpp"
 #include <cstddef>
 #include <ranges>

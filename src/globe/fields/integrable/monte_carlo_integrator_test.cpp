@@ -3,7 +3,7 @@
 #include "./monte_carlo_integrator.hpp"
 #include "../scalar/mock_scalar_field.hpp"
 #include "../scalar/constant_scalar_field.hpp"
-#include "../../generators/random_sphere_point_generator.hpp"
+#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../../testing/test_fixtures.hpp"
 #include "../../testing/geometric_assertions.hpp"
 #include "../../testing/arc_factory.hpp"

@@ -3,10 +3,10 @@
 
 #include "../scalar/scalar_field.hpp"
 #include "../../math/interval.hpp"
-#include "../../geometry/spherical/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
-#include "../../generators/sphere_point_generator.hpp"
-#include "../../math/interval_sampler.hpp"
+#include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
+#include "../../math/interval_sampler/interval_sampler.hpp"
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Kd_tree.h>
@@ -33,7 +33,7 @@ class DensitySampledIntegrableField {
     );
 
     [[nodiscard]] double integrate(const SphericalPolygon &polygon) const;
-    [[nodiscard]] double integrate(const SphericalBoundingBox &bbox = SphericalBoundingBox::full_sphere()) const;
+    [[nodiscard]] double integrate(const SphericalBoundingBox &bounding_box = SphericalBoundingBox::full_sphere()) const;
 
  private:
     using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
@@ -75,7 +75,7 @@ DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerTyp
 ) :
     _scalar_field(scalar_field),
     _point_generator(std::move(point_generator)),
-    _global_bounding_box(),
+    _global_bounding_box(SphericalBoundingBox::full_sphere()),
     _weight_per_sample(1.0),
     _max_density(std::max(max_density, 1e-6)),
     _sample_attempts(0),
@@ -202,13 +202,13 @@ size_t DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSam
 }
 
 template<ScalarField ScalarFieldType, SpherePointGenerator GeneratorType, IntervalSampler IntervalSamplerType>
-double DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::integrate(const SphericalBoundingBox &bbox) const {
+double DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::integrate(const SphericalBoundingBox &bounding_box) const {
     if (_points.empty()) {
         return 0.0;
     }
 
-    Point3 center = bbox.center();
-    double radius = bbox.bounding_sphere_radius();
+    Point3 center = bounding_box.center();
+    double radius = bounding_box.bounding_sphere_radius();
     FuzzySphere query(center, radius, 1e-9);
 
     std::vector<Point3> candidates;
@@ -217,7 +217,7 @@ double DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSam
     size_t hits = std::count_if(
         candidates.begin(),
         candidates.end(),
-        [&bbox](const Point3 &point) { return bbox.contains(point); }
+        [&bounding_box](const Point3 &point) { return bounding_box.contains(point); }
     );
 
     return static_cast<double>(hits) * _weight_per_sample;

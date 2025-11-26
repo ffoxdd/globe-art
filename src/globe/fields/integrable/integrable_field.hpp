@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_INTEGRABLE_FIELD_H_
 #define GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_INTEGRABLE_FIELD_H_
 
-#include "../../geometry/spherical/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 
 namespace globe {
 

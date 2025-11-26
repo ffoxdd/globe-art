@@ -4,9 +4,9 @@
 #include "../../types.hpp"
 #include "../../geometry/spherical/helpers.hpp"
 #include "../core/voronoi_sphere.hpp"
-#include "../../generators/random_sphere_point_generator.hpp"
+#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../../fields/scalar/noise_field.hpp"
-#include "../../geometry/spherical/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../fields/integrable/density_sampled_integrable_field.hpp"
 #include "../../fields/integrable/integrable_field.hpp"
 #include "../../math/interval.hpp"
@@ -193,14 +193,14 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::Opti
 ) {
     Point3 original_position = _voronoi_sphere->site(index);
     Point3 north = antipodal(original_position);
-    TangentBasis basis = build_tangent_basis(position_vector(north));
+    TangentBasis basis = build_tangent_basis(to_position_vector(north));
     Vector3 tangent_u = basis.tangent_u;
     Vector3 tangent_v = basis.tangent_v;
 
     using column_vector = dlib::matrix<double, 2, 1>;
 
     double initial_error = previous_error;
-    Vector3 original_vector = position_vector(original_position);
+    Vector3 original_vector = to_position_vector(original_position);
 
     auto run_bobyqa = [&](const column_vector& initial_point, int max_function_calls) {
         struct RunResult {
@@ -223,7 +223,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::Opti
             Point3 candidate = stereographic_plane_to_sphere(
                 params(0),
                 params(1),
-                original_position,
+                original_vector,
                 tangent_u,
                 tangent_v
             );
@@ -231,7 +231,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::Opti
             _voronoi_sphere->update_site(index, candidate);
 
             double total_error = compute_total_error(target_mass);
-            double displacement_angle = angular_distance(original_vector, position_vector(candidate));
+            double displacement_angle = angular_distance(original_vector, to_position_vector(candidate));
             double penalty = DISPLACEMENT_PENALTY_SCALE * target_mass * target_mass * displacement_angle * displacement_angle;
             double cost = total_error + penalty;
 
@@ -288,7 +288,7 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::Opti
 
     _voronoi_sphere->update_site(index, best_position);
     double delta = final_norm - initial_norm;
-    double movement = angular_distance(original_vector, position_vector(best_position));
+    double movement = angular_distance(original_vector, to_position_vector(best_position));
     bool moved = movement > MOVEMENT_EPSILON;
 
     std::cout <<

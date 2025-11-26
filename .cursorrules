@@ -6,6 +6,11 @@
 
 ## Code Style
 
+### Naming Conventions
+- Use full, descriptive variable names - never abbreviations
+- Prefer `bounding_box` over `bbox`, `point` over `pt`, `index` over `idx`, etc.
+- Parameter names in concept definitions should be descriptive (e.g., `const BoundingBox& bounding_box`)
+
 ### Comments
 - Do not use verbose documentation comments
 - Avoid TODOs in code comments
@@ -97,6 +102,80 @@ What makes a test expensive:
 - Statistical validation requiring multiple runs
 - Integration tests involving multiple subsystems
 - Performance benchmarks
+
+### File Organization for Related Types
+When a concept has multiple concrete implementations, organize them in a directory named after the concept:
+- Directory name matches the concept (e.g., `interval_sampler/`, `circular_interval_sampler/`)
+- Concept file and its implementations live together in the directory
+- The directory is a sibling to related types (e.g., `math/interval_sampler/` is sibling to `math/interval.hpp`)
+
+When a class has internal helper classes that exist purely to support its implementation:
+- Put the main class and its helpers in a directory named after the main class
+- The helpers are implementation details, not part of the public interface
+- Tests for the helpers can be separate files within the directory
+
+Example structures:
+```
+math/
+├── interval.hpp
+├── interval_sampler/
+│   ├── interval_sampler.hpp              # concept definition
+│   ├── uniform_interval_sampler.hpp      # implementation
+│   └── uniform_interval_sampler_test.cpp # tests alongside implementation
+├── circular_interval.hpp
+└── circular_interval_sampler/
+    ├── circular_interval_sampler.hpp
+    ├── uniform_circular_interval_sampler.hpp
+    └── uniform_circular_interval_sampler_test.cpp
+
+geometry/spherical/
+├── spherical_polygon/
+│   ├── spherical_polygon.hpp                           # main class
+│   ├── spherical_polygon_test.cpp
+│   ├── spherical_polygon_bounding_box_calculator.hpp   # internal helper
+│   └── spherical_polygon_bounding_box_calculator_test.cpp
+└── spherical_bounding_box.hpp
+```
+
+### Dependency Injection via Concepts
+**ALL injected dependencies must use concepts** - not just random/slow ones. Any dependency injected via template parameter should be constrained by a concept:
+- Use concepts to constrain ALL injected template parameters (e.g., `SpherePointGenerator`, `IntervalSampler`, `ScalarField`, `IntegrableField`)
+- Concepts define the interface without specifying implementation
+- Template parameters must use the concept as the constraint, never `typename`
+- Provide concrete default template arguments for production use
+- This enables dependency injection while maintaining type safety and clear interfaces
+- Benefits: testability (inject test doubles), type safety (compiler enforces interface), documentation (concept shows requirements)
+
+Pattern:
+```cpp
+template<
+    ScalarField ScalarFieldType,
+    SpherePointGenerator GeneratorType = RandomSpherePointGenerator<>,
+    IntervalSampler IntervalSamplerType = UniformIntervalSampler
+>
+class MyClass {
+ public:
+    MyClass() = default;
+
+    MyClass(
+        ScalarFieldType field,
+        GeneratorType generator,
+        IntervalSamplerType sampler = IntervalSamplerType()
+    );
+
+ private:
+    ScalarFieldType _field;
+    GeneratorType _generator;
+    IntervalSamplerType _sampler;
+};
+```
+
+Key principles:
+- **Concept as constraint**: Use the concept name (e.g., `IntervalSampler`) not `typename` for ALL injected template parameters
+- **Concrete default**: Provide a concrete type as the default (e.g., `UniformIntervalSampler`)
+- **Constructor injection**: Allow injecting dependencies via constructor with default-constructed fallback
+- **Default constructor**: Provide a default constructor that uses default-constructed dependencies
+- **Never create internally**: Never instantiate dependencies as uninjected private members - ALL dependencies must be injectable
 
 ### Pre-Commit Checklist
 Before making a commit, always verify:

@@ -3,7 +3,7 @@
 #include "../../testing/geometric_assertions.hpp"
 #include "../../testing/statistical_assertions.hpp"
 #include "../../math/interval.hpp"
-#include "../../generators/random_point_generator.hpp"
+#include "../../generators/point_generator/random_point_generator.hpp"
 
 using namespace globe;
 using globe::testing::compute_statistics;

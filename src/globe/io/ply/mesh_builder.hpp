@@ -50,7 +50,6 @@ private:
         const Point3 &point
     );
 
-    Vector3 arc_normal(const Point3 &source, const Point3 &target) const;
     Point3 create_offset_point(const Point3 &point, const Vector3 &arc_normal) const;
 
     int _samples_per_arc;
@@ -73,11 +72,11 @@ inline void MeshBuilder::build_arc(
     }
 
     SurfaceMesh::Vertex_index prev_vertex = get_or_create_vertex(mesh, source);
-    Vector3 arc_normal = this->arc_normal(source, target);
-    Point3 prev_offset = create_offset_point(source, arc_normal);
+    Vector3 normal = arc_normal(source, target);
+    Point3 prev_offset = create_offset_point(source, normal);
     SurfaceMesh::Vertex_index prev_offset_vertex = get_or_create_vertex(mesh, prev_offset);
 
-    sample_arc_and_add_segments(mesh, source, target, arc_normal, prev_vertex, prev_offset_vertex);
+    sample_arc_and_add_segments(mesh, source, target, normal, prev_vertex, prev_offset_vertex);
 }
 
 inline void MeshBuilder::sample_arc_and_add_segments(
@@ -141,15 +140,8 @@ inline SurfaceMesh::Vertex_index MeshBuilder::get_or_create_vertex(
     return vertex;
 }
 
-inline Vector3 MeshBuilder::arc_normal(const Point3 &source, const Point3 &target) const {
-    Vector3 source_vec = position_vector(source);
-    Vector3 target_vec = position_vector(target);
-
-    return normalize(CGAL::cross_product(source_vec, target_vec));
-}
-
 inline Point3 MeshBuilder::create_offset_point(const Point3 &point, const Vector3 &arc_normal) const {
-    Vector3 radius_vec = position_vector(point);
+    Vector3 radius_vec = to_position_vector(point);
     Vector3 perpendicular = normalize(CGAL::cross_product(arc_normal, radius_vec));
     Point3 offset_point = point + (perpendicular * _arc_thickness);
 

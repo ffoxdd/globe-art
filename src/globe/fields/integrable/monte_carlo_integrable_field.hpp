@@ -2,10 +2,10 @@
 #define GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_MONTE_CARLO_INTEGRABLE_FIELD_H_
 
 #include "../scalar/scalar_field.hpp"
-#include "../../geometry/spherical/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "monte_carlo_integrator.hpp"
-#include "../../generators/sphere_point_generator.hpp"
+#include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
 #include <optional>
 
 namespace globe {
@@ -16,7 +16,7 @@ class MonteCarloIntegrableField {
     MonteCarloIntegrableField(SF scalar_field, GeneratorType point_generator);
 
     double integrate(const SphericalPolygon &polygon);
-    double integrate(const SphericalBoundingBox &bbox = SphericalBoundingBox::full_sphere());
+    double integrate(const SphericalBoundingBox &bounding_box = SphericalBoundingBox::full_sphere());
 
 private:
     SF _scalar_field;
@@ -45,7 +45,7 @@ double MonteCarloIntegrableField<SF, GeneratorType>::integrate(const SphericalPo
 }
 
 template<ScalarField SF, SpherePointGenerator GeneratorType>
-double MonteCarloIntegrableField<SF, GeneratorType>::integrate(const SphericalBoundingBox &bbox) {
+double MonteCarloIntegrableField<SF, GeneratorType>::integrate(const SphericalBoundingBox &bounding_box) {
     MonteCarloIntegrator<SF, GeneratorType> calculator(
         _scalar_field,
         _point_generator

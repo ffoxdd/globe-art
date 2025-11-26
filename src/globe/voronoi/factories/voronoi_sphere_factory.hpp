@@ -7,7 +7,7 @@
 #include "../../fields/scalar/constant_scalar_field.hpp"
 #include "../../fields/scalar/noise_field.hpp"
 #include "../../fields/integrable/density_sampled_integrable_field.hpp"
-#include "../../generators/random_sphere_point_generator.hpp"
+#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include <string>
 #include <memory>
 #include <algorithm>
