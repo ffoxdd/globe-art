@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "spherical_polygon.hpp"
-#include "../../testing/arc_factory.hpp"
+#include "../../../testing/arc_factory.hpp"
 #include <cmath>
 
 using namespace globe;
@@ -102,10 +102,10 @@ TEST(SphericalPolygonTest, PolygonWithWrappedThetaBoundingBox) {
     Point3 p3(r_high * std::cos(theta2), r_high * std::sin(theta2), z_high);
     Point3 p4(r_high * std::cos(theta1), r_high * std::sin(theta1), z_high);
 
-    Vector3 v1 = CGAL::cross_product(position_vector(p1), position_vector(p2));
-    Vector3 v2 = CGAL::cross_product(position_vector(p2), position_vector(p3));
-    Vector3 v3 = CGAL::cross_product(position_vector(p3), position_vector(p4));
-    Vector3 v4 = CGAL::cross_product(position_vector(p4), position_vector(p1));
+    Vector3 v1 = CGAL::cross_product(to_position_vector(p1), to_position_vector(p2));
+    Vector3 v2 = CGAL::cross_product(to_position_vector(p2), to_position_vector(p3));
+    Vector3 v3 = CGAL::cross_product(to_position_vector(p3), to_position_vector(p4));
+    Vector3 v4 = CGAL::cross_product(to_position_vector(p4), to_position_vector(p1));
 
     SphericalPolygon polygon(std::vector<Arc>{
         make_arc(v1, p1, p2),
@@ -114,18 +114,16 @@ TEST(SphericalPolygonTest, PolygonWithWrappedThetaBoundingBox) {
         make_arc(v4, p4, p1)
     });
 
-    SphericalBoundingBox bbox = polygon.bounding_box();
+    SphericalBoundingBox bounding_box = polygon.bounding_box();
 
-    EXPECT_TRUE(bbox.is_theta_wrapped());
+    EXPECT_GT(bounding_box.theta_interval().end(), TWO_PI);
 
-    Point3 center = bbox.center();
+    Point3 center = bounding_box.center();
 
     double center_theta = std::atan2(center.y(), center.x());
     if (center_theta < 0.0) center_theta += 2.0 * M_PI;
 
-    bool center_in_wrapped_interval =
-        (center_theta >= bbox.theta_interval().low()) || (center_theta <= bbox.theta_interval().high());
-    EXPECT_TRUE(center_in_wrapped_interval);
+    EXPECT_TRUE(bounding_box.theta_interval().contains(center_theta));
 }
 
 TEST(SphericalPolygonTest, BoundingBoxWrappedThetaMeasure) {
@@ -141,10 +139,10 @@ TEST(SphericalPolygonTest, BoundingBoxWrappedThetaMeasure) {
     Point3 p3(r_high * std::cos(theta2), r_high * std::sin(theta2), z_high);
     Point3 p4(r_high * std::cos(theta1), r_high * std::sin(theta1), z_high);
 
-    Vector3 v1 = CGAL::cross_product(position_vector(p1), position_vector(p2));
-    Vector3 v2 = CGAL::cross_product(position_vector(p2), position_vector(p3));
-    Vector3 v3 = CGAL::cross_product(position_vector(p3), position_vector(p4));
-    Vector3 v4 = CGAL::cross_product(position_vector(p4), position_vector(p1));
+    Vector3 v1 = CGAL::cross_product(to_position_vector(p1), to_position_vector(p2));
+    Vector3 v2 = CGAL::cross_product(to_position_vector(p2), to_position_vector(p3));
+    Vector3 v3 = CGAL::cross_product(to_position_vector(p3), to_position_vector(p4));
+    Vector3 v4 = CGAL::cross_product(to_position_vector(p4), to_position_vector(p1));
 
     SphericalPolygon polygon(std::vector<Arc>{
         make_arc(v1, p1, p2),
@@ -153,25 +151,27 @@ TEST(SphericalPolygonTest, BoundingBoxWrappedThetaMeasure) {
         make_arc(v4, p4, p1)
     });
 
-    SphericalBoundingBox bbox = polygon.bounding_box();
+    SphericalBoundingBox bounding_box = polygon.bounding_box();
 
-    EXPECT_TRUE(bbox.is_theta_wrapped());
+    EXPECT_GT(bounding_box.theta_interval().end(), TWO_PI);
 
     double expected_theta_measure = (2.0 * M_PI - 5.8) + 0.2;
-    EXPECT_NEAR(bbox.theta_interval().measure(), expected_theta_measure, 0.05);
+    EXPECT_NEAR(bounding_box.theta_interval().measure(), expected_theta_measure, 0.05);
 }
 
 TEST(SphericalPolygonTest, BoundingSphereRadiusWithWrappedTheta) {
-    Interval wrapped_theta(5.5, 0.8 + 2.0 * M_PI);
+    double theta_start = 5.5;
+    double theta_measure = (TWO_PI - 5.5) + 0.8;
+    ThetaInterval wrapped_theta(theta_start, theta_measure);
     Interval z_interval(0.0, 0.5);
-    SphericalBoundingBox bbox(wrapped_theta, z_interval);
+    SphericalBoundingBox bounding_box(wrapped_theta, z_interval);
 
-    double radius = bbox.bounding_sphere_radius();
+    double radius = bounding_box.bounding_sphere_radius();
 
     EXPECT_GT(radius, 0.0);
 
-    double theta_span = bbox.theta_interval().measure();
-    double z_span = bbox.z_interval().measure();
+    double theta_span = bounding_box.theta_interval().measure();
+    double z_span = bounding_box.z_interval().measure();
     double r_max = std::sqrt(1.0 - z_interval.low() * z_interval.low());
     double chord = 2.0 * r_max * std::sin(theta_span / 2.0);
     double expected_radius = std::sqrt(z_span * z_span + chord * chord);
@@ -240,4 +240,74 @@ TEST(SphericalPolygonTest, CentroidForSymmetricPolygon) {
     );
     EXPECT_NEAR(distance, 1.0, 1e-9);
     EXPECT_NEAR(centroid.z(), 0.5, 1e-9);
+}
+
+TEST(SphericalPolygonTest, ArcThetaExtrema_FullCircle) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0))
+    });
+
+    ThetaInterval theta_interval = polygon.bounding_box().theta_interval();
+
+    EXPECT_TRUE(theta_interval.is_full());
+}
+
+TEST(SphericalPolygonTest, BoundingBox_IncludesNorthPoleZ) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0))
+    });
+
+    EXPECT_TRUE(polygon.contains(NORTH_POLE));
+
+    SphericalBoundingBox bounding_box = polygon.bounding_box();
+    Interval z_interval = bounding_box.z_interval();
+
+    EXPECT_LE(z_interval.low(), 0.0);
+    EXPECT_GE(z_interval.high(), 1.0);
+    EXPECT_TRUE(z_interval.contains(1.0));
+}
+
+TEST(SphericalPolygonTest, BoundingBox_IncludesSouthPoleZ) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, -1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(0, 0, -1), Point3(0, 1, 0), Point3(-1, 0, 0)),
+        make_arc(Vector3(0, 0, -1), Point3(-1, 0, 0), Point3(0, -1, 0)),
+        make_arc(Vector3(0, 0, -1), Point3(0, -1, 0), Point3(1, 0, 0))
+    });
+
+    EXPECT_TRUE(polygon.contains(SOUTH_POLE));
+
+    SphericalBoundingBox bounding_box = polygon.bounding_box();
+    Interval z_interval = bounding_box.z_interval();
+
+    EXPECT_GE(z_interval.high(), 0.0);
+    EXPECT_LE(z_interval.low(), -1.0);
+    EXPECT_TRUE(z_interval.contains(-1.0));
+}
+
+TEST(SphericalPolygonTest, BoundingBox_PoleZEvenWhenArcsDontReach) {
+    double z_arc = 0.9;
+    double r_arc = std::sqrt(1.0 - z_arc * z_arc);
+
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(r_arc, 0, z_arc), Point3(0, r_arc, z_arc)),
+        make_arc(Vector3(0, 0, 1), Point3(0, r_arc, z_arc), Point3(-r_arc, 0, z_arc)),
+        make_arc(Vector3(0, 0, 1), Point3(-r_arc, 0, z_arc), Point3(0, -r_arc, z_arc)),
+        make_arc(Vector3(0, 0, 1), Point3(0, -r_arc, z_arc), Point3(r_arc, 0, z_arc))
+    });
+
+    EXPECT_TRUE(polygon.contains(NORTH_POLE));
+
+    SphericalBoundingBox bounding_box = polygon.bounding_box();
+    Interval z_interval = bounding_box.z_interval();
+
+    EXPECT_LE(z_interval.low(), z_arc);
+    EXPECT_GE(z_interval.high(), 1.0);
+    EXPECT_TRUE(z_interval.contains(1.0));
 }

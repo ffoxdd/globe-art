@@ -213,7 +213,7 @@ TEST(BuildTangentBasisTest, ProducesRightHandedBasis) {
 
 TEST(PositionVectorTest, ConvertsPointToVector) {
     Point3 p = {1, 2, 3};
-    Vector3 v = position_vector(p);
+    Vector3 v = to_position_vector(p);
 
     EXPECT_DOUBLE_EQ(v.x(), 1.0);
     EXPECT_DOUBLE_EQ(v.y(), 2.0);

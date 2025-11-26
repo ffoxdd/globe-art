@@ -18,6 +18,8 @@ namespace detail {
 using Vector3 = detail::Kernel::Vector_3;
 using Point3 = detail::Kernel::Point_3;
 using Arc = detail::DelaunayTriangulation::Arc_on_sphere_2;
+using SphericalPoint3 = detail::SphericalKernel::Point_3;
+using SphericalVector3 = detail::SphericalKernel::Vector_3;
 
 } // namespace globe
 
