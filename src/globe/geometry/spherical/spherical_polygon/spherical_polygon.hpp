@@ -11,6 +11,7 @@
 #include <vector>
 #include <cmath>
 #include <ranges>
+#include <algorithm>
 
 namespace globe {
 
@@ -21,6 +22,7 @@ class SphericalPolygon {
     [[nodiscard]] auto points() const;
     [[nodiscard]] SphericalBoundingBox bounding_box() const;
     [[nodiscard]] Point3 centroid() const;
+    [[nodiscard]] double bounding_sphere_radius() const;
     [[nodiscard]] bool contains(const Point3 &point) const;
 
  private:
@@ -87,6 +89,24 @@ inline Point3 SphericalPolygon::centroid() const {
     }
 
     return project_to_sphere(average);
+}
+
+inline double SphericalPolygon::bounding_sphere_radius() const {
+    if (empty()) {
+        return 0.0;
+    }
+
+    Point3 center = centroid();
+
+    double max_squared_distance = std::ranges::max(
+        points() | std::views::transform(
+            [&center](const Point3 &point) {
+                return CGAL::squared_distance(point, center);
+            }
+        )
+    );
+
+    return std::sqrt(max_squared_distance);
 }
 
 inline bool SphericalPolygon::contains(const Point3 &point) const {

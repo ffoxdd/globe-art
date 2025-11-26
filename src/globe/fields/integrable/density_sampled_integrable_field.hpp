@@ -5,6 +5,7 @@
 #include "../../math/interval.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
+#include "../../geometry/spherical/helpers.hpp"
 #include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
 #include "../../math/interval_sampler/interval_sampler.hpp"
 #include <vector>
@@ -69,7 +70,6 @@ DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerTyp
     _max_density(std::max(max_density, 1e-6)),
     _sample_attempts(0),
     _interval_sampler(std::move(interval_sampler)) {
-
     build_samples(target_sample_count);
 }
 
@@ -94,6 +94,7 @@ void DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSampl
             if (_points.size() >= target_sample_count) {
                 break;
             }
+
             if (candidate_accepted(candidate)) {
                 _points.push_back(candidate);
             }
@@ -147,20 +148,10 @@ double DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSam
 }
 
 template<ScalarField ScalarFieldType, SpherePointGenerator GeneratorType, IntervalSampler IntervalSamplerType>
-FuzzySphere
-DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::query_sphere(
+FuzzySphere DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::query_sphere(
     const SphericalPolygon &polygon
 ) const {
-    Point3 centroid = polygon.centroid();
-    double max_squared_distance = 0.0;
-
-    for (const auto& v : polygon.points()) {
-        double squared_dist = CGAL::squared_distance(v, centroid);
-        max_squared_distance = std::max(max_squared_distance, squared_dist);
-    }
-
-    double max_chord_distance = std::sqrt(max_squared_distance);
-    return FuzzySphere(centroid, max_chord_distance, 1e-9);
+    return FuzzySphere(polygon.centroid(), polygon.bounding_sphere_radius(), GEOMETRIC_EPSILON);
 }
 
 template<ScalarField ScalarFieldType, SpherePointGenerator GeneratorType, IntervalSampler IntervalSamplerType>

@@ -186,7 +186,8 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::averag
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
-typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::OptimizationResult DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vertex_position(
+typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::OptimizationResult
+DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vertex_position(
     size_t index,
     double target_mass,
     double previous_error
@@ -306,7 +307,8 @@ typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::Opti
 
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
-typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::CellMassHeap DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::build_cell_mass_heap() {
+typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::CellMassHeap
+DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::build_cell_mass_heap() {
     CellMassHeap heap;
 
     size_t i = 0;
@@ -372,7 +374,10 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
-std::optional<std::pair<size_t, double>> DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::find_most_undersized_vertex_with_deficit(double target_mass) {
+std::optional<std::pair<size_t, double>>
+DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::find_most_undersized_vertex_with_deficit(
+    double target_mass
+) {
     size_t best_index = _voronoi_sphere->size();
     double largest_deficit = 0.0;
     size_t i = 0;
@@ -397,7 +402,11 @@ std::optional<std::pair<size_t, double>> DensityVoronoiSphereOptimizer<Integrabl
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
-bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass) {
+bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_vertex_toward_random_point(
+    size_t index,
+    double deficit,
+    double target_mass
+) {
     if (index >= _voronoi_sphere->size()) {
         return false;
     }

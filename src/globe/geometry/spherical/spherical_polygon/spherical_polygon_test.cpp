@@ -311,3 +311,39 @@ TEST(SphericalPolygonTest, BoundingBox_PoleZEvenWhenArcsDontReach) {
     EXPECT_GE(z_interval.high(), 1.0);
     EXPECT_TRUE(z_interval.contains(1.0));
 }
+
+TEST(SphericalPolygonTest, BoundingSphereRadiusContainsAllVertices) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
+        make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
+    });
+
+    Point3 centroid = polygon.centroid();
+    double radius = polygon.bounding_sphere_radius();
+
+    for (const auto &point : polygon.points()) {
+        double distance = std::sqrt(CGAL::squared_distance(point, centroid));
+        EXPECT_LE(distance, radius + GEOMETRIC_EPSILON);
+    }
+}
+
+TEST(SphericalPolygonTest, BoundingSphereRadiusIsMinimalForSymmetricPolygon) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0)),
+    });
+
+    double radius = polygon.bounding_sphere_radius();
+
+    double max_distance = 0.0;
+    Point3 centroid = polygon.centroid();
+    for (const auto &point : polygon.points()) {
+        double distance = std::sqrt(CGAL::squared_distance(point, centroid));
+        max_distance = std::max(max_distance, distance);
+    }
+
+    EXPECT_NEAR(radius, max_distance, GEOMETRIC_EPSILON);
+}
