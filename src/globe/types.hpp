@@ -5,6 +5,9 @@
 #include <CGAL/Exact_spherical_kernel_3.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_2.h>
+#include <CGAL/Search_traits_3.h>
+#include <CGAL/Kd_tree.h>
+#include <CGAL/Fuzzy_sphere.h>
 
 namespace globe {
 
@@ -13,6 +16,7 @@ namespace detail {
     using SphericalKernel = CGAL::Exact_spherical_kernel_3;
     using DelaunayTraits = CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>;
     using DelaunayTriangulation = CGAL::Delaunay_triangulation_on_sphere_2<DelaunayTraits>;
+    using SearchTraits = CGAL::Search_traits_3<Kernel>;
 }
 
 using Vector3 = detail::Kernel::Vector_3;
@@ -20,6 +24,8 @@ using Point3 = detail::Kernel::Point_3;
 using Arc = detail::DelaunayTriangulation::Arc_on_sphere_2;
 using SphericalPoint3 = detail::SphericalKernel::Point_3;
 using SphericalVector3 = detail::SphericalKernel::Vector_3;
+using KDTree = CGAL::Kd_tree<detail::SearchTraits>;
+using FuzzySphere = CGAL::Fuzzy_sphere<detail::SearchTraits>;
 
 } // namespace globe
 

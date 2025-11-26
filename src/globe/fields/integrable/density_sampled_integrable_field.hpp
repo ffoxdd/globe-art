@@ -7,9 +7,6 @@
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
 #include "../../math/interval_sampler/interval_sampler.hpp"
-#include <CGAL/Search_traits_3.h>
-#include <CGAL/Kd_tree.h>
-#include <CGAL/Fuzzy_sphere.h>
 #include <vector>
 #include <iterator>
 #include <algorithm>
@@ -35,16 +32,11 @@ class DensitySampledIntegrableField {
     [[nodiscard]] double integrate(const SphericalBoundingBox &bounding_box = SphericalBoundingBox::full_sphere()) const;
 
  private:
-    using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
-    using SearchTraits = CGAL::Search_traits_3<Kernel>;
-    using KdTree = CGAL::Kd_tree<SearchTraits>;
-    using FuzzySphere = CGAL::Fuzzy_sphere<SearchTraits>;
-
     ScalarFieldType &_scalar_field;
     GeneratorType _point_generator;
     SphericalBoundingBox _global_bounding_box;
     std::vector<Point3> _points;
-    KdTree _kdtree;
+    KDTree _kdtree;
     double _weight_per_sample;
     double _max_density;
     size_t _sample_attempts;
@@ -155,7 +147,8 @@ double DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSam
 }
 
 template<ScalarField ScalarFieldType, SpherePointGenerator GeneratorType, IntervalSampler IntervalSamplerType>
-typename DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::FuzzySphere DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::query_sphere(
+FuzzySphere
+DensitySampledIntegrableField<ScalarFieldType, GeneratorType, IntervalSamplerType>::query_sphere(
     const SphericalPolygon &polygon
 ) const {
     Point3 centroid = polygon.centroid();

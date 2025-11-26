@@ -5,9 +5,6 @@
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "sphere_point_generator.hpp"
 #include "random_sphere_point_generator.hpp"
-#include <CGAL/Kd_tree.h>
-#include <CGAL/Search_traits_3.h>
-#include <CGAL/Fuzzy_sphere.h>
 #include <vector>
 #include <cmath>
 
@@ -24,11 +21,6 @@ class PoissonSpherePointGenerator {
     );
 
  private:
-    using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
-    using SearchTraits = CGAL::Search_traits_3<Kernel>;
-    using KdTree = CGAL::Kd_tree<SearchTraits>;
-    using FuzzySphere = CGAL::Fuzzy_sphere<SearchTraits>;
-
     SpherePointGeneratorType _generator;
 
     static constexpr size_t MAX_ATTEMPTS_PER_POINT = 30;
@@ -40,7 +32,7 @@ class PoissonSpherePointGenerator {
         double min_distance,
         const SphericalBoundingBox &bbox
     );
-    bool is_valid_candidate(const Point3 &candidate, const KdTree &tree, double min_distance) const;
+    bool is_valid_candidate(const Point3 &candidate, const KDTree &tree, double min_distance) const;
     void adjust_to_exact_count(std::vector<Point3> &points, size_t target_count);
 };
 
@@ -79,7 +71,7 @@ std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::gener
     std::vector<Point3> points;
     points.reserve(target_count);
 
-    KdTree tree;
+    KDTree tree;
 
     size_t attempts = 0;
     size_t max_total_attempts = target_count * MAX_ATTEMPTS_PER_POINT;
@@ -101,7 +93,7 @@ std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::gener
 template<SpherePointGenerator SpherePointGeneratorType>
 bool PoissonSpherePointGenerator<SpherePointGeneratorType>::is_valid_candidate(
     const Point3 &candidate,
-    const KdTree &tree,
+    const KDTree &tree,
     double min_distance
 ) const {
     if (tree.size() == 0) {
