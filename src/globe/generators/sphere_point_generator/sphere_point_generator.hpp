@@ -12,6 +12,7 @@ template<typename T>
 concept SpherePointGenerator = requires(T t, const SphericalBoundingBox &bounding_box, size_t count) {
     { t.generate(count) } -> std::convertible_to<std::vector<Point3>>;
     { t.generate(count, bounding_box) } -> std::convertible_to<std::vector<Point3>>;
+    { t.last_attempt_count() } -> std::convertible_to<size_t>;
 };
 
 }

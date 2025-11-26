@@ -29,9 +29,12 @@ class RandomSpherePointGenerator {
     std::vector<Point3> generate(size_t count);
     std::vector<Point3> generate(size_t count, const SphericalBoundingBox &bounding_box);
 
+    [[nodiscard]] size_t last_attempt_count() const { return _last_attempt_count; }
+
  private:
     CartesianGeneratorType _cartesian_generator;
     SphericalBoundingBoxSamplerType _spherical_sampler;
+    size_t _last_attempt_count = 0;
 };
 
 template<PointGenerator CartesianGeneratorType, SphericalBoundingBoxSampler SphericalBoundingBoxSamplerType>
@@ -42,6 +45,7 @@ std::vector<Point3> RandomSpherePointGenerator<CartesianGeneratorType, Spherical
     for (const auto& point : cartesian_points) {
         sphere_points.push_back(project_to_sphere(point));
     }
+    _last_attempt_count = count;
     return sphere_points;
 }
 
@@ -52,6 +56,7 @@ std::vector<Point3> RandomSpherePointGenerator<CartesianGeneratorType, Spherical
     for (size_t i = 0; i < count; ++i) {
         points.push_back(_spherical_sampler.sample(bounding_box));
     }
+    _last_attempt_count = count;
     return points;
 }
 

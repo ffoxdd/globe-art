@@ -50,7 +50,7 @@ class RejectionSamplingSpherePointGenerator {
     static constexpr size_t BATCH_SIZE = 100;
 
     [[nodiscard]] bool candidate_accepted(const Point3 &candidate);
-    [[nodiscard]] double acceptance_threshold(const Point3 &point) const;
+    [[nodiscard]] double acceptance_threshold(const Point3 &point);
     [[nodiscard]] double sample_acceptance();
 };
 
@@ -99,7 +99,7 @@ bool RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGenerator
 template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
 double RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::acceptance_threshold(
     const Point3 &point
-) const {
+) {
     double density = _density_field.value(point);
     return std::clamp(density / _max_density, 0.0, 1.0);
 }

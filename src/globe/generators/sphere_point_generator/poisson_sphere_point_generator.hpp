@@ -27,14 +27,18 @@ class PoissonSpherePointGenerator {
         _generator(std::move(generator)) {
     }
 
+    std::vector<Point3> generate(size_t count);
     std::vector<Point3> generate(
         size_t count,
-        const SphericalBoundingBox &bounding_box = SphericalBoundingBox::full_sphere()
+        const SphericalBoundingBox &bounding_box
     );
+
+    [[nodiscard]] size_t last_attempt_count() const { return _last_attempt_count; }
 
  private:
     DensityFieldType _density_field;
     SpherePointGeneratorType _generator;
+    size_t _last_attempt_count = 0;
 
     static constexpr size_t MAX_ATTEMPTS_PER_POINT = 30;
     static constexpr double DISTANCE_SCALING_FACTOR = 0.95;
@@ -53,11 +57,17 @@ class PoissonSpherePointGenerator {
 };
 
 template<ScalarField DensityFieldType, SpherePointGenerator SpherePointGeneratorType>
+std::vector<Point3> PoissonSpherePointGenerator<DensityFieldType, SpherePointGeneratorType>::generate(size_t count) {
+    return generate(count, SphericalBoundingBox::full_sphere());
+}
+
+template<ScalarField DensityFieldType, SpherePointGenerator SpherePointGeneratorType>
 std::vector<Point3> PoissonSpherePointGenerator<DensityFieldType, SpherePointGeneratorType>::generate(
     size_t count,
     const SphericalBoundingBox &bounding_box
 ) {
     if (count == 0) {
+        _last_attempt_count = 0;
         return {};
     }
 
@@ -115,6 +125,7 @@ std::vector<Point3> PoissonSpherePointGenerator<DensityFieldType, SpherePointGen
         }
     }
 
+    _last_attempt_count = attempts;
     return points;
 }
 
