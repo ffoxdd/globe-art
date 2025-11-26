@@ -3,8 +3,15 @@
 
 #include <ranges>
 #include <iterator>
+#include <algorithm>
+#include <concepts>
 
 namespace globe {
+
+template<typename Range, typename ValueType>
+concept RangeOf =
+    std::ranges::range<Range> &&
+    std::same_as<std::ranges::range_value_t<Range>, ValueType>;
 
 template<std::ranges::range RangeType>
 auto circular_adjacent_pairs(const RangeType &range) {
@@ -83,6 +90,12 @@ auto circular_adjacent_pairs(const RangeType &range) {
     };
 
     return CircularPairs{range};
+}
+
+template<std::ranges::range RangeType, typename Predicate>
+bool all_circular_adjacent_pairs(const RangeType &range, Predicate pred) {
+    auto pairs = circular_adjacent_pairs(range);
+    return std::all_of(pairs.begin(), pairs.end(), pred);
 }
 
 } // namespace globe
