@@ -3,7 +3,6 @@
 
 #include "../../types.hpp"
 #include "../../math/interval.hpp"
-#include <vector>
 
 namespace globe {
 

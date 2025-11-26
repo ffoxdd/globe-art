@@ -3,7 +3,6 @@
 
 #include "scalar_field.hpp"
 #include <gmock/gmock.h>
-#include <vector>
 
 namespace globe {
 

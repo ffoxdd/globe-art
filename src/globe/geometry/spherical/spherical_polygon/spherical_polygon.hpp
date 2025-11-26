@@ -6,13 +6,10 @@
 #include "../../../types.hpp"
 #include "../helpers.hpp"
 #include "../../../std_ext/ranges.hpp"
-#include "../../../math/interval.hpp"
 #include <CGAL/assertions.h>
 #include <utility>
 #include <vector>
-#include <cstddef>
 #include <cmath>
-#include <algorithm>
 #include <ranges>
 
 namespace globe {

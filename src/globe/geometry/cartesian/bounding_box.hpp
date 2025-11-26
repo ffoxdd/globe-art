@@ -2,7 +2,6 @@
 #define GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_HPP_
 
 #include "../../math/interval.hpp"
-#include "../../types.hpp"
 
 namespace globe {
 

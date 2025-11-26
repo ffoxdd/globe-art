@@ -7,7 +7,6 @@
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
 #include "../../math/interval_sampler/interval_sampler.hpp"
-#include <CGAL/Simple_cartesian.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Kd_tree.h>
 #include <CGAL/Fuzzy_sphere.h>
