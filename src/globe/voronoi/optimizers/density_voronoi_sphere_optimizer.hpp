@@ -29,7 +29,6 @@ namespace globe {
 const int DEFAULT_POINT_COUNT = 10;
 const size_t DEFAULT_OPTIMIZATION_PASSES = 10;
 const double DISPLACEMENT_PENALTY_SCALE = 0.0;
-const double MOVEMENT_EPSILON = 1e-4;
 const double ZERO_ERROR_TOLERANCE = 1e-4;
 const double MIN_PERTURBATION_RADIANS = 0.025;
 const size_t MAX_PERTURBATION_ATTEMPTS = 100;
@@ -67,9 +66,17 @@ class DensityVoronoiSphereOptimizer {
     size_t _optimization_passes;
     GeneratorType _point_generator;
 
-    struct OptimizationResult {
-        double error;
-        bool moved;
+
+    struct PassResult {
+        double start_error;
+        double end_error;
+        size_t vertices_processed;
+    };
+
+    struct OptimizationState {
+        size_t consecutive_stuck_passes = 0;
+        double best_error = std::numeric_limits<double>::max();
+        std::vector<Point3> best_checkpoint;
     };
 
     using CellMassHeap = std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator>;
@@ -78,8 +85,15 @@ class DensityVoronoiSphereOptimizer {
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
-    OptimizationResult optimize_vertex_position(size_t index, double target_mass, double previous_error);
+    double optimize_vertex_position(size_t index, double target_mass, double previous_error);
     void adjust_mass(size_t max_passes);
+    PassResult run_single_pass(double target_mass);
+    bool check_progress_and_maybe_perturb(
+        double target_mass,
+        const PassResult &pass_result,
+        OptimizationState &state
+    );
+    void print_final_results(double target_mass);
     CellMassHeap build_cell_mass_heap();
     double compute_convergence_error(double target_mass);
     double compute_objective_error(double target_mass);
@@ -117,70 +131,97 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
-    size_t consecutive_stuck_passes = 0;
-    double best_error = std::numeric_limits<double>::max();
-    Checkpoint best_checkpoint = save_checkpoint();
+    OptimizationState state;
+    state.best_checkpoint = save_checkpoint();
 
     for (size_t pass = 0; pass < max_passes; pass++) {
         std::cout << std::endl;
         std::cout << "=== Optimization pass " << pass + 1 << " / " << max_passes << " ===" << std::endl;
 
-        auto heap = build_cell_mass_heap();
-        size_t vertex_count = 0;
-        double start_of_pass_error = compute_convergence_error(target_mass);
-        double current_error = start_of_pass_error;
+        PassResult result = run_single_pass(target_mass);
 
-        while (!heap.empty()) {
-            size_t i = heap.top().index;
-            heap.pop();
-
-            OptimizationResult result = optimize_vertex_position(i, target_mass, current_error);
-            current_error = result.error;
-            vertex_count++;
-        }
-
-        std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
-
-        double pass_improvement = start_of_pass_error - current_error;
-        bool made_meaningful_progress = pass_improvement > ZERO_ERROR_TOLERANCE * start_of_pass_error;
-
-        if (made_meaningful_progress) {
-            consecutive_stuck_passes = 0;
-            if (current_error < best_error) {
-                best_error = current_error;
-                best_checkpoint = save_checkpoint();
-            }
-        } else {
-            consecutive_stuck_passes++;
-
-            double rms_error = std::sqrt(current_error / _voronoi_sphere->size());
-            if (rms_error <= ZERO_ERROR_TOLERANCE * target_mass) {
-                std::cout <<
-                    "RMS error " << rms_error <<
-                    " below threshold; stopping optimization." <<
-                    std::endl;
-                break;
-            }
-
-            if (consecutive_stuck_passes > MAX_PERTURBATION_ATTEMPTS) {
-                std::cout <<
-                    "Exceeded " << MAX_PERTURBATION_ATTEMPTS <<
-                    " perturbation attempts; reverting to best checkpoint." <<
-                    std::endl;
-                restore_checkpoint(best_checkpoint);
-                break;
-            }
-
-            std::cout <<
-                "No meaningful error improvement (stuck " << consecutive_stuck_passes <<
-                "x); perturbing to escape local minimum." << std::endl;
-
-            if (!perturb_most_undersized_vertex(target_mass)) {
-                std::cout << "No suitable vertex found for perturbation." << std::endl;
-            }
+        if (!check_progress_and_maybe_perturb(target_mass, result, state)) {
+            break;
         }
     }
 
+    print_final_results(target_mass);
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::PassResult
+DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::run_single_pass(double target_mass) {
+    auto heap = build_cell_mass_heap();
+    double start_error = compute_convergence_error(target_mass);
+    double current_error = start_error;
+    size_t vertex_count = 0;
+
+    while (!heap.empty()) {
+        size_t index = heap.top().index;
+        heap.pop();
+
+        current_error = optimize_vertex_position(index, target_mass, current_error);
+        vertex_count++;
+    }
+
+    std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
+
+    return {start_error, current_error, vertex_count};
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::check_progress_and_maybe_perturb(
+    double target_mass,
+    const PassResult &pass_result,
+    OptimizationState &state
+) {
+    double pass_improvement = pass_result.start_error - pass_result.end_error;
+    bool made_meaningful_progress = pass_improvement > ZERO_ERROR_TOLERANCE * pass_result.start_error;
+
+    if (made_meaningful_progress) {
+        state.consecutive_stuck_passes = 0;
+
+        if (pass_result.end_error < state.best_error) {
+            state.best_error = pass_result.end_error;
+            state.best_checkpoint = save_checkpoint();
+        }
+
+        return true;
+    }
+
+    state.consecutive_stuck_passes++;
+
+    double rms_error = std::sqrt(pass_result.end_error / _voronoi_sphere->size());
+    if (rms_error <= ZERO_ERROR_TOLERANCE * target_mass) {
+        std::cout <<
+            "RMS error " << rms_error <<
+            " below threshold; stopping optimization." <<
+            std::endl;
+        return false;
+    }
+
+    if (state.consecutive_stuck_passes > MAX_PERTURBATION_ATTEMPTS) {
+        std::cout <<
+            "Exceeded " << MAX_PERTURBATION_ATTEMPTS <<
+            " perturbation attempts; reverting to best checkpoint." <<
+            std::endl;
+        restore_checkpoint(state.best_checkpoint);
+        return false;
+    }
+
+    std::cout <<
+        "No meaningful error improvement (stuck " << state.consecutive_stuck_passes <<
+        "x); perturbing to escape local minimum." << std::endl;
+
+    if (!perturb_most_undersized_vertex(target_mass)) {
+        std::cout << "No suitable vertex found for perturbation." << std::endl;
+    }
+
+    return true;
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::print_final_results(double target_mass) {
     std::cout << std::endl;
     std::cout << "Final cell masses after optimization:" << std::endl;
 
@@ -219,8 +260,7 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::averag
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
-typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::OptimizationResult
-DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vertex_position(
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vertex_position(
     size_t index,
     double target_mass,
     double previous_error
@@ -305,18 +345,16 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vert
     _voronoi_sphere->update_site(index, best_position);
     double delta = final_norm - initial_norm;
     double movement = angular_distance(original_vector, to_position_vector(best_position));
-    bool moved = movement > MOVEMENT_EPSILON;
 
     std::cout <<
         "  Vertex " << std::setw(4) << index <<
         ": error = " << final_norm <<
         " (Δ = " << delta <<
         ", movement = " << movement <<
-        ", moved = " << (moved ? "yes" : "no") <<
         ")" <<
         std::endl;
 
-    return {final_error, moved};
+    return final_error;
 }
 
 
