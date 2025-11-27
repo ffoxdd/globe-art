@@ -87,10 +87,11 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant(
 
     DensityVoronoiSphereOptimizer<ConstantIntegrableField> optimizer(
         std::move(voronoi_sphere),
-        std::move(integrable_field)
+        std::move(integrable_field),
+        _optimization_passes
     );
 
-    return optimizer.optimize(_optimization_passes);
+    return optimizer.optimize();
 }
 
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_noise(
@@ -111,10 +112,11 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_noise(
 
     DensityVoronoiSphereOptimizer optimizer(
         std::move(voronoi_sphere),
-        std::move(integrable_field)
+        std::move(integrable_field),
+        _optimization_passes
     );
 
-    return optimizer.optimize(_optimization_passes);
+    return optimizer.optimize();
 }
 
 }

@@ -55,14 +55,16 @@ class DensityVoronoiSphereOptimizer {
     DensityVoronoiSphereOptimizer(
         std::unique_ptr<VoronoiSphere> voronoi_sphere,
         std::unique_ptr<IntegrableFieldType> integrable_field,
+        size_t optimization_passes = DEFAULT_OPTIMIZATION_PASSES,
         GeneratorType point_generator = GeneratorType()
     );
 
-    std::unique_ptr<VoronoiSphere> optimize(size_t optimization_passes = DEFAULT_OPTIMIZATION_PASSES);
+    std::unique_ptr<VoronoiSphere> optimize();
 
  private:
     std::unique_ptr<VoronoiSphere> _voronoi_sphere;
     std::unique_ptr<IntegrableFieldType> _integrable_field;
+    size_t _optimization_passes;
     GeneratorType _point_generator;
 
     struct OptimizationResult {
@@ -95,18 +97,18 @@ template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType
 DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::DensityVoronoiSphereOptimizer(
     std::unique_ptr<VoronoiSphere> voronoi_sphere,
     std::unique_ptr<IntegrableFieldType> integrable_field,
+    size_t optimization_passes,
     GeneratorType point_generator
 ) :
     _voronoi_sphere(std::move(voronoi_sphere)),
     _integrable_field(std::move(integrable_field)),
+    _optimization_passes(optimization_passes),
     _point_generator(std::move(point_generator)) {
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
-std::unique_ptr<VoronoiSphere> DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize(
-    size_t optimization_passes
-) {
-    adjust_mass(optimization_passes);
+std::unique_ptr<VoronoiSphere> DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize() {
+    adjust_mass(_optimization_passes);
     return std::move(_voronoi_sphere);
 }
 
