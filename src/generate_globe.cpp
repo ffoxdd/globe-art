@@ -13,6 +13,7 @@ struct Config {
     std::string density_field;
     bool perform_render;
     int optimization_passes;
+    int lloyd_passes;
 };
 
 Config parse_arguments(int argc, char *argv[]);
@@ -27,12 +28,14 @@ int main(int argc, char *argv[]) {
         "  Density: " << config.density_field << std::endl <<
         "  Render: " << (config.perform_render ? "yes" : "no") << std::endl <<
         "  Optimization passes: " << config.optimization_passes << std::endl <<
+        "  Lloyd passes: " << config.lloyd_passes << std::endl <<
         std::endl;
 
     VoronoiSphereFactory factory(
         config.points_count,
         config.density_field,
-        config.optimization_passes
+        config.optimization_passes,
+        config.lloyd_passes
     );
 
     auto voronoi_sphere = factory.build();
@@ -62,6 +65,11 @@ Config parse_arguments(int argc, char *argv[]) {
         ->description("Number of optimization passes")
         ->default_val(10)
         ->check(CLI::PositiveNumber);
+
+    app.add_option("--lloyd-passes", config.lloyd_passes)
+        ->description("Number of Lloyd relaxation passes")
+        ->default_val(4)
+        ->check(CLI::NonNegativeNumber);
 
     try {
         app.parse(argc, argv);

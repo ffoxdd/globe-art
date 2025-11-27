@@ -4,6 +4,7 @@
 #include "../core/voronoi_sphere.hpp"
 #include "../core/random_voronoi_sphere_builder.hpp"
 #include "../optimizers/density_voronoi_sphere_optimizer.hpp"
+#include "../optimizers/lloyd_voronoi_sphere_optimizer.hpp"
 #include "../../fields/scalar/noise_field.hpp"
 #include "../../fields/integrable/constant_integrable_field.hpp"
 #include "../../fields/integrable/sampled_integrable_field.hpp"
@@ -21,7 +22,8 @@ class VoronoiSphereFactory {
     VoronoiSphereFactory(
         int points_count,
         std::string density_function,
-        int optimization_passes
+        int optimization_passes,
+        int lloyd_passes
     );
 
     std::unique_ptr<VoronoiSphere> build();
@@ -33,6 +35,7 @@ class VoronoiSphereFactory {
     int _points_count;
     std::string _density_function;
     size_t _optimization_passes;
+    size_t _lloyd_passes;
 
     std::unique_ptr<VoronoiSphere> build_initial();
 
@@ -48,21 +51,30 @@ class VoronoiSphereFactory {
 inline VoronoiSphereFactory::VoronoiSphereFactory(
     int points_count,
     std::string density_function,
-    int optimization_passes
+    int optimization_passes,
+    int lloyd_passes
 ) :
     _points_count(points_count),
     _density_function(std::move(density_function)),
-    _optimization_passes(static_cast<size_t>(optimization_passes)) {
+    _optimization_passes(static_cast<size_t>(optimization_passes)),
+    _lloyd_passes(static_cast<size_t>(lloyd_passes)) {
 }
 
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::build() {
-    auto initial_voronoi_sphere = build_initial();
+    auto voronoi_sphere = build_initial();
 
     if (_density_function == "constant") {
-        return optimize_constant(std::move(initial_voronoi_sphere));
+        voronoi_sphere = optimize_constant(std::move(voronoi_sphere));
     } else {
-        return optimize_noise(std::move(initial_voronoi_sphere));
+        voronoi_sphere = optimize_noise(std::move(voronoi_sphere));
     }
+
+    if (_lloyd_passes > 0) {
+        LloydVoronoiSphereOptimizer lloyd_optimizer(std::move(voronoi_sphere), _lloyd_passes);
+        voronoi_sphere = lloyd_optimizer.optimize();
+    }
+
+    return voronoi_sphere;
 }
 
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::build_initial() {

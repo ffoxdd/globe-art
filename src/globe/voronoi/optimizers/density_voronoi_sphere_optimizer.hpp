@@ -26,16 +26,6 @@
 
 namespace globe {
 
-const int DEFAULT_POINT_COUNT = 10;
-const size_t DEFAULT_OPTIMIZATION_PASSES = 10;
-const double DISPLACEMENT_PENALTY_SCALE = 0.0;
-const double ZERO_ERROR_TOLERANCE = 1e-4;
-const double MIN_PERTURBATION_RADIANS = 0.025;
-const size_t MAX_PERTURBATION_ATTEMPTS = 100;
-const size_t MAX_SUCCESSFUL_PERTURBATIONS_BEFORE_RESTORE = 5;
-const size_t MAX_RESTORATIONS_PER_CHECKPOINT = 5;
-const double CENTROID_DEVIATION_PENALTY = 0.0;
-
 struct VoronoiCell {
     size_t index;
     double mass{};
@@ -53,10 +43,19 @@ template<
 >
 class DensityVoronoiSphereOptimizer {
  public:
+    static constexpr size_t DEFAULT_PASSES = 10;
+    static constexpr double DISPLACEMENT_PENALTY_SCALE = 0.0;
+    static constexpr double ZERO_ERROR_TOLERANCE = 1e-4;
+    static constexpr double MIN_PERTURBATION_RADIANS = 0.025;
+    static constexpr size_t MAX_PERTURBATION_ATTEMPTS = 100;
+    static constexpr size_t MAX_SUCCESSFUL_PERTURBATIONS_BEFORE_RESTORE = 5;
+    static constexpr size_t MAX_RESTORATIONS_PER_CHECKPOINT = 5;
+    static constexpr double CENTROID_DEVIATION_PENALTY = 0.0;
+
     DensityVoronoiSphereOptimizer(
         std::unique_ptr<VoronoiSphere> voronoi_sphere,
         std::unique_ptr<IntegrableFieldType> integrable_field,
-        size_t optimization_passes = DEFAULT_OPTIMIZATION_PASSES,
+        size_t optimization_passes = DEFAULT_PASSES,
         GeneratorType point_generator = GeneratorType()
     );
 
