@@ -23,6 +23,7 @@ class Interval {
     [[nodiscard]] double high() const;
     [[nodiscard]] double measure() const;
     [[nodiscard]] double midpoint() const;
+    [[nodiscard]] double clamp(double value) const;
     [[nodiscard]] bool contains(double value) const;
 
     [[nodiscard]] static Interval hull(const Interval &a, const Interval &b);
@@ -69,6 +70,10 @@ inline double Interval::measure() const {
 
 inline double Interval::midpoint() const {
     return (_low + _high) / 2.0;
+}
+
+inline double Interval::clamp(double value) const {
+    return std::clamp(value, _low, _high);
 }
 
 inline bool Interval::contains(double value) const {

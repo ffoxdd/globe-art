@@ -23,6 +23,7 @@ class SphericalPolygon {
     [[nodiscard]] SphericalBoundingBox bounding_box() const;
     [[nodiscard]] Point3 centroid() const;
     [[nodiscard]] double bounding_sphere_radius() const;
+    [[nodiscard]] double area() const;
     [[nodiscard]] bool contains(const Point3 &point) const;
 
  private:
@@ -107,6 +108,24 @@ inline double SphericalPolygon::bounding_sphere_radius() const {
     );
 
     return std::sqrt(max_squared_distance);
+}
+
+inline double SphericalPolygon::area() const {
+    if (_arcs.size() < 3) {
+        return 0.0;
+    }
+
+    auto interior_angles = circular_adjacent_pairs(_arcs) |
+        std::views::transform([](const auto &pair) {
+            const auto &[prev_arc, curr_arc] = pair;
+            return spherical_angle(
+                prev_arc.source(),
+                curr_arc.source(),
+                curr_arc.target()
+            );
+        });
+
+    return sum(interior_angles) - static_cast<double>(_arcs.size() - 2) * M_PI;
 }
 
 inline bool SphericalPolygon::contains(const Point3 &point) const {

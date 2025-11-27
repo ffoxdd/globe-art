@@ -347,3 +347,26 @@ TEST(SphericalPolygonTest, BoundingSphereRadiusIsMinimalForSymmetricPolygon) {
 
     EXPECT_NEAR(radius, max_distance, GEOMETRIC_EPSILON);
 }
+
+TEST(SphericalPolygonTest, AreaOfOctant) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
+        make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
+    });
+
+    double expected_area = M_PI / 2.0;
+    EXPECT_NEAR(polygon.area(), expected_area, 1e-9);
+}
+
+TEST(SphericalPolygonTest, AreaOfHemisphere) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0)),
+    });
+
+    double expected_area = 2.0 * M_PI;
+    EXPECT_NEAR(polygon.area(), expected_area, 1e-9);
+}

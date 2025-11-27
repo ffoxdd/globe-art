@@ -160,6 +160,15 @@ inline double spherical_angle(const Vector3 &a, const Vector3 &b, const Vector3 
     );
 }
 
+template<HasXYZ PointType>
+inline double spherical_angle(const PointType &a, const PointType &b, const PointType &c) {
+    return spherical_angle(
+        to_position_vector(a),
+        to_position_vector(b),
+        to_position_vector(c)
+    );
+}
+
 inline Point3 project_to_sphere(const Vector3 &position_vector) {
     return to_point(normalize(position_vector));
 }

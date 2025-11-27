@@ -27,7 +27,6 @@
 
 namespace globe {
 
-const Interval DENSITY_FIELD_INTERVAL = Interval(1, 100);
 const int DEFAULT_POINT_COUNT = 10;
 const size_t DEFAULT_OPTIMIZATION_PASSES = 10;
 const double DISPLACEMENT_PENALTY_SCALE = 0.0;
@@ -407,11 +406,7 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_
     }
 
     double raw_radians = perturbation_scale() * multiplier;
-    double angular_step = std::clamp(
-        raw_radians,
-        PERTURBATION_RADIANS_RANGE.low(),
-        PERTURBATION_RADIANS_RANGE.high()
-    );
+    double angular_step = PERTURBATION_RADIANS_RANGE.clamp(raw_radians);
 
     Point3 current_site = _voronoi_sphere->site(index);
     Vector3 current_vector = to_position_vector(current_site);

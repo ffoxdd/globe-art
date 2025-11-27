@@ -14,88 +14,118 @@ concept RangeOf =
     std::same_as<std::ranges::range_value_t<Range>, ValueType>;
 
 template<std::ranges::range RangeType>
-auto circular_adjacent_pairs(const RangeType &range) {
-    struct CircularPairs {
-        const RangeType &range_ref;
+class CircularPairsView : public std::ranges::view_interface<CircularPairsView<RangeType>> {
+ public:
+    class Iterator {
+     public:
+        using iterator_t = std::ranges::iterator_t<const RangeType>;
+        using value_type = std::pair<
+            std::ranges::range_value_t<const RangeType>,
+            std::ranges::range_value_t<const RangeType>
+        >;
+        using difference_type = std::ptrdiff_t;
+        using iterator_category = std::input_iterator_tag;
+        using iterator_concept = std::input_iterator_tag;
 
-        struct Iterator {
-            using iterator_t = std::ranges::iterator_t<const RangeType>;
-            iterator_t it;
-            iterator_t begin_it;
-            iterator_t end_it;
-            bool is_wraparound;
+        Iterator() = default;
+        Iterator(iterator_t it, iterator_t begin_it, iterator_t end_it, bool is_wraparound)
+            : _it(it), _begin_it(begin_it), _end_it(end_it), _is_wraparound(is_wraparound) {}
 
-            using value_type = std::pair<
-                std::ranges::range_reference_t<const RangeType>,
-                std::ranges::range_reference_t<const RangeType>
-            >;
-
-            value_type operator*() const {
-                if (is_wraparound) {
-                    iterator_t last = begin_it;
-                    for (auto temp = begin_it; temp != end_it; ++temp) {
-                        last = temp;
-                    }
-                    return {*last, *begin_it};
-                } else {
-                    auto next = std::next(it);
-                    return {*it, *next};
+        value_type operator*() const {
+            if (_is_wraparound) {
+                iterator_t last = _begin_it;
+                for (auto temp = _begin_it; temp != _end_it; ++temp) {
+                    last = temp;
                 }
+                return {*last, *_begin_it};
+            } else {
+                auto next = std::next(_it);
+                return {*_it, *next};
             }
-
-            Iterator &operator++() {
-                if (is_wraparound) {
-                    it = end_it;
-                    is_wraparound = false;
-                } else {
-                    ++it;
-                    auto next = std::next(it);
-                    if (next == end_it) {
-                        is_wraparound = true;
-                    }
-                }
-                return *this;
-            }
-
-            bool operator==(const Iterator &other) const {
-                return it == other.it && is_wraparound == other.is_wraparound;
-            }
-
-            bool operator!=(const Iterator &other) const {
-                return !(*this == other);
-            }
-        };
-
-        Iterator begin() const {
-            auto it = std::ranges::begin(range_ref);
-            auto end_it = std::ranges::end(range_ref);
-            bool is_wraparound = false;
-
-            if (it == end_it) {
-                return {end_it, it, end_it, false};
-            }
-
-            auto next = std::next(it);
-            if (next == end_it) {
-                is_wraparound = true;
-            }
-
-            return {it, it, end_it, is_wraparound};
         }
 
-        Iterator end() const {
-            auto end_it = std::ranges::end(range_ref);
-            return {end_it, std::ranges::begin(range_ref), end_it, false};
+        Iterator &operator++() {
+            if (_is_wraparound) {
+                _it = _end_it;
+                _is_wraparound = false;
+            } else {
+                ++_it;
+                auto next = std::next(_it);
+                if (next == _end_it) {
+                    _is_wraparound = true;
+                }
+            }
+            return *this;
         }
+
+        Iterator operator++(int) {
+            Iterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        bool operator==(const Iterator &other) const {
+            return _it == other._it && _is_wraparound == other._is_wraparound;
+        }
+
+        bool operator!=(const Iterator &other) const {
+            return !(*this == other);
+        }
+
+     private:
+        iterator_t _it{};
+        iterator_t _begin_it{};
+        iterator_t _end_it{};
+        bool _is_wraparound = false;
     };
 
-    return CircularPairs{range};
+    CircularPairsView() = default;
+    explicit CircularPairsView(const RangeType &range) : _range_ptr(&range) {}
+
+    Iterator begin() const {
+        auto it = std::ranges::begin(*_range_ptr);
+        auto end_it = std::ranges::end(*_range_ptr);
+        bool is_wraparound = false;
+
+        if (it == end_it) {
+            return Iterator(end_it, it, end_it, false);
+        }
+
+        auto next = std::next(it);
+        if (next == end_it) {
+            is_wraparound = true;
+        }
+
+        return Iterator(it, it, end_it, is_wraparound);
+    }
+
+    Iterator end() const {
+        auto end_it = std::ranges::end(*_range_ptr);
+        return Iterator(end_it, std::ranges::begin(*_range_ptr), end_it, false);
+    }
+
+ private:
+    const RangeType *_range_ptr = nullptr;
+};
+
+template<std::ranges::range RangeType>
+auto circular_adjacent_pairs(const RangeType &range) {
+    return CircularPairsView<RangeType>(range);
 }
 
 template<std::ranges::range RangeType, typename Predicate>
 bool all_circular_adjacent_pairs(const RangeType &range, Predicate pred) {
     auto pairs = circular_adjacent_pairs(range);
     return std::all_of(pairs.begin(), pairs.end(), pred);
+}
+
+template<std::ranges::range RangeType>
+auto sum(const RangeType &range) {
+    std::ranges::range_value_t<RangeType> result{};
+    for (const auto &value : range) {
+        result += value;
+    }
+    return result;
 }
 
 } // namespace globe
