@@ -24,6 +24,7 @@ class SampledIntegrableField {
 
     [[nodiscard]] double integrate(const SphericalPolygon &polygon) const;
     [[nodiscard]] double integrate(const SphericalBoundingBox &bounding_box = SphericalBoundingBox::full_sphere()) const;
+    [[nodiscard]] double max_frequency() const;
 
  private:
     GeneratorType _point_generator;
@@ -145,6 +146,15 @@ double SampledIntegrableField<GeneratorType>::integrate(const SphericalBoundingB
     );
 
     return static_cast<double>(hits) * _weight_per_sample;
+}
+
+template<SpherePointGenerator GeneratorType>
+double SampledIntegrableField<GeneratorType>::max_frequency() const {
+    if (_points.empty()) {
+        return 0.0;
+    }
+    double average_spacing = std::sqrt(UNIT_SPHERE_AREA / static_cast<double>(_points.size()));
+    return 1.0 / (2.0 * average_spacing);
 }
 
 } // namespace globe

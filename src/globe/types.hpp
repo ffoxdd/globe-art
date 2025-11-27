@@ -27,6 +27,8 @@ using SearchTraits = CGAL::Search_traits_3<detail::Kernel>;
 using KDTree = CGAL::Kd_tree<SearchTraits>;
 using FuzzySphere = CGAL::Fuzzy_sphere<SearchTraits>;
 
+constexpr double UNIT_SPHERE_AREA = 4.0 * M_PI;
+
 } // namespace globe
 
 #endif //GLOBEART_SRC_GLOBE_TYPES_H_

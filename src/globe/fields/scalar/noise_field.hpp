@@ -13,6 +13,7 @@ class NoiseField {
     NoiseField(Interval output_range = Interval(0, 1), int seed = 1546);
     double value(const Point3 &location);
     Interval output_range() const { return _output_range; }
+    double max_frequency() const;
 
  private:
     anl::CKernel _kernel;
@@ -42,6 +43,10 @@ inline double NoiseField::value(const Point3 &location) {
     return anl::CNoiseExecutor(_kernel).evaluateScalar(
         location.x(), location.y(), location.z(), _instruction_index
     );
+}
+
+inline double NoiseField::max_frequency() const {
+    return NOISE_FREQUENCY * std::pow(NOISE_LACUNARITY, NOISE_OCTAVES - 1);
 }
 
 inline double NoiseField::amplitude_sum(double persistence, int octaves) {

@@ -91,3 +91,40 @@ TEST(SampledIntegrableFieldTest, EXPENSIVE_IntegratesPolygonSubsetOfSphere) {
     EXPECT_LT(result / total, 0.9);
 }
 
+TEST(SampledIntegrableFieldTest, MaxFrequencyIsZeroForEmptyField) {
+    std::vector<Point3> empty_sequence;
+    SequencePointGenerator generator(empty_sequence);
+
+    SampledIntegrableField<SequencePointGenerator> field(
+        std::move(generator),
+        0,
+        1.0
+    );
+
+    EXPECT_DOUBLE_EQ(field.max_frequency(), 0.0);
+}
+
+TEST(SampledIntegrableFieldTest, MaxFrequencyComputedFromSampleCount) {
+    std::vector<Point3> sequence = {
+        Point3(1, 0, 0),
+        Point3(0, 1, 0),
+        Point3(0, 0, 1),
+        Point3(-1, 0, 0),
+        Point3(0, -1, 0),
+        Point3(0, 0, -1)
+    };
+
+    SequencePointGenerator generator(sequence);
+
+    SampledIntegrableField<SequencePointGenerator> field(
+        std::move(generator),
+        6,
+        1.0
+    );
+
+    double average_spacing = std::sqrt(UNIT_SPHERE_AREA / 6.0);
+    double expected_frequency = 1.0 / (2.0 * average_spacing);
+
+    EXPECT_DOUBLE_EQ(field.max_frequency(), expected_frequency);
+}
+

@@ -15,6 +15,11 @@ concept ScalarField = requires(
     { scalar_field.output_range() } -> std::convertible_to<Interval>;
 };
 
+template<typename T>
+concept BandLimitedScalarField = ScalarField<T> && requires(const T &field) {
+    { field.max_frequency() } -> std::convertible_to<double>;
+};
+
 }
 
 #endif //GLOBEART_SRC_GLOBE_NOISE_GENERATOR_SCALAR_FIELD_H_

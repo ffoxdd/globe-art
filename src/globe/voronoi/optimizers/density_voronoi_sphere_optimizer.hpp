@@ -18,6 +18,7 @@
 #include <utility>
 #include <cstddef>
 #include <iostream>
+#include <iomanip>
 #include <atomic>
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
@@ -32,7 +33,8 @@ const size_t DEFAULT_OPTIMIZATION_PASSES = 10;
 const double DISPLACEMENT_PENALTY_SCALE = 0.0;
 const double MOVEMENT_EPSILON = 1e-4;
 const double ZERO_ERROR_TOLERANCE = 1e-3;
-const double MAX_PERTURBATION_STEP = 0.15;
+const double DEFAULT_PERTURBATION_SCALE = 0.5;
+const double MIN_PERTURBATION_STEP = 0.1;
 const size_t MIN_SAMPLE_COUNT = 60'000;
 const size_t SAMPLES_PER_POINT = 3'000;
 
@@ -79,9 +81,10 @@ class DensityVoronoiSphereOptimizer {
     void adjust_mass(size_t max_passes);
     CellMassHeap build_cell_mass_heap();
     double compute_total_error(double target_mass);
-    bool perturb_most_undersized_vertex(double target_mass);
+    bool perturb_most_undersized_vertex(double target_mass, size_t stuck_count);
     std::optional<std::pair<size_t, double>> find_most_undersized_vertex_with_deficit(double target_mass);
-    bool perturb_vertex_toward_random_point(size_t index, double deficit, double target_mass);
+    bool perturb_vertex_toward_random_point(size_t index, double multiplier);
+    double perturbation_scale() const;
 };
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
@@ -108,6 +111,8 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
+    size_t consecutive_stuck_passes = 0;
+
     for (size_t pass = 0; pass < max_passes; pass++) {
         std::cout << std::endl;
         std::cout << "=== Optimization pass " << pass + 1 << " / " << max_passes << " ===" << std::endl;
@@ -129,7 +134,11 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
 
         std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
 
-        if (!pass_made_progress) {
+        if (pass_made_progress) {
+            consecutive_stuck_passes = 0;
+        } else {
+            consecutive_stuck_passes++;
+
             double rms_error = std::sqrt(current_error / _voronoi_sphere->size());
             if (rms_error <= ZERO_ERROR_TOLERANCE * target_mass) {
                 std::cout <<
@@ -140,10 +149,10 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
             }
 
             std::cout <<
-                "No vertex movement detected; perturbing undersized vertex to escape local minimum."
-                << std::endl;
+                "No vertex movement detected (stuck " << consecutive_stuck_passes <<
+                "x); perturbing to escape local minimum." << std::endl;
 
-            if (!perturb_most_undersized_vertex(target_mass)) {
+            if (!perturb_most_undersized_vertex(target_mass, consecutive_stuck_passes)) {
                 std::cout << "No suitable vertex found for perturbation." << std::endl;
             }
         }
@@ -163,7 +172,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
         total_error += error;
         max_error = std::max(max_error, error);
 
-        std::cout << "  Cell " << i << " mass: " << cell_mass << ", error: " << error << std::endl;
+        std::cout << "  Cell " << std::setw(4) << i << " mass: " << cell_mass << ", error: " << error << std::endl;
         i++;
     }
 
@@ -217,10 +226,6 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vert
         column_vector starting_point = initial_point;
         _voronoi_sphere->update_site(index, original_position);
 
-        size_t eval_count = 0;
-        double first_eval_error = -1.0;
-        double last_eval_error = -1.0;
-
         auto objective = [&](const column_vector& params) -> double {
             Point3 candidate = stereographic_plane_to_sphere(
                 params(0),
@@ -236,12 +241,6 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vert
             double displacement_angle = angular_distance(original_vector, to_position_vector(candidate));
             double penalty = DISPLACEMENT_PENALTY_SCALE * target_mass * target_mass * displacement_angle * displacement_angle;
             double cost = total_error + penalty;
-
-            if (eval_count == 0) {
-                first_eval_error = total_error;
-            }
-            last_eval_error = total_error;
-            eval_count++;
 
             if (cost < run_best_cost) {
                 run_best_cost = cost;
@@ -266,14 +265,6 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vert
         } catch (...) {
         }
 
-        std::cout << "    " <<
-            "[" <<
-            "BOBYQA evals=" << eval_count <<
-            ", first_error=" << std::sqrt(first_eval_error) <<
-            ", last_error=" << std::sqrt(last_eval_error) <<
-            ", best_error=" << std::sqrt(run_best_mass_error) <<
-            "]" << std::endl;
-
         _voronoi_sphere->update_site(index, run_best_position);
         return RunResult{run_best_mass_error, run_best_cost, run_best_position};
     };
@@ -294,7 +285,7 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vert
     bool moved = movement > MOVEMENT_EPSILON;
 
     std::cout <<
-        "  Vertex " << index <<
+        "  Vertex " << std::setw(4) << index <<
         ": error = " << final_norm <<
         " (Δ = " << delta <<
         ", movement = " << movement <<
@@ -353,7 +344,10 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::comput
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
-bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_most_undersized_vertex(double target_mass) {
+bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_most_undersized_vertex(
+    double target_mass,
+    size_t stuck_count
+) {
     auto candidate = find_most_undersized_vertex_with_deficit(target_mass);
 
     if (!candidate.has_value()) {
@@ -361,14 +355,15 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_
     }
 
     auto [vertex_index, deficit] = candidate.value();
+    double multiplier = static_cast<double>(stuck_count);
 
-    if (!perturb_vertex_toward_random_point(vertex_index, deficit, target_mass)) {
+    if (!perturb_vertex_toward_random_point(vertex_index, multiplier)) {
         return false;
     }
 
     std::cout <<
-        "  Perturbed vertex " << vertex_index <<
-        " toward random direction to escape local minimum." <<
+        "  Perturbed vertex " << std::setw(4) << vertex_index <<
+        " (multiplier " << multiplier << "x)" <<
         std::endl;
 
     return true;
@@ -405,15 +400,14 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::find_most_und
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
 bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_vertex_toward_random_point(
     size_t index,
-    double deficit,
-    double target_mass
+    double multiplier
 ) {
     if (index >= _voronoi_sphere->size()) {
         return false;
     }
 
-    double deficit_ratio = std::clamp(deficit / target_mass, 0.0, 1.0);
-    double step = MAX_PERTURBATION_STEP * deficit_ratio;
+    double base_step = std::max(perturbation_scale(), MIN_PERTURBATION_STEP);
+    double step = std::min(base_step * multiplier, 1.0);
 
     Point3 current_site = _voronoi_sphere->site(index);
     Point3 random_point = _point_generator.generate(1)[0];
@@ -422,6 +416,15 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_
     _voronoi_sphere->update_site(index, normalized_point);
 
     return true;
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturbation_scale() const {
+    double max_freq = _integrable_field->max_frequency();
+    if (max_freq <= 0.0) {
+        return DEFAULT_PERTURBATION_SCALE;
+    }
+    return 1.0 / (2.0 * max_freq);
 }
 
 } // namespace globe

@@ -13,6 +13,11 @@ concept IntegrableField = requires(
     { integrable_field.integrate(polygon) } -> std::convertible_to<double>;
 };
 
+template<typename T>
+concept BandLimitedIntegrableField = IntegrableField<T> && requires(const T &field) {
+    { field.max_frequency() } -> std::convertible_to<double>;
+};
+
 }
 
 #endif //GLOBEART_SRC_GLOBE_INTEGRABLE_FIELD_INTEGRABLE_FIELD_H_

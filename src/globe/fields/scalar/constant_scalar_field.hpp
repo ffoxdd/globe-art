@@ -20,6 +20,10 @@ public:
         return _output_range;
     }
 
+    inline double max_frequency() const {
+        return 0.0;
+    }
+
 private:
     double _value;
     Interval _output_range;
