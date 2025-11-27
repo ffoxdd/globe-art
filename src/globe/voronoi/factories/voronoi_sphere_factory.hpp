@@ -4,16 +4,14 @@
 #include "../core/voronoi_sphere.hpp"
 #include "../core/random_voronoi_sphere_builder.hpp"
 #include "../optimizers/density_voronoi_sphere_optimizer.hpp"
-#include "../../fields/scalar/constant_scalar_field.hpp"
 #include "../../fields/scalar/noise_field.hpp"
+#include "../../fields/integrable/constant_integrable_field.hpp"
 #include "../../fields/integrable/sampled_integrable_field.hpp"
-#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../../generators/sphere_point_generator/rejection_sampling_sphere_point_generator.hpp"
 #include "../../generators/sphere_point_generator/poisson_sphere_point_generator/poisson_sphere_point_generator.hpp"
 #include <string>
 #include <memory>
 #include <algorithm>
-#include <cmath>
 #include <iostream>
 
 namespace globe {
@@ -38,7 +36,6 @@ class VoronoiSphereFactory {
 
     std::unique_ptr<VoronoiSphere> build_initial();
 
-    using ConstantGenerator = PoissonSpherePointGenerator<>;
     using NoiseGenerator = PoissonSpherePointGenerator<RejectionSamplingSpherePointGenerator<NoiseField>>;
 
     std::unique_ptr<VoronoiSphere> optimize_constant(std::unique_ptr<VoronoiSphere> voronoi_sphere);
@@ -86,18 +83,9 @@ inline size_t VoronoiSphereFactory::sample_count(double max_frequency) {
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
-    ConstantScalarField field;
-    size_t samples = sample_count(field.max_frequency());
-    std::cout << "Sample count: " << samples << std::endl;
-    ConstantGenerator generator;
+    auto integrable_field = std::make_unique<ConstantIntegrableField>();
 
-    auto integrable_field = std::make_unique<SampledIntegrableField<ConstantGenerator>>(
-        std::move(generator),
-        samples,
-        1.0
-    );
-
-    DensityVoronoiSphereOptimizer optimizer(
+    DensityVoronoiSphereOptimizer<ConstantIntegrableField> optimizer(
         std::move(voronoi_sphere),
         std::move(integrable_field)
     );

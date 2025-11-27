@@ -10,7 +10,6 @@
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../fields/integrable/sampled_integrable_field.hpp"
 #include "../../fields/integrable/integrable_field.hpp"
-#include "../../math/interval.hpp"
 #include <algorithm>
 #include <memory>
 #include <queue>
@@ -31,8 +30,9 @@ const int DEFAULT_POINT_COUNT = 10;
 const size_t DEFAULT_OPTIMIZATION_PASSES = 10;
 const double DISPLACEMENT_PENALTY_SCALE = 0.0;
 const double MOVEMENT_EPSILON = 1e-4;
-const double ZERO_ERROR_TOLERANCE = 1e-3;
-const Interval PERTURBATION_RADIANS_RANGE = Interval(0.025, 0.3);
+const double ZERO_ERROR_TOLERANCE = 1e-4;
+const double MIN_PERTURBATION_RADIANS = 0.025;
+const size_t MAX_PERTURBATION_ATTEMPTS = 100;
 
 struct VoronoiCell {
     size_t index;
@@ -70,6 +70,8 @@ class DensityVoronoiSphereOptimizer {
     };
 
     using CellMassHeap = std::priority_queue<VoronoiCell, std::vector<VoronoiCell>, MinMassComparator>;
+    using Checkpoint = std::vector<Point3>;
+
     double mass(const SphericalPolygon &spherical_polygon);
     double total_mass();
     double average_mass();
@@ -77,10 +79,12 @@ class DensityVoronoiSphereOptimizer {
     void adjust_mass(size_t max_passes);
     CellMassHeap build_cell_mass_heap();
     double compute_total_error(double target_mass);
-    bool perturb_most_undersized_vertex(double target_mass, size_t stuck_count);
+    bool perturb_most_undersized_vertex(double target_mass);
     std::optional<std::pair<size_t, double>> find_most_undersized_vertex_with_deficit(double target_mass);
-    bool perturb_vertex_toward_random_point(size_t index, double multiplier);
+    bool perturb_vertex_toward_random_point(size_t index);
     double perturbation_scale() const;
+    Checkpoint save_checkpoint() const;
+    void restore_checkpoint(const Checkpoint &checkpoint);
 };
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
@@ -109,6 +113,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
 
     size_t consecutive_stuck_passes = 0;
     double best_error = std::numeric_limits<double>::max();
+    Checkpoint best_checkpoint = save_checkpoint();
 
     for (size_t pass = 0; pass < max_passes; pass++) {
         std::cout << std::endl;
@@ -116,7 +121,8 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
 
         auto heap = build_cell_mass_heap();
         size_t vertex_count = 0;
-        double current_error = compute_total_error(target_mass);
+        double start_of_pass_error = compute_total_error(target_mass);
+        double current_error = start_of_pass_error;
 
         while (!heap.empty()) {
             size_t i = heap.top().index;
@@ -129,12 +135,15 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
 
         std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
 
-        double error_improvement = best_error - current_error;
-        bool made_meaningful_progress = error_improvement > ZERO_ERROR_TOLERANCE * target_mass * target_mass;
+        double pass_improvement = start_of_pass_error - current_error;
+        bool made_meaningful_progress = pass_improvement > ZERO_ERROR_TOLERANCE * start_of_pass_error;
 
         if (made_meaningful_progress) {
-            best_error = current_error;
             consecutive_stuck_passes = 0;
+            if (current_error < best_error) {
+                best_error = current_error;
+                best_checkpoint = save_checkpoint();
+            }
         } else {
             consecutive_stuck_passes++;
 
@@ -147,11 +156,20 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
                 break;
             }
 
+            if (consecutive_stuck_passes > MAX_PERTURBATION_ATTEMPTS) {
+                std::cout <<
+                    "Exceeded " << MAX_PERTURBATION_ATTEMPTS <<
+                    " perturbation attempts; reverting to best checkpoint." <<
+                    std::endl;
+                restore_checkpoint(best_checkpoint);
+                break;
+            }
+
             std::cout <<
                 "No meaningful error improvement (stuck " << consecutive_stuck_passes <<
                 "x); perturbing to escape local minimum." << std::endl;
 
-            if (!perturb_most_undersized_vertex(target_mass, consecutive_stuck_passes)) {
+            if (!perturb_most_undersized_vertex(target_mass)) {
                 std::cout << "No suitable vertex found for perturbation." << std::endl;
             }
         }
@@ -344,8 +362,7 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::comput
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
 bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_most_undersized_vertex(
-    double target_mass,
-    size_t stuck_count
+    double target_mass
 ) {
     auto candidate = find_most_undersized_vertex_with_deficit(target_mass);
 
@@ -354,16 +371,12 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_
     }
 
     auto [vertex_index, deficit] = candidate.value();
-    double multiplier = static_cast<double>(stuck_count);
 
-    if (!perturb_vertex_toward_random_point(vertex_index, multiplier)) {
+    if (!perturb_vertex_toward_random_point(vertex_index)) {
         return false;
     }
 
-    std::cout <<
-        "  Perturbed vertex " << std::setw(4) << vertex_index <<
-        " (multiplier " << multiplier << "x)" <<
-        std::endl;
+    std::cout << "  Perturbed vertex " << std::setw(4) << vertex_index << std::endl;
 
     return true;
 }
@@ -398,15 +411,13 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::find_most_und
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
 bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_vertex_toward_random_point(
-    size_t index,
-    double multiplier
+    size_t index
 ) {
     if (index >= _voronoi_sphere->size()) {
         return false;
     }
 
-    double raw_radians = perturbation_scale() * multiplier;
-    double angular_step = PERTURBATION_RADIANS_RANGE.clamp(raw_radians);
+    double angular_step = perturbation_scale();
 
     Point3 current_site = _voronoi_sphere->site(index);
     Vector3 current_vector = to_position_vector(current_site);
@@ -437,9 +448,31 @@ template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType
 double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturbation_scale() const {
     double max_freq = _integrable_field->max_frequency();
     if (max_freq <= 0.0) {
-        return PERTURBATION_RADIANS_RANGE.midpoint();
+        return MIN_PERTURBATION_RADIANS;
     }
     return 1.0 / (2.0 * max_freq);
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::Checkpoint
+DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::save_checkpoint() const {
+    Checkpoint checkpoint;
+    checkpoint.reserve(_voronoi_sphere->size());
+
+    for (size_t i = 0; i < _voronoi_sphere->size(); i++) {
+        checkpoint.push_back(_voronoi_sphere->site(i));
+    }
+
+    return checkpoint;
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::restore_checkpoint(
+    const Checkpoint &checkpoint
+) {
+    for (size_t i = 0; i < checkpoint.size(); i++) {
+        _voronoi_sphere->update_site(i, checkpoint[i]);
+    }
 }
 
 } // namespace globe

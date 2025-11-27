@@ -10,7 +10,7 @@ using namespace globe;
 
 struct Config {
     int points_count;
-    std::string density_function;
+    std::string density_field;
     bool perform_render;
     int optimization_passes;
 };
@@ -24,14 +24,14 @@ int main(int argc, char *argv[]) {
     std::cout <<
         "Configuration:" << std::endl <<
         "  Points: " << config.points_count << std::endl <<
-        "  Density: " << config.density_function << std::endl <<
+        "  Density: " << config.density_field << std::endl <<
         "  Render: " << (config.perform_render ? "yes" : "no") << std::endl <<
         "  Optimization passes: " << config.optimization_passes << std::endl <<
         std::endl;
 
     VoronoiSphereFactory factory(
         config.points_count,
-        config.density_function,
+        config.density_field,
         config.optimization_passes
     );
 
@@ -49,8 +49,8 @@ Config parse_arguments(int argc, char *argv[]) {
         ->description("Number of points to generate")
         ->default_val(10);
 
-    app.add_option("--density-function,-d", config.density_function)
-        ->description("Density function type")
+    app.add_option("--density-field,-f", config.density_field)
+        ->description("Density field type")
         ->check(CLI::IsMember({"constant", "noise"}))
         ->default_val("noise");
 
