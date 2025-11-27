@@ -33,6 +33,7 @@ const double MOVEMENT_EPSILON = 1e-4;
 const double ZERO_ERROR_TOLERANCE = 1e-4;
 const double MIN_PERTURBATION_RADIANS = 0.025;
 const size_t MAX_PERTURBATION_ATTEMPTS = 100;
+const double CENTROID_DEVIATION_PENALTY = 2e-8;
 
 struct VoronoiCell {
     size_t index;
@@ -78,7 +79,10 @@ class DensityVoronoiSphereOptimizer {
     OptimizationResult optimize_vertex_position(size_t index, double target_mass, double previous_error);
     void adjust_mass(size_t max_passes);
     CellMassHeap build_cell_mass_heap();
-    double compute_total_error(double target_mass);
+    double compute_convergence_error(double target_mass);
+    double compute_objective_error(double target_mass);
+    double compute_mass_error(double target_mass);
+    double compute_centroid_deviation_error(double target_mass);
     bool perturb_most_undersized_vertex(double target_mass);
     std::optional<std::pair<size_t, double>> find_most_undersized_vertex_with_deficit(double target_mass);
     bool perturb_vertex_toward_random_point(size_t index);
@@ -121,7 +125,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
 
         auto heap = build_cell_mass_heap();
         size_t vertex_count = 0;
-        double start_of_pass_error = compute_total_error(target_mass);
+        double start_of_pass_error = compute_convergence_error(target_mass);
         double current_error = start_of_pass_error;
 
         while (!heap.empty()) {
@@ -254,14 +258,14 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimize_vert
 
             _voronoi_sphere->update_site(index, candidate);
 
-            double total_error = compute_total_error(target_mass);
+            double optimization_error = compute_objective_error(target_mass);
             double displacement_angle = angular_distance(original_vector, to_position_vector(candidate));
             double penalty = DISPLACEMENT_PENALTY_SCALE * target_mass * target_mass * displacement_angle * displacement_angle;
-            double cost = total_error + penalty;
+            double cost = optimization_error + penalty;
 
             if (cost < run_best_cost) {
                 run_best_cost = cost;
-                run_best_mass_error = total_error;
+                run_best_mass_error = compute_convergence_error(target_mass);
                 run_best_position = candidate;
             }
 
@@ -331,7 +335,18 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::build_cell_ma
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
-double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::compute_total_error(double target_mass) {
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::compute_convergence_error(double target_mass) {
+    return compute_mass_error(target_mass);
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::compute_objective_error(double target_mass) {
+    return compute_mass_error(target_mass) +
+        CENTROID_DEVIATION_PENALTY * target_mass * target_mass * compute_centroid_deviation_error(target_mass);
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::compute_mass_error(double target_mass) {
     std::vector<SphericalPolygon> cells;
     cells.reserve(_voronoi_sphere->size());
 
@@ -348,8 +363,8 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::comput
 
             for (size_t i = range.begin(); i != range.end(); ++i) {
                 double cell_mass = mass(cells[i]);
-                double error = cell_mass - target_mass;
-                local_error += error * error;
+                double mass_error = cell_mass - target_mass;
+                local_error += mass_error * mass_error;
             }
 
             double current = total_error.load();
@@ -358,6 +373,25 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::comput
     );
 
     return total_error.load();
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::compute_centroid_deviation_error(double target_mass) {
+    double total_error = 0.0;
+
+    size_t i = 0;
+    for (const auto &cell : _voronoi_sphere->dual_cells()) {
+        Point3 site = _voronoi_sphere->site(i);
+        Point3 centroid = cell.centroid();
+        double deviation = angular_distance(
+            to_position_vector(site),
+            to_position_vector(centroid)
+        );
+        total_error += deviation * deviation;
+        i++;
+    }
+
+    return total_error;
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
