@@ -33,10 +33,7 @@ const size_t DEFAULT_OPTIMIZATION_PASSES = 10;
 const double DISPLACEMENT_PENALTY_SCALE = 0.0;
 const double MOVEMENT_EPSILON = 1e-4;
 const double ZERO_ERROR_TOLERANCE = 1e-3;
-const double DEFAULT_PERTURBATION_SCALE = 0.5;
-const double MIN_PERTURBATION_STEP = 0.1;
-const size_t MIN_SAMPLE_COUNT = 60'000;
-const size_t SAMPLES_PER_POINT = 3'000;
+const Interval PERTURBATION_RADIANS_RANGE = Interval(0.025, 0.3);
 
 struct VoronoiCell {
     size_t index;
@@ -112,6 +109,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
     size_t consecutive_stuck_passes = 0;
+    double best_error = std::numeric_limits<double>::max();
 
     for (size_t pass = 0; pass < max_passes; pass++) {
         std::cout << std::endl;
@@ -120,7 +118,6 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
         auto heap = build_cell_mass_heap();
         size_t vertex_count = 0;
         double current_error = compute_total_error(target_mass);
-        bool pass_made_progress = false;
 
         while (!heap.empty()) {
             size_t i = heap.top().index;
@@ -128,13 +125,16 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
 
             OptimizationResult result = optimize_vertex_position(i, target_mass, current_error);
             current_error = result.error;
-            pass_made_progress = pass_made_progress || result.moved;
             vertex_count++;
         }
 
         std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
 
-        if (pass_made_progress) {
+        double error_improvement = best_error - current_error;
+        bool made_meaningful_progress = error_improvement > ZERO_ERROR_TOLERANCE * target_mass * target_mass;
+
+        if (made_meaningful_progress) {
+            best_error = current_error;
             consecutive_stuck_passes = 0;
         } else {
             consecutive_stuck_passes++;
@@ -142,14 +142,14 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
             double rms_error = std::sqrt(current_error / _voronoi_sphere->size());
             if (rms_error <= ZERO_ERROR_TOLERANCE * target_mass) {
                 std::cout <<
-                    "No vertex movement and RMS error " << rms_error <<
+                    "RMS error " << rms_error <<
                     " below threshold; stopping optimization." <<
                     std::endl;
                 break;
             }
 
             std::cout <<
-                "No vertex movement detected (stuck " << consecutive_stuck_passes <<
+                "No meaningful error improvement (stuck " << consecutive_stuck_passes <<
                 "x); perturbing to escape local minimum." << std::endl;
 
             if (!perturb_most_undersized_vertex(target_mass, consecutive_stuck_passes)) {
@@ -406,14 +406,34 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_
         return false;
     }
 
-    double base_step = std::max(perturbation_scale(), MIN_PERTURBATION_STEP);
-    double step = std::min(base_step * multiplier, 1.0);
+    double raw_radians = perturbation_scale() * multiplier;
+    double angular_step = std::clamp(
+        raw_radians,
+        PERTURBATION_RADIANS_RANGE.low(),
+        PERTURBATION_RADIANS_RANGE.high()
+    );
 
     Point3 current_site = _voronoi_sphere->site(index);
+    Vector3 current_vector = to_position_vector(current_site);
+
     Point3 random_point = _point_generator.generate(1)[0];
-    Point3 perturbed = spherical_interpolate(current_site, random_point, step);
-    Point3 normalized_point = project_to_sphere(perturbed);
-    _voronoi_sphere->update_site(index, normalized_point);
+    Vector3 random_vector = to_position_vector(random_point);
+
+    double dot = current_vector * random_vector;
+    Vector3 tangent_component = random_vector - dot * current_vector;
+    double tangent_length = std::sqrt(tangent_component.squared_length());
+
+    if (tangent_length < 1e-10) {
+        return false;
+    }
+
+    Vector3 tangent_direction = tangent_component / tangent_length;
+    Vector3 new_vector =
+        std::cos(angular_step) * current_vector +
+        std::sin(angular_step) * tangent_direction;
+
+    Point3 new_site(new_vector.x(), new_vector.y(), new_vector.z());
+    _voronoi_sphere->update_site(index, new_site);
 
     return true;
 }
@@ -422,7 +442,7 @@ template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType
 double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturbation_scale() const {
     double max_freq = _integrable_field->max_frequency();
     if (max_freq <= 0.0) {
-        return DEFAULT_PERTURBATION_SCALE;
+        return PERTURBATION_RADIANS_RANGE.midpoint();
     }
     return 1.0 / (2.0 * max_freq);
 }
