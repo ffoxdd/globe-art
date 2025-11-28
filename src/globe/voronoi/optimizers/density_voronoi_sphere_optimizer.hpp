@@ -94,7 +94,7 @@ class DensityVoronoiSphereOptimizer {
     double average_mass();
     double optimize_vertex_position(size_t index, double target_mass, double previous_error);
     void adjust_mass(size_t max_passes);
-    PassResult run_single_pass(double target_mass);
+    PassResult run_single_pass(double target_mass, size_t pass_number, size_t max_passes);
     bool check_progress_and_maybe_perturb( double target_mass, const PassResult &pass_result, OptimizationState &state );
     void print_final_results(double target_mass);
     CellMassHeap build_cell_mass_heap();
@@ -138,10 +138,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
     state.best_checkpoint = save_checkpoint();
 
     for (size_t pass = 0; pass < max_passes; pass++) {
-        std::cout << std::endl;
-        std::cout << "=== Optimization pass " << pass + 1 << " / " << max_passes << " ===" << std::endl;
-
-        PassResult result = run_single_pass(target_mass);
+        PassResult result = run_single_pass(target_mass, pass + 1, max_passes);
 
         if (!check_progress_and_maybe_perturb(target_mass, result, state)) {
             break;
@@ -153,7 +150,11 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
 typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::PassResult
-DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::run_single_pass(double target_mass) {
+DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::run_single_pass(
+    double target_mass,
+    size_t pass_number,
+    size_t max_passes
+) {
     auto heap = build_cell_mass_heap();
     double start_error = compute_convergence_error(target_mass);
     double current_error = start_error;
@@ -167,7 +168,14 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::run_single_pa
         vertex_count++;
     }
 
-    std::cout << "Optimized " << vertex_count << " vertices" << std::endl;
+    double start_rms = std::sqrt(start_error / _voronoi_sphere->size());
+    double end_rms = std::sqrt(current_error / _voronoi_sphere->size());
+
+    std::cout << std::fixed << std::setprecision(6) <<
+        "  Pass " << std::setw(3) << pass_number << "/" << max_passes <<
+        ": error " << std::setw(10) << start_rms <<
+        " -> " << std::setw(10) << end_rms <<
+        std::defaultfloat << std::endl;
 
     return {start_error, current_error, vertex_count};
 }
@@ -369,22 +377,9 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::optimi
     origin = 0.0, 0.0;
 
     auto initial_result = run_bobyqa(origin, 15);
-    double final_error = initial_result.mass_error;
-    Point3 best_position = initial_result.best_position;
+    _voronoi_sphere->update_site(index, initial_result.best_position);
 
-    double initial_norm = std::sqrt(initial_error);
-    double final_norm = std::sqrt(final_error);
-
-    _voronoi_sphere->update_site(index, best_position);
-    double delta = final_norm - initial_norm;
-
-    std::cout << std::fixed << std::setprecision(6) <<
-        "  Vertex " << std::setw(4) << index <<
-        ": error = " << std::setw(10) << final_norm <<
-        ", Δ = " << std::setw(11) << std::showpos << delta << std::noshowpos <<
-        std::defaultfloat << std::endl;
-
-    return final_error;
+    return initial_result.mass_error;
 }
 
 

@@ -29,6 +29,8 @@ class VoronoiSphereFactory {
     std::unique_ptr<VoronoiSphere> build();
 
  private:
+    using NoiseGenerator = PoissonSpherePointGenerator<RejectionSamplingSpherePointGenerator<NoiseField>>;
+
     static constexpr double NYQUIST_SAFETY_FACTOR = 4.0;
     static constexpr size_t MIN_SAMPLES = 1000;
 
@@ -38,8 +40,8 @@ class VoronoiSphereFactory {
     size_t _lloyd_passes;
 
     std::unique_ptr<VoronoiSphere> build_initial();
+    std::unique_ptr<VoronoiSphere> optimize_density(std::unique_ptr<VoronoiSphere> voronoi_sphere);
 
-    using NoiseGenerator = PoissonSpherePointGenerator<RejectionSamplingSpherePointGenerator<NoiseField>>;
 
     std::unique_ptr<VoronoiSphere> optimize_constant(std::unique_ptr<VoronoiSphere> voronoi_sphere);
     std::unique_ptr<VoronoiSphere> optimize_noise(std::unique_ptr<VoronoiSphere> voronoi_sphere);
@@ -63,18 +65,26 @@ inline VoronoiSphereFactory::VoronoiSphereFactory(
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::build() {
     auto voronoi_sphere = build_initial();
 
-    if (_density_function == "constant") {
-        voronoi_sphere = optimize_constant(std::move(voronoi_sphere));
-    } else {
-        voronoi_sphere = optimize_noise(std::move(voronoi_sphere));
-    }
+    voronoi_sphere = optimize_density(std::move(voronoi_sphere));
 
     if (_lloyd_passes > 0) {
-        LloydVoronoiSphereOptimizer lloyd_optimizer(std::move(voronoi_sphere), _lloyd_passes);
+        LloydVoronoiSphereOptimizer lloyd_optimizer(std::move(voronoi_sphere), 1);
         voronoi_sphere = lloyd_optimizer.optimize();
+
+        voronoi_sphere = optimize_density(std::move(voronoi_sphere));
     }
 
     return voronoi_sphere;
+}
+
+inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_density(
+    std::unique_ptr<VoronoiSphere> voronoi_sphere
+) {
+    if (_density_function == "constant") {
+        return optimize_constant(std::move(voronoi_sphere));
+    } else {
+        return optimize_noise(std::move(voronoi_sphere));
+    }
 }
 
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::build_initial() {
