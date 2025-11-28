@@ -74,6 +74,20 @@ class DensityVoronoiSphereOptimizer {
         size_t vertices_processed;
     };
 
+    enum class PassAction {
+        CONTINUE,
+        PERTURBING,
+        RESTORED_CHECKPOINT,
+        CONVERGED,
+        STOPPED
+    };
+
+    struct ProgressResult {
+        bool should_continue;
+        PassAction action;
+        size_t action_number;
+    };
+
     struct OptimizationState {
         double best_error = std::numeric_limits<double>::max();
         std::vector<Point3> best_checkpoint;
@@ -94,8 +108,9 @@ class DensityVoronoiSphereOptimizer {
     double average_mass();
     double optimize_vertex_position(size_t index, double target_mass, double previous_error);
     void adjust_mass(size_t max_passes);
-    PassResult run_single_pass(double target_mass, size_t pass_number, size_t max_passes);
-    bool check_progress_and_maybe_perturb( double target_mass, const PassResult &pass_result, OptimizationState &state );
+    PassResult run_single_pass(double target_mass);
+    ProgressResult check_progress_and_maybe_perturb(double target_mass, const PassResult &pass_result, OptimizationState &state);
+    void print_pass_result(size_t pass_number, size_t max_passes, const PassResult &result, const ProgressResult &progress);
     void print_final_results(double target_mass);
     CellMassHeap build_cell_mass_heap();
     double compute_convergence_error(double target_mass);
@@ -138,9 +153,12 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
     state.best_checkpoint = save_checkpoint();
 
     for (size_t pass = 0; pass < max_passes; pass++) {
-        PassResult result = run_single_pass(target_mass, pass + 1, max_passes);
+        PassResult result = run_single_pass(target_mass);
+        ProgressResult progress = check_progress_and_maybe_perturb(target_mass, result, state);
 
-        if (!check_progress_and_maybe_perturb(target_mass, result, state)) {
+        print_pass_result(pass + 1, max_passes, result, progress);
+
+        if (!progress.should_continue) {
             break;
         }
     }
@@ -150,11 +168,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::adjust_m
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
 typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::PassResult
-DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::run_single_pass(
-    double target_mass,
-    size_t pass_number,
-    size_t max_passes
-) {
+DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::run_single_pass(double target_mass) {
     auto heap = build_cell_mass_heap();
     double start_error = compute_convergence_error(target_mass);
     double current_error = start_error;
@@ -168,20 +182,12 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::run_single_pa
         vertex_count++;
     }
 
-    double start_rms = std::sqrt(start_error / _voronoi_sphere->size());
-    double end_rms = std::sqrt(current_error / _voronoi_sphere->size());
-
-    std::cout << std::fixed << std::setprecision(6) <<
-        "  Pass " << std::setw(3) << pass_number << "/" << max_passes <<
-        ": error " << std::setw(10) << start_rms <<
-        " -> " << std::setw(10) << end_rms <<
-        std::defaultfloat << std::endl;
-
     return {start_error, current_error, vertex_count};
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
-bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::check_progress_and_maybe_perturb(
+typename DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::ProgressResult
+DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::check_progress_and_maybe_perturb(
     double target_mass,
     const PassResult &pass_result,
     OptimizationState &state
@@ -194,8 +200,6 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::check_pr
         if (error_changed) {
             state.successful_perturbations_since_best++;
             state.perturbation_attempts = 0;
-            std::cout << "Perturbation successful (escape #" <<
-                state.successful_perturbations_since_best << ")" << std::endl;
         } else {
             state.perturbation_attempts++;
         }
@@ -211,54 +215,72 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::check_pr
             state.successful_perturbations_since_best = 0;
             state.restorations_to_current_best = 0;
         }
-        return true;
+        return {true, PassAction::CONTINUE, 0};
     }
 
     double rms_error = std::sqrt(pass_result.end_error / _voronoi_sphere->size());
     if (rms_error <= ZERO_ERROR_TOLERANCE * target_mass) {
-        std::cout <<
-            "RMS error " << rms_error <<
-            " below threshold; stopping optimization." <<
-            std::endl;
-        return false;
+        return {false, PassAction::CONVERGED, 0};
     }
 
     if (state.successful_perturbations_since_best >= MAX_SUCCESSFUL_PERTURBATIONS_BEFORE_RESTORE &&
         state.restorations_to_current_best < MAX_RESTORATIONS_PER_CHECKPOINT) {
-        std::cout <<
-            "After " << state.successful_perturbations_since_best <<
-            " successful perturbations, still above best error; " <<
-            "restoring checkpoint (restoration #" << (state.restorations_to_current_best + 1) << ")" <<
-            std::endl;
         restore_checkpoint(state.best_checkpoint);
         state.restorations_to_current_best++;
         state.successful_perturbations_since_best = 0;
         state.perturbation_attempts = 0;
-        return true;
+        return {true, PassAction::RESTORED_CHECKPOINT, state.restorations_to_current_best};
     }
 
     if (state.perturbation_attempts >= MAX_PERTURBATION_ATTEMPTS) {
-        std::cout <<
-            "Exceeded " << MAX_PERTURBATION_ATTEMPTS <<
-            " perturbation attempts; stopping optimization." <<
-            std::endl;
-        return false;
+        return {false, PassAction::STOPPED, state.perturbation_attempts};
     }
-
-    std::cout <<
-        "No meaningful error improvement; perturbing to escape local minimum " <<
-        "(attempt " << (state.perturbation_attempts + 1) << ")" <<
-        std::endl;
 
     state.error_before_perturbation = pass_result.end_error;
+    size_t attempt_number = state.perturbation_attempts + 1;
+
     if (perturb_most_undersized_vertex(target_mass)) {
         state.just_perturbed = true;
+        return {true, PassAction::PERTURBING, attempt_number};
     } else {
-        std::cout << "No suitable vertex found for perturbation." << std::endl;
         state.perturbation_attempts++;
+        return {true, PassAction::CONTINUE, 0};
+    }
+}
+
+template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
+void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::print_pass_result(
+    size_t pass_number,
+    size_t max_passes,
+    const PassResult &result,
+    const ProgressResult &progress
+) {
+    double start_rms = std::sqrt(result.start_error / _voronoi_sphere->size());
+    double end_rms = std::sqrt(result.end_error / _voronoi_sphere->size());
+
+    std::cout << std::fixed << std::setprecision(6) <<
+        "  Pass " << std::setw(3) << pass_number << "/" << max_passes <<
+        ": error " << std::setw(10) << start_rms <<
+        " -> " << std::setw(10) << end_rms;
+
+    switch (progress.action) {
+        case PassAction::PERTURBING:
+            std::cout << " [perturb #" << progress.action_number << "]";
+            break;
+        case PassAction::RESTORED_CHECKPOINT:
+            std::cout << " [restore #" << progress.action_number << "]";
+            break;
+        case PassAction::CONVERGED:
+            std::cout << " [converged]";
+            break;
+        case PassAction::STOPPED:
+            std::cout << " [stopped]";
+            break;
+        case PassAction::CONTINUE:
+            break;
     }
 
-    return true;
+    std::cout << std::defaultfloat << std::endl;
 }
 
 template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType>
@@ -474,8 +496,6 @@ bool DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::perturb_
     if (!perturb_vertex_toward_random_point(vertex_index)) {
         return false;
     }
-
-    std::cout << "  Perturbed vertex " << std::setw(4) << vertex_index << std::endl;
 
     return true;
 }
