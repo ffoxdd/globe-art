@@ -6,8 +6,14 @@
 #include "circulator_iterator.hpp"
 #include <cstddef>
 #include <ranges>
+#include <unordered_map>
 
 namespace globe {
+
+struct CellEdgeInfo {
+    size_t neighbor_index;
+    Arc arc;
+};
 
 class VoronoiSphere {
  public:
@@ -20,6 +26,8 @@ class VoronoiSphere {
 
     Point3 site(size_t index) const;
     void update_site(size_t index, Point3 new_position);
+
+    std::vector<CellEdgeInfo> cell_edges(size_t index) const;
 
  private:
     using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
@@ -35,11 +43,13 @@ class VoronoiSphere {
 
     Triangulation _triangulation;
     std::vector<VertexHandle> _handles;
+    std::unordered_map<VertexHandle, size_t> _handle_to_index;
 
     auto all_edges() const;
     auto static edge_circulator_range(EdgeCirculator edge_circulator);
     auto incident_edges_range(VertexHandle vertex_handle) const;
     std::vector<Arc> dual_cell_arcs(size_t index) const;
+    size_t vertex_index(VertexHandle handle) const;
 };
 
 inline VoronoiSphere::VoronoiSphere() {
@@ -47,7 +57,9 @@ inline VoronoiSphere::VoronoiSphere() {
 
 inline void VoronoiSphere::insert(Point3 point) {
     VertexHandle handle = _triangulation.insert(point);
+    size_t index = _handles.size();
     _handles.push_back(handle);
+    _handle_to_index[handle] = index;
 }
 
 inline auto VoronoiSphere::edge_circulator_range(EdgeCirculator edge_circulator) {
@@ -85,8 +97,10 @@ inline Point3 VoronoiSphere::site(size_t index) const {
 }
 
 inline void VoronoiSphere::update_site(size_t index, Point3 new_position) {
+    _handle_to_index.erase(_handles[index]);
     _triangulation.remove(_handles[index]);
     _handles[index] = _triangulation.insert(new_position);
+    _handle_to_index[_handles[index]] = index;
 }
 
 inline std::vector<Arc> VoronoiSphere::dual_cell_arcs(size_t index) const {
@@ -105,6 +119,37 @@ inline auto VoronoiSphere::dual_cells() const {
             return SphericalPolygon(dual_cell_arcs(index));
         }
     );
+}
+
+inline size_t VoronoiSphere::vertex_index(VertexHandle handle) const {
+    auto it = _handle_to_index.find(handle);
+    if (it != _handle_to_index.end()) {
+        return it->second;
+    }
+    return size();
+}
+
+inline std::vector<CellEdgeInfo> VoronoiSphere::cell_edges(size_t index) const {
+    std::vector<CellEdgeInfo> result;
+    VertexHandle vertex_handle = _handles[index];
+
+    for (const auto& edge : incident_edges_range(vertex_handle)) {
+        auto face = edge.first;
+        int edge_index = edge.second;
+
+        VertexHandle v1 = face->vertex((edge_index + 1) % 3);
+        VertexHandle v2 = face->vertex((edge_index + 2) % 3);
+
+        VertexHandle neighbor_handle = (v1 == vertex_handle) ? v2 : v1;
+        size_t neighbor_idx = vertex_index(neighbor_handle);
+
+        if (neighbor_idx < size()) {
+            Arc arc = _triangulation.dual_on_sphere(edge);
+            result.push_back({neighbor_idx, arc});
+        }
+    }
+
+    return result;
 }
 
 } // namespace globe

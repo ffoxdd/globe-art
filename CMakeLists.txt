@@ -23,6 +23,7 @@ find_package(anl REQUIRED)
 find_package(TBB REQUIRED CONFIG)
 find_package(dlib REQUIRED)
 find_package(CLI11 REQUIRED CONFIG)
+find_package(Eigen3 REQUIRED)
 
 # Main Executable
 
@@ -31,7 +32,7 @@ set(GLOBE_SOURCES src/globe/fields/scalar/anl_implementation.cpp)
 
 add_executable(generate_globe src/generate_globe.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
 target_include_directories(generate_globe PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
-target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib CLI11::CLI11)
+target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib CLI11::CLI11 Eigen3::Eigen)
 target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER CGAL_USE_BASIC_VIEWER_QT QT_NO_KEYWORDS)
 
 # Tests
@@ -44,7 +45,7 @@ file(GLOB_RECURSE TEST_SOURCES src/globe/*_test.cpp)
 foreach (TEST_SRC ${TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
     add_executable(${TEST_NAME} ${TEST_SRC} ${GLOBE_SOURCES})
-    target_link_libraries(${TEST_NAME} PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib ${GTEST_LDFLAGS} ${GMOCK_LDFLAGS})
+    target_link_libraries(${TEST_NAME} PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib Eigen3::Eigen ${GTEST_LDFLAGS} ${GMOCK_LDFLAGS})
     target_compile_options(${TEST_NAME} PRIVATE ${GTEST_CFLAGS} ${GMOCK_CFLAGS})
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach ()
