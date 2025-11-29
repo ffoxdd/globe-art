@@ -218,7 +218,7 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
 
         bool should_perturb = !improved &&
                               (rms_error > CONVERGENCE_THRESHOLD * 100) &&
-                              (result > 0);
+                              (result != 0);
 
         if (!should_perturb && stalled_phases >= MAX_STALLED_PHASES) {
             std::cout << "Optimization stalled at RMS = " << std::fixed << std::setprecision(8)
@@ -343,6 +343,7 @@ std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType, GeneratorType>:
 
     for (size_t k = 0; k < n; ++k) {
         Point3 site_k = _voronoi_sphere->site(k);
+        Eigen::Vector3d s_k = to_eigen(site_k);
         auto cell_edges = _voronoi_sphere->cell_edges(k);
 
         for (const auto& edge_info : cell_edges) {
@@ -354,15 +355,16 @@ std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType, GeneratorType>:
 
             auto arc_moments = compute_arc_moments(v1, v2);
             Eigen::Vector3d rho_weighted_moment = _field.edge_gradient_integral(arc_moments);
+            double edge_integral = _field.edge_integral(arc_moments);
 
-            Eigen::Vector3d n_vec = to_eigen(site_j) - to_eigen(site_k);
+            Eigen::Vector3d n_vec = to_eigen(site_j) - s_k;
             double n_norm = n_vec.norm();
 
             if (n_norm < GEOMETRIC_EPSILON) {
                 continue;
             }
 
-            Eigen::Vector3d edge_grad = rho_weighted_moment / n_norm;
+            Eigen::Vector3d edge_grad = (rho_weighted_moment - s_k * edge_integral) / n_norm;
             gradients[k] += (mass_errors[k] - mass_errors[j]) * edge_grad;
         }
     }
