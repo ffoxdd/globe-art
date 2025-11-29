@@ -8,7 +8,6 @@
 #include "../../fields/spherical/spherical_field.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
 #include "../core/voronoi_sphere.hpp"
-#include <LBFGS.h>
 #include <Eigen/Core>
 #include <memory>
 #include <vector>
@@ -23,6 +22,11 @@ class GradientDensityOptimizer {
  public:
     static constexpr size_t DEFAULT_ITERATIONS = 100;
     static constexpr double CONVERGENCE_THRESHOLD = 1e-8;
+    static constexpr double INITIAL_STEP_SIZE = 0.1;
+    static constexpr double MAX_STEP_SIZE = 1.0;
+    static constexpr double MIN_STEP_SIZE = 1e-10;
+    static constexpr double STEP_SHRINK_FACTOR = 0.5;
+    static constexpr double STEP_GROW_FACTOR = 1.2;
 
     GradientDensityOptimizer(
         std::unique_ptr<VoronoiSphere> voronoi_sphere,
@@ -38,24 +42,24 @@ class GradientDensityOptimizer {
     FieldType _field;
     size_t _max_iterations;
     double _target_mass;
-    size_t _iteration_count;
-    Eigen::VectorXd _best_x;
-    double _best_error;
-
-    class MassBalanceObjective;
+    double _step_size;
 
     Eigen::VectorXd sites_to_vector() const;
-    void vector_to_sites(const Eigen::VectorXd& x);
     void vector_to_sites_normalized(const Eigen::VectorXd& x);
-    void project_sites_to_sphere();
 
-    double compute_objective_and_gradient(const Eigen::VectorXd& x, Eigen::VectorXd& grad);
-    void maybe_save_best(const Eigen::VectorXd& x, double error);
     std::vector<double> compute_mass_errors() const;
-    std::vector<Eigen::Vector3d> compute_energy_gradients(
+    std::vector<Eigen::Vector3d> compute_gradients(
         const std::vector<double>& mass_errors
     ) const;
+    Eigen::VectorXd compute_projected_gradient() const;
     double compute_total_error(const std::vector<double>& mass_errors) const;
+    double compute_error() const;
+
+    double backtracking_line_search(
+        const Eigen::VectorXd& x,
+        const Eigen::VectorXd& grad,
+        double current_error
+    );
 
     static Eigen::Vector3d compute_edge_sensitivity(
         const Point3& site_i,
@@ -63,23 +67,6 @@ class GradientDensityOptimizer {
         const Point3& edge_v1,
         const Point3& edge_v2
     );
-};
-
-template<SphericalField FieldType>
-class GradientDensityOptimizer<FieldType>::MassBalanceObjective {
- public:
-    explicit MassBalanceObjective(GradientDensityOptimizer& optimizer) :
-        _optimizer(optimizer) {}
-
-    double operator()(const Eigen::VectorXd& x, Eigen::VectorXd& grad) {
-        _optimizer.vector_to_sites_normalized(x);
-        double error = _optimizer.compute_objective_and_gradient(x, grad);
-        _optimizer.maybe_save_best(x, error);
-        return error;
-    }
-
- private:
-    GradientDensityOptimizer& _optimizer;
 };
 
 template<SphericalField FieldType>
@@ -93,8 +80,7 @@ GradientDensityOptimizer<FieldType>::GradientDensityOptimizer(
     _field(std::move(field)),
     _max_iterations(max_iterations),
     _target_mass(0.0),
-    _iteration_count(0),
-    _best_error(std::numeric_limits<double>::max()) {
+    _step_size(INITIAL_STEP_SIZE) {
 }
 
 template<SphericalField FieldType>
@@ -102,41 +88,84 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType>::optimize() {
     _target_mass = _field.total_mass() / _voronoi_sphere->size();
     std::cout << "Target mass per cell: " << _target_mass << std::endl;
 
-    LBFGSpp::LBFGSParam<double> params;
-    params.max_iterations = static_cast<int>(_max_iterations);
-    params.epsilon = CONVERGENCE_THRESHOLD;
-    params.epsilon_rel = 1e-5;
-    params.past = 3;
-    params.delta = 1e-10;
-    params.max_linesearch = 40;
+    double prev_error = std::numeric_limits<double>::max();
+    size_t stall_count = 0;
+    static constexpr size_t MAX_STALLS = 10;
 
-    LBFGSpp::LBFGSSolver<double> solver(params);
-    MassBalanceObjective objective(*this);
+    for (size_t iteration = 0; iteration < _max_iterations; ++iteration) {
+        double error = compute_error();
+        double rms_error = std::sqrt(2.0 * error / _voronoi_sphere->size());
 
-    Eigen::VectorXd x = sites_to_vector();
-    double final_error = 0.0;
+        if (iteration % 10 == 0) {
+            std::cout << std::fixed << std::setprecision(8)
+                << "  Iteration " << std::setw(4) << iteration
+                << ": RMS error = " << rms_error
+                << ", step = " << _step_size
+                << std::defaultfloat << std::endl;
+        }
 
-    _iteration_count = 0;
-    _best_x = x;
-    _best_error = std::numeric_limits<double>::max();
+        if (rms_error < CONVERGENCE_THRESHOLD) {
+            std::cout << "Converged at iteration " << iteration << std::endl;
+            break;
+        }
 
-    try {
-        int iterations = solver.minimize(objective, x, final_error);
-        std::cout << "L-BFGS converged in " << iterations << " iterations" << std::endl;
-        _best_x = x;
-    } catch (const std::runtime_error& e) {
-        std::cout << "L-BFGS stopped: " << e.what() << std::endl;
+        double improvement = (prev_error - error) / prev_error;
+        if (improvement < 1e-6 && iteration > 0) {
+            ++stall_count;
+            if (stall_count >= MAX_STALLS) {
+                std::cout << "Stalled at iteration " << iteration << std::endl;
+                break;
+            }
+        } else {
+            stall_count = 0;
+        }
+        prev_error = error;
+
+        Eigen::VectorXd x = sites_to_vector();
+        Eigen::VectorXd grad = compute_projected_gradient();
+
+        double step = backtracking_line_search(x, grad, error);
+        if (step < MIN_STEP_SIZE) {
+            _step_size = std::max(_step_size * STEP_SHRINK_FACTOR, MIN_STEP_SIZE);
+            continue;
+        }
+
+        Eigen::VectorXd new_x = x - step * grad;
+        vector_to_sites_normalized(new_x);
+
+        _step_size = std::min(step * STEP_GROW_FACTOR, MAX_STEP_SIZE);
     }
 
-    vector_to_sites_normalized(_best_x);
-
-    auto mass_errors = compute_mass_errors();
-    double actual_error = compute_total_error(mass_errors);
-    double rms_error = std::sqrt(2.0 * actual_error / _voronoi_sphere->size());
+    double final_error = compute_error();
+    double rms_error = std::sqrt(2.0 * final_error / _voronoi_sphere->size());
     std::cout << "Final RMS error: " << std::fixed << std::setprecision(8)
         << rms_error << std::defaultfloat << std::endl;
 
     return std::move(_voronoi_sphere);
+}
+
+template<SphericalField FieldType>
+double GradientDensityOptimizer<FieldType>::backtracking_line_search(
+    const Eigen::VectorXd& x,
+    const Eigen::VectorXd& grad,
+    double current_error
+) {
+    double step = _step_size;
+
+    while (step > MIN_STEP_SIZE) {
+        Eigen::VectorXd new_x = x - step * grad;
+        vector_to_sites_normalized(new_x);
+        double new_error = compute_error();
+
+        if (new_error < current_error) {
+            return step;
+        }
+
+        step *= STEP_SHRINK_FACTOR;
+    }
+
+    vector_to_sites_normalized(x);
+    return 0.0;
 }
 
 template<SphericalField FieldType>
@@ -155,16 +184,6 @@ Eigen::VectorXd GradientDensityOptimizer<FieldType>::sites_to_vector() const {
 }
 
 template<SphericalField FieldType>
-void GradientDensityOptimizer<FieldType>::vector_to_sites(const Eigen::VectorXd& x) {
-    size_t n = _voronoi_sphere->size();
-
-    for (size_t i = 0; i < n; ++i) {
-        Point3 new_site(x[3 * i + 0], x[3 * i + 1], x[3 * i + 2]);
-        _voronoi_sphere->update_site(i, new_site);
-    }
-}
-
-template<SphericalField FieldType>
 void GradientDensityOptimizer<FieldType>::vector_to_sites_normalized(const Eigen::VectorXd& x) {
     size_t n = _voronoi_sphere->size();
 
@@ -176,50 +195,18 @@ void GradientDensityOptimizer<FieldType>::vector_to_sites_normalized(const Eigen
 }
 
 template<SphericalField FieldType>
-void GradientDensityOptimizer<FieldType>::project_sites_to_sphere() {
-    size_t n = _voronoi_sphere->size();
-
-    for (size_t i = 0; i < n; ++i) {
-        Point3 site = _voronoi_sphere->site(i);
-        Eigen::Vector3d v(site.x(), site.y(), site.z());
-        v.normalize();
-        _voronoi_sphere->update_site(i, Point3(v.x(), v.y(), v.z()));
-    }
+double GradientDensityOptimizer<FieldType>::compute_error() const {
+    auto mass_errors = compute_mass_errors();
+    return compute_total_error(mass_errors);
 }
 
 template<SphericalField FieldType>
-void GradientDensityOptimizer<FieldType>::maybe_save_best(
-    const Eigen::VectorXd& x,
-    double total_error
-) {
+Eigen::VectorXd GradientDensityOptimizer<FieldType>::compute_projected_gradient() const {
     auto mass_errors = compute_mass_errors();
-    double mass_error = compute_total_error(mass_errors);
-    if (mass_error < _best_error) {
-        _best_error = mass_error;
-        _best_x = x;
-    }
-}
-
-template<SphericalField FieldType>
-double GradientDensityOptimizer<FieldType>::compute_objective_and_gradient(
-    const Eigen::VectorXd& x,
-    Eigen::VectorXd& grad
-) {
-    auto mass_errors = compute_mass_errors();
-    double error = compute_total_error(mass_errors);
-
-    if (_iteration_count % 10 == 0) {
-        double rms_error = std::sqrt(2.0 * error / _voronoi_sphere->size());
-        std::cout << std::fixed << std::setprecision(8)
-            << "  Iteration " << std::setw(4) << _iteration_count
-            << ": RMS error = " << rms_error
-            << std::defaultfloat << std::endl;
-    }
-    ++_iteration_count;
-
-    auto gradients = compute_energy_gradients(mass_errors);
+    auto gradients = compute_gradients(mass_errors);
 
     size_t n = _voronoi_sphere->size();
+    Eigen::VectorXd grad(3 * n);
 
     for (size_t i = 0; i < n; ++i) {
         Point3 site = _voronoi_sphere->site(i);
@@ -234,7 +221,7 @@ double GradientDensityOptimizer<FieldType>::compute_objective_and_gradient(
         grad[3 * i + 2] = g.z();
     }
 
-    return error;
+    return grad;
 }
 
 template<SphericalField FieldType>
@@ -254,7 +241,7 @@ std::vector<double> GradientDensityOptimizer<FieldType>::compute_mass_errors() c
 }
 
 template<SphericalField FieldType>
-std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType>::compute_energy_gradients(
+std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType>::compute_gradients(
     const std::vector<double>& mass_errors
 ) const {
     size_t n = _voronoi_sphere->size();

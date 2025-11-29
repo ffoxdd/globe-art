@@ -210,13 +210,68 @@ src/globe/voronoi/optimizers/
 All components implemented and tested:
 1. ✅ ArcMoments + compute_arc_moments() - using Eigen for Matrix3
 2. ✅ PolygonMoments + compute_polygon_moments() - triangulation-based
-3. ✅ SphericalField concept + ConstantSphericalField
+3. ✅ SphericalField concept + ConstantSphericalField + LinearSphericalField
 4. ✅ compute_edge_sensitivity()
-5. ✅ GradientDensityOptimizer - converges in ~14 iterations for constant field
+5. ✅ GradientDensityOptimizer with backtracking line search
+
+## Current Optimizer Implementation
+
+The optimizer uses gradient descent with backtracking line search:
+
+```cpp
+// Parameters
+INITIAL_STEP_SIZE = 0.1   // Starting step size
+MAX_STEP_SIZE = 1.0       // Maximum step size
+MIN_STEP_SIZE = 1e-10     // Minimum before giving up
+STEP_SHRINK_FACTOR = 0.5  // Halve step on failure
+STEP_GROW_FACTOR = 1.2    // Grow step on success
+```
+
+**Algorithm:**
+1. Compute projected gradient (tangent to sphere)
+2. Backtracking line search: try step, accept if error decreases, else halve and retry
+3. On success, grow step size by 1.2x (up to max 1.0)
+4. Stall detection: stop after 10 consecutive low-improvement iterations
+
+**Results:**
+- **Constant field**: Converges to RMS error ~1e-8 in ~150 iterations
+- **Linear field**: Stalls at RMS error ~0.009 (see Known Limitations below)
+
+## Known Limitations
+
+### Linear Field Convergence Issue
+
+The gradient optimizer stalls at ~0.009 RMS error for LinearSphericalField, while constant field converges to ~1e-8. This appears to be due to the edge sensitivity approximation.
+
+**Root cause hypothesis:** The edge sensitivity formula assumes that when an edge moves by distance d, the mass change is approximately:
+
+```
+δM ≈ (∫_edge ρ dl) × d
+```
+
+This assumes the density along the edge represents the density of the area being swept. For a constant field, this is exact. For a spatially-varying field like linear, the swept area may have different density than the edge itself.
+
+**More precisely:** When an edge moves, it sweeps out a strip of area. The mass change should be:
+
+```
+δM = ∫_strip ρ(x) dA
+```
+
+But we approximate this as:
+
+```
+δM ≈ (∫_edge ρ(x) dl) × (edge movement)
+```
+
+For linear field ρ(x,y,z) = slope·z + offset, if the edge is at one z-level but the strip extends to different z-levels, this approximation breaks down.
+
+## TODO
+
+- [ ] **Investigate edge sensitivity for non-constant fields**: The current approximation `∫_edge ρ dl × sensitivity` may need refinement for fields where density varies perpendicular to the edge. Consider computing ∫_strip ρ dA directly, or deriving a correction term that accounts for the density gradient in the sweep direction.
 
 ## Future Extensions
 
-- L-BFGS instead of gradient descent
-- Full analytic velocity integration (non-constant v_n)
+- Full analytic velocity integration (non-constant v_n along edge)
 - Higher-order polynomial fields
 - Composite fields (linear combinations)
+- Per-site adaptive step sizes based on cell geometry
