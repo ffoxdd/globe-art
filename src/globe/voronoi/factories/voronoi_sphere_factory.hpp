@@ -10,6 +10,7 @@
 #include "../../fields/integrable/constant_integrable_field.hpp"
 #include "../../fields/integrable/sampled_integrable_field.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
+#include "../../fields/spherical/linear_spherical_field.hpp"
 #include "../../generators/sphere_point_generator/rejection_sampling_sphere_point_generator.hpp"
 #include "../../generators/sphere_point_generator/poisson_sphere_point_generator/poisson_sphere_point_generator.hpp"
 #include <string>
@@ -52,6 +53,7 @@ class VoronoiSphereFactory {
     std::unique_ptr<VoronoiSphere> optimize_constant_ccvd(std::unique_ptr<VoronoiSphere> voronoi_sphere);
     std::unique_ptr<VoronoiSphere> optimize_noise_ccvd(std::unique_ptr<VoronoiSphere> voronoi_sphere);
     std::unique_ptr<VoronoiSphere> optimize_constant_gradient(std::unique_ptr<VoronoiSphere> voronoi_sphere);
+    std::unique_ptr<VoronoiSphere> optimize_linear_gradient(std::unique_ptr<VoronoiSphere> voronoi_sphere);
 
     static double nyquist_density(double max_frequency);
     static size_t sample_count(double max_frequency);
@@ -111,6 +113,8 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_gradient(
 ) {
     if (_density_function == "constant") {
         return optimize_constant_gradient(std::move(voronoi_sphere));
+    } else if (_density_function == "linear") {
+        return optimize_linear_gradient(std::move(voronoi_sphere));
     } else {
         std::cerr << "Gradient optimization not yet implemented for noise field" << std::endl;
         return voronoi_sphere;
@@ -175,6 +179,21 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_gr
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
     ConstantSphericalField field(1.0);
+
+    GradientDensityOptimizer optimizer(
+        std::move(voronoi_sphere),
+        field,
+        _optimization_passes,
+        0.5
+    );
+
+    return optimizer.optimize();
+}
+
+inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_linear_gradient(
+    std::unique_ptr<VoronoiSphere> voronoi_sphere
+) {
+    LinearSphericalField field(1.0, 1.0);
 
     GradientDensityOptimizer optimizer(
         std::move(voronoi_sphere),

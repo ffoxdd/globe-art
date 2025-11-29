@@ -57,7 +57,7 @@ Config parse_arguments(int argc, char *argv[]) {
 
     app.add_option("--density-field,-f", config.density_field)
         ->description("Density field type")
-        ->check(CLI::IsMember({"constant", "noise"}))
+        ->check(CLI::IsMember({"constant", "linear", "noise"}))
         ->default_val("noise");
 
     app.add_option("--optimization-strategy,-s", config.optimization_strategy)
