@@ -7,6 +7,8 @@
 #include "../../geometry/spherical/moments/polygon_moments.hpp"
 #include "../../fields/spherical/spherical_field.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
+#include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
+#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../core/voronoi_sphere.hpp"
 #include <Eigen/Core>
 #include <memory>
@@ -14,10 +16,14 @@
 #include <iostream>
 #include <iomanip>
 #include <cmath>
+#include <optional>
 
 namespace globe {
 
-template<SphericalField FieldType = ConstantSphericalField>
+template<
+    SphericalField FieldType = ConstantSphericalField,
+    SpherePointGenerator GeneratorType = RandomSpherePointGenerator<>
+>
 class GradientDensityOptimizer {
  public:
     static constexpr size_t DEFAULT_ITERATIONS = 100;
@@ -28,21 +34,29 @@ class GradientDensityOptimizer {
     static constexpr double STEP_SHRINK_FACTOR = 0.5;
     static constexpr double STEP_GROW_FACTOR = 1.2;
 
+    static constexpr double PERTURBATION_ANGLE = 0.05;
+    static constexpr size_t MAX_PERTURBATION_ATTEMPTS = 50;
+    static constexpr size_t MAX_PERTURBATIONS_BEFORE_RESTORE = 5;
+    static constexpr size_t MAX_RESTORES_PER_CHECKPOINT = 3;
+
     GradientDensityOptimizer(
         std::unique_ptr<VoronoiSphere> voronoi_sphere,
         FieldType field,
         size_t max_iterations = DEFAULT_ITERATIONS,
-        double step_size = 0.1
+        GeneratorType point_generator = GeneratorType()
     );
 
     std::unique_ptr<VoronoiSphere> optimize();
 
  private:
+    using Checkpoint = std::vector<Point3>;
+
     std::unique_ptr<VoronoiSphere> _voronoi_sphere;
     FieldType _field;
     size_t _max_iterations;
     double _target_mass;
     double _step_size;
+    GeneratorType _point_generator;
 
     Eigen::VectorXd sites_to_vector() const;
     void vector_to_sites_normalized(const Eigen::VectorXd& x);
@@ -61,32 +75,37 @@ class GradientDensityOptimizer {
         double current_error
     );
 
-    static Eigen::Vector3d compute_edge_sensitivity(
-        const Point3& site_i,
-        const Point3& site_j,
-        const Point3& edge_v1,
-        const Point3& edge_v2
-    );
+    Checkpoint save_checkpoint() const;
+    void restore_checkpoint(const Checkpoint& checkpoint);
+    std::optional<size_t> find_most_undersized_index() const;
+    bool perturb_site_randomly(size_t index);
 };
 
-template<SphericalField FieldType>
-GradientDensityOptimizer<FieldType>::GradientDensityOptimizer(
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+GradientDensityOptimizer<FieldType, GeneratorType>::GradientDensityOptimizer(
     std::unique_ptr<VoronoiSphere> voronoi_sphere,
     FieldType field,
     size_t max_iterations,
-    [[maybe_unused]] double step_size
+    GeneratorType point_generator
 ) :
     _voronoi_sphere(std::move(voronoi_sphere)),
     _field(std::move(field)),
     _max_iterations(max_iterations),
     _target_mass(0.0),
-    _step_size(INITIAL_STEP_SIZE) {
+    _step_size(INITIAL_STEP_SIZE),
+    _point_generator(std::move(point_generator)) {
 }
 
-template<SphericalField FieldType>
-std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType>::optimize() {
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType>::optimize() {
     _target_mass = _field.total_mass() / _voronoi_sphere->size();
     std::cout << "Target mass per cell: " << _target_mass << std::endl;
+
+    double best_error = std::numeric_limits<double>::max();
+    Checkpoint best_checkpoint = save_checkpoint();
+    size_t perturbation_attempts = 0;
+    size_t perturbations_since_best = 0;
+    size_t restores_to_current_best = 0;
 
     double prev_error = std::numeric_limits<double>::max();
     size_t stall_count = 0;
@@ -109,12 +128,43 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType>::optimize() {
             break;
         }
 
+        if (error < best_error) {
+            best_error = error;
+            best_checkpoint = save_checkpoint();
+            perturbations_since_best = 0;
+            restores_to_current_best = 0;
+        }
+
         double improvement = (prev_error - error) / prev_error;
         if (improvement < 1e-6 && iteration > 0) {
             ++stall_count;
             if (stall_count >= MAX_STALLS) {
-                std::cout << "Stalled at iteration " << iteration << std::endl;
-                break;
+                if (perturbations_since_best >= MAX_PERTURBATIONS_BEFORE_RESTORE &&
+                    restores_to_current_best < MAX_RESTORES_PER_CHECKPOINT) {
+                    restore_checkpoint(best_checkpoint);
+                    ++restores_to_current_best;
+                    perturbations_since_best = 0;
+                    stall_count = 0;
+                    _step_size = INITIAL_STEP_SIZE;
+                    std::cout << "  [restore #" << restores_to_current_best << "]" << std::endl;
+                    continue;
+                }
+
+                if (perturbation_attempts >= MAX_PERTURBATION_ATTEMPTS) {
+                    std::cout << "Stopped after " << perturbation_attempts
+                        << " perturbation attempts" << std::endl;
+                    break;
+                }
+
+                auto undersized = find_most_undersized_index();
+                if (undersized.has_value() && perturb_site_randomly(undersized.value())) {
+                    ++perturbation_attempts;
+                    ++perturbations_since_best;
+                    stall_count = 0;
+                    _step_size = INITIAL_STEP_SIZE;
+                    std::cout << "  [perturb #" << perturbation_attempts << "]" << std::endl;
+                    continue;
+                }
             }
         } else {
             stall_count = 0;
@@ -126,6 +176,35 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType>::optimize() {
 
         double step = backtracking_line_search(x, grad, error);
         if (step < MIN_STEP_SIZE) {
+            ++stall_count;
+            if (stall_count >= MAX_STALLS) {
+                if (perturbations_since_best >= MAX_PERTURBATIONS_BEFORE_RESTORE &&
+                    restores_to_current_best < MAX_RESTORES_PER_CHECKPOINT) {
+                    restore_checkpoint(best_checkpoint);
+                    ++restores_to_current_best;
+                    perturbations_since_best = 0;
+                    stall_count = 0;
+                    _step_size = INITIAL_STEP_SIZE;
+                    std::cout << "  [restore #" << restores_to_current_best << "]" << std::endl;
+                    continue;
+                }
+
+                if (perturbation_attempts >= MAX_PERTURBATION_ATTEMPTS) {
+                    std::cout << "Stopped after " << perturbation_attempts
+                        << " perturbation attempts" << std::endl;
+                    break;
+                }
+
+                auto undersized = find_most_undersized_index();
+                if (undersized.has_value() && perturb_site_randomly(undersized.value())) {
+                    ++perturbation_attempts;
+                    ++perturbations_since_best;
+                    stall_count = 0;
+                    _step_size = INITIAL_STEP_SIZE;
+                    std::cout << "  [perturb #" << perturbation_attempts << "]" << std::endl;
+                    continue;
+                }
+            }
             _step_size = std::max(_step_size * STEP_SHRINK_FACTOR, MIN_STEP_SIZE);
             continue;
         }
@@ -136,6 +215,8 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType>::optimize() {
         _step_size = std::min(step * STEP_GROW_FACTOR, MAX_STEP_SIZE);
     }
 
+    restore_checkpoint(best_checkpoint);
+
     double final_error = compute_error();
     double rms_error = std::sqrt(2.0 * final_error / _voronoi_sphere->size());
     std::cout << "Final RMS error: " << std::fixed << std::setprecision(8)
@@ -144,8 +225,8 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType>::optimize() {
     return std::move(_voronoi_sphere);
 }
 
-template<SphericalField FieldType>
-double GradientDensityOptimizer<FieldType>::backtracking_line_search(
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+double GradientDensityOptimizer<FieldType, GeneratorType>::backtracking_line_search(
     const Eigen::VectorXd& x,
     const Eigen::VectorXd& grad,
     double current_error
@@ -168,8 +249,8 @@ double GradientDensityOptimizer<FieldType>::backtracking_line_search(
     return 0.0;
 }
 
-template<SphericalField FieldType>
-Eigen::VectorXd GradientDensityOptimizer<FieldType>::sites_to_vector() const {
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+Eigen::VectorXd GradientDensityOptimizer<FieldType, GeneratorType>::sites_to_vector() const {
     size_t n = _voronoi_sphere->size();
     Eigen::VectorXd x(3 * n);
 
@@ -183,8 +264,8 @@ Eigen::VectorXd GradientDensityOptimizer<FieldType>::sites_to_vector() const {
     return x;
 }
 
-template<SphericalField FieldType>
-void GradientDensityOptimizer<FieldType>::vector_to_sites_normalized(const Eigen::VectorXd& x) {
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+void GradientDensityOptimizer<FieldType, GeneratorType>::vector_to_sites_normalized(const Eigen::VectorXd& x) {
     size_t n = _voronoi_sphere->size();
 
     for (size_t i = 0; i < n; ++i) {
@@ -194,14 +275,14 @@ void GradientDensityOptimizer<FieldType>::vector_to_sites_normalized(const Eigen
     }
 }
 
-template<SphericalField FieldType>
-double GradientDensityOptimizer<FieldType>::compute_error() const {
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+double GradientDensityOptimizer<FieldType, GeneratorType>::compute_error() const {
     auto mass_errors = compute_mass_errors();
     return compute_total_error(mass_errors);
 }
 
-template<SphericalField FieldType>
-Eigen::VectorXd GradientDensityOptimizer<FieldType>::compute_projected_gradient() const {
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+Eigen::VectorXd GradientDensityOptimizer<FieldType, GeneratorType>::compute_projected_gradient() const {
     auto mass_errors = compute_mass_errors();
     auto gradients = compute_gradients(mass_errors);
 
@@ -224,8 +305,8 @@ Eigen::VectorXd GradientDensityOptimizer<FieldType>::compute_projected_gradient(
     return grad;
 }
 
-template<SphericalField FieldType>
-std::vector<double> GradientDensityOptimizer<FieldType>::compute_mass_errors() const {
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+std::vector<double> GradientDensityOptimizer<FieldType, GeneratorType>::compute_mass_errors() const {
     size_t n = _voronoi_sphere->size();
     std::vector<double> errors(n);
 
@@ -240,8 +321,8 @@ std::vector<double> GradientDensityOptimizer<FieldType>::compute_mass_errors() c
     return errors;
 }
 
-template<SphericalField FieldType>
-std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType>::compute_gradients(
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType, GeneratorType>::compute_gradients(
     const std::vector<double>& mass_errors
 ) const {
     size_t n = _voronoi_sphere->size();
@@ -259,12 +340,16 @@ std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType>::compute_gradie
             Point3 v2 = to_point(edge_info.arc.target());
 
             auto arc_moments = compute_arc_moments(v1, v2);
-            double rho_integral = _field.edge_integral(arc_moments);
-            Eigen::Vector3d sensitivity = compute_edge_sensitivity(
-                site_k, site_j, v1, v2
-            );
+            Eigen::Vector3d rho_weighted_moment = _field.edge_gradient_integral(arc_moments);
 
-            Eigen::Vector3d edge_grad = rho_integral * sensitivity;
+            Eigen::Vector3d n_vec = to_eigen(site_j) - to_eigen(site_k);
+            double n_norm = n_vec.norm();
+
+            if (n_norm < GEOMETRIC_EPSILON) {
+                continue;
+            }
+
+            Eigen::Vector3d edge_grad = rho_weighted_moment / n_norm;
             gradients[k] += (mass_errors[k] - mass_errors[j]) * edge_grad;
         }
     }
@@ -272,8 +357,8 @@ std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType>::compute_gradie
     return gradients;
 }
 
-template<SphericalField FieldType>
-double GradientDensityOptimizer<FieldType>::compute_total_error(
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+double GradientDensityOptimizer<FieldType, GeneratorType>::compute_total_error(
     const std::vector<double>& mass_errors
 ) const {
     double sum = 0.0;
@@ -283,35 +368,90 @@ double GradientDensityOptimizer<FieldType>::compute_total_error(
     return sum / 2.0;
 }
 
-template<SphericalField FieldType>
-Eigen::Vector3d GradientDensityOptimizer<FieldType>::compute_edge_sensitivity(
-    const Point3& site_i,
-    const Point3& site_j,
-    const Point3& edge_v1,
-    const Point3& edge_v2
-) {
-    Eigen::Vector3d si = to_eigen(site_i).normalized();
-    Eigen::Vector3d sj = to_eigen(site_j).normalized();
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+typename GradientDensityOptimizer<FieldType, GeneratorType>::Checkpoint
+GradientDensityOptimizer<FieldType, GeneratorType>::save_checkpoint() const {
+    Checkpoint checkpoint;
+    checkpoint.reserve(_voronoi_sphere->size());
 
-    Eigen::Vector3d toward_j = sj - si;
+    for (size_t i = 0; i < _voronoi_sphere->size(); ++i) {
+        checkpoint.push_back(_voronoi_sphere->site(i));
+    }
 
-    Eigen::Vector3d tangent = toward_j - si.dot(toward_j) * si;
+    return checkpoint;
+}
+
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+void GradientDensityOptimizer<FieldType, GeneratorType>::restore_checkpoint(const Checkpoint& checkpoint) {
+    for (size_t i = 0; i < checkpoint.size(); ++i) {
+        _voronoi_sphere->update_site(i, checkpoint[i]);
+    }
+}
+
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+std::optional<size_t> GradientDensityOptimizer<FieldType, GeneratorType>::find_most_undersized_index() const {
+    auto mass_errors = compute_mass_errors();
+
+    size_t best_index = 0;
+    double largest_deficit = 0.0;
+    double largest_abs_error = 0.0;
+    size_t largest_error_index = 0;
+
+    for (size_t i = 0; i < mass_errors.size(); ++i) {
+        double deficit = -mass_errors[i];
+        if (deficit > largest_deficit) {
+            largest_deficit = deficit;
+            best_index = i;
+        }
+        double abs_error = std::abs(mass_errors[i]);
+        if (abs_error > largest_abs_error) {
+            largest_abs_error = abs_error;
+            largest_error_index = i;
+        }
+    }
+
+    if (largest_deficit > 0.0) {
+        return best_index;
+    }
+
+    if (largest_abs_error > 0.0) {
+        return largest_error_index;
+    }
+
+    return std::nullopt;
+}
+
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+bool GradientDensityOptimizer<FieldType, GeneratorType>::perturb_site_randomly(size_t index) {
+    Point3 site = _voronoi_sphere->site(index);
+    Eigen::Vector3d s(site.x(), site.y(), site.z());
+    s.normalize();
+
+    auto random_points = _point_generator.generate(1);
+    if (random_points.empty()) {
+        return false;
+    }
+
+    Point3 random_point = random_points[0];
+    Eigen::Vector3d random_dir(random_point.x(), random_point.y(), random_point.z());
+
+    Eigen::Vector3d tangent = random_dir - random_dir.dot(s) * s;
     double tangent_norm = tangent.norm();
 
     if (tangent_norm < GEOMETRIC_EPSILON) {
-        return Eigen::Vector3d::Zero();
+        return false;
     }
 
     tangent /= tangent_norm;
 
-    Eigen::Vector3d v1 = to_eigen(edge_v1).normalized();
-    Eigen::Vector3d v2 = to_eigen(edge_v2).normalized();
+    Eigen::Vector3d new_pos =
+        std::cos(PERTURBATION_ANGLE) * s +
+        std::sin(PERTURBATION_ANGLE) * tangent;
 
-    double cos_angle = v1.dot(v2);
-    cos_angle = std::clamp(cos_angle, -1.0, 1.0);
-    double edge_length = std::acos(cos_angle);
+    new_pos.normalize();
+    _voronoi_sphere->update_site(index, Point3(new_pos.x(), new_pos.y(), new_pos.z()));
 
-    return 0.5 * edge_length * tangent;
+    return true;
 }
 
 }

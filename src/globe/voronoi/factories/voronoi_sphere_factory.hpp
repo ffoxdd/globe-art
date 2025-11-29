@@ -183,8 +183,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_gr
     GradientDensityOptimizer optimizer(
         std::move(voronoi_sphere),
         field,
-        _optimization_passes,
-        0.5
+        _optimization_passes
     );
 
     return optimizer.optimize();
@@ -198,8 +197,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_linear_grad
     GradientDensityOptimizer optimizer(
         std::move(voronoi_sphere),
         field,
-        _optimization_passes,
-        0.5
+        _optimization_passes
     );
 
     return optimizer.optimize();

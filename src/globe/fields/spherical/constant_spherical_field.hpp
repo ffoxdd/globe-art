@@ -15,6 +15,7 @@ class ConstantSphericalField {
     [[nodiscard]] double value(const Point3& point) const;
     [[nodiscard]] double mass(const PolygonMoments& moments) const;
     [[nodiscard]] double edge_integral(const ArcMoments& moments) const;
+    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const ArcMoments& moments) const;
 
     [[nodiscard]] double total_mass() const;
 
@@ -36,6 +37,12 @@ inline double ConstantSphericalField::mass(const PolygonMoments& moments) const 
 
 inline double ConstantSphericalField::edge_integral(const ArcMoments& moments) const {
     return _value * moments.length;
+}
+
+inline Eigen::Vector3d ConstantSphericalField::edge_gradient_integral(
+    const ArcMoments& moments
+) const {
+    return _value * moments.first_moment;
 }
 
 inline double ConstantSphericalField::total_mass() const {
