@@ -4,6 +4,7 @@
 #include "../../types.hpp"
 #include "../../geometry/spherical/moments/arc_moments.hpp"
 #include "../../geometry/spherical/moments/polygon_moments.hpp"
+#include <Eigen/Core>
 
 namespace globe {
 
@@ -17,6 +18,7 @@ concept SphericalField = requires(
     { field.value(point) } -> std::convertible_to<double>;
     { field.mass(polygon_moments) } -> std::convertible_to<double>;
     { field.edge_integral(arc_moments) } -> std::convertible_to<double>;
+    { field.edge_gradient_integral(arc_moments) } -> std::convertible_to<Eigen::Vector3d>;
 };
 
 }

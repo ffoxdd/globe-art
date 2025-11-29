@@ -35,8 +35,7 @@ TEST(GradientDensityOptimizerTest, ConvergesForConstantField) {
     GradientDensityOptimizer optimizer(
         std::move(voronoi),
         field,
-        50,
-        0.5
+        50
     );
 
     auto result = optimizer.optimize();

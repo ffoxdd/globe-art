@@ -15,6 +15,7 @@ class LinearSphericalField {
     [[nodiscard]] double value(const Point3& point) const;
     [[nodiscard]] double mass(const PolygonMoments& moments) const;
     [[nodiscard]] double edge_integral(const ArcMoments& moments) const;
+    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const ArcMoments& moments) const;
 
     [[nodiscard]] double total_mass() const;
 
@@ -38,6 +39,12 @@ inline double LinearSphericalField::mass(const PolygonMoments& moments) const {
 
 inline double LinearSphericalField::edge_integral(const ArcMoments& moments) const {
     return _slope * moments.first_moment.z() + _offset * moments.length;
+}
+
+inline Eigen::Vector3d LinearSphericalField::edge_gradient_integral(
+    const ArcMoments& moments
+) const {
+    return _slope * moments.second_moment.col(2) + _offset * moments.first_moment;
 }
 
 inline double LinearSphericalField::total_mass() const {

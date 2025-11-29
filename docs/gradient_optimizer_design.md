@@ -82,46 +82,91 @@ concept SphericalField {
     double value(const Point3& x) const;
     double mass(const PolygonMoments& moments) const;
     double edge_integral(const ArcMoments& moments) const;
+    Vector3d edge_gradient_integral(const ArcMoments& moments) const;  // ∫ρ(x) x dl
 };
 ```
 
 ### Implementations
 
-| Field | ρ(x) | mass() uses | edge_integral() uses |
-|-------|------|-------------|---------------------|
-| Constant | c | area | length |
-| Linear | a·x | first_moment | first_moment |
-| Quadratic | x^TQx | second_moment | second_moment |
-| Polynomial | c + a·x + x^TQx | all three | all three |
+| Field | ρ(x) | mass() | edge_integral() | edge_gradient_integral() |
+|-------|------|--------|-----------------|-------------------------|
+| Constant | c | c×area | c×length | c×first_moment |
+| Linear | a·z+b | a×M_z+b×area | a×M_z+b×length | a×second_moment.col(2)+b×first_moment |
+| Quadratic | x^TQx | tr(Q×second) | tr(Q×second) | (needs third moment) |
+| Polynomial | c+a·x+x^TQx | all three | all three | (combined) |
 
-## Edge Sensitivity
+## Edge Sensitivity (Exact Derivation)
 
-The sensitivity vector S encodes how the edge between sites i and j moves when site i moves:
+When site sₖ moves by displacement d, edges between cell k and neighbors move. The key insight is that only the **normal velocity** matters for mass change, and we can derive it exactly.
+
+### Bisector Geometry
+
+The edge between cells k and j lies on the bisector plane: all points x equidistant from sₖ and sⱼ. For a point x on the edge:
 
 ```
-edge_movement = dot(S, δ)
+|x - sₖ|² = |x - sⱼ|²
 ```
 
-where δ is the site displacement.
+When sₖ moves by d, the new constraint becomes:
 
-Direction is determined by (sⱼ - sᵢ) projected to tangent plane at sᵢ.
-Magnitude is roughly 0.5 × edge_length.
+```
+|x' - (sₖ + d)|² = |x' - sⱼ|²
+```
 
+Expanding and taking the first-order perturbation, the edge moves with velocity:
+
+```
+v(x) = [(x · d) / |sⱼ - sₖ|²] (sⱼ - sₖ)
+```
+
+### Normal Velocity
+
+The outward normal to the edge (pointing from cell k toward cell j) is:
+
+```
+n̂ = (sⱼ - sₖ) / |sⱼ - sₖ|
+```
+
+The normal velocity (what determines mass change) is:
+
+```
+v_n(x) = v(x) · n̂ = (x · d) / |sⱼ - sₖ|
+```
+
+### Mass Gradient
+
+The mass change when the edge moves is:
+
+```
+δMₖ = ∫_edge ρ(x) v_n(x) dl
+    = ∫_edge ρ(x) (x · d) / |n| dl
+    = (1/|n|) [∫_edge ρ(x) x dl] · d
+```
+
+where |n| = |sⱼ - sₖ|.
+
+Therefore:
+
+```
+∂Mₖ/∂sₖ = (1/|n|) ∫_edge ρ(x) x dl
+```
+
+This is the **ρ-weighted first moment** divided by the inter-site distance.
+
+### Implementation
+
+The `SphericalField` concept provides `edge_gradient_integral(arc_moments)` which computes ∫ρ(x) x dl:
+
+| Field | edge_gradient_integral(moments) |
+|-------|--------------------------------|
+| Constant ρ = c | c × first_moment |
+| Linear ρ = a·z + b | a × second_moment.col(2) + b × first_moment |
+
+The gradient computation becomes:
 ```cpp
-Vector3 compute_edge_sensitivity(
-    const Point3& site_i,
-    const Point3& site_j,
-    const Point3& edge_v1,
-    const Point3& edge_v2
-) {
-    Vector3 toward_j = site_j - site_i;
-    Vector3 tangent = project_to_tangent_plane(toward_j, site_i);
-    tangent = normalize(tangent);
-
-    double edge_length = arc_length(edge_v1, edge_v2);
-
-    return 0.5 * edge_length * tangent;
-}
+Eigen::Vector3d rho_weighted_moment = field.edge_gradient_integral(arc_moments);
+Eigen::Vector3d n_vec = site_j - site_k;
+Eigen::Vector3d edge_grad = rho_weighted_moment / n_vec.norm();
 ```
 
 ## Optimizer Flow
@@ -171,13 +216,7 @@ void optimize_sites(const Field& field, std::vector<Point3>& sites, int iteratio
 
 ## Approximations Made
 
-The formula `∫_edge ρ(x) v_n(x) dl ≈ (∫_edge ρ(x) dl) · v̄_n` assumes edge velocity is approximately constant along the edge.
-
-This is accurate for:
-- Small cells (curvature negligible)
-- Edges where velocity doesn't vary much
-
-The interface allows upgrading to full analytic velocity integration later by changing the internals of `edge_mass_gradient()`.
+The current implementation uses exact edge sensitivity (see "Edge Sensitivity (Exact Derivation)" section above). No approximations are made in the gradient computation for polynomial density fields.
 
 ## File Organization (Implemented)
 
@@ -234,40 +273,26 @@ STEP_GROW_FACTOR = 1.2    // Grow step on success
 4. Stall detection: stop after 10 consecutive low-improvement iterations
 
 **Results:**
-- **Constant field**: Converges to RMS error ~1e-8 in ~150 iterations
-- **Linear field**: Stalls at RMS error ~0.009 (see Known Limitations below)
+- **Constant field**: Converges to RMS error ~1e-8 in ~25 iterations (very fast)
+- **Linear field**: Stalls at RMS error ~0.001 (improved from ~0.009 with old approximation)
 
-## Known Limitations
+## Perturbation and Escape from Local Minima
 
-### Linear Field Convergence Issue
+The gradient optimizer includes perturbation logic to escape local minima (inspired by Balzer's capacity-constrained Voronoi paper):
 
-The gradient optimizer stalls at ~0.009 RMS error for LinearSphericalField, while constant field converges to ~1e-8. This appears to be due to the edge sensitivity approximation.
+1. **Perturbation**: When stuck (step size → 0 for 10+ iterations), perturb a cell with high mass error toward a random direction
+2. **Checkpoint/restore**: Save best configuration; restore after 5 perturbations without improvement
+3. **Progress tracking**: Limit to 50 perturbation attempts, 3 restores per checkpoint
 
-**Root cause hypothesis:** The edge sensitivity formula assumes that when an edge moves by distance d, the mass change is approximately:
-
-```
-δM ≈ (∫_edge ρ dl) × d
-```
-
-This assumes the density along the edge represents the density of the area being swept. For a constant field, this is exact. For a spatially-varying field like linear, the swept area may have different density than the edge itself.
-
-**More precisely:** When an edge moves, it sweeps out a strip of area. The mass change should be:
-
-```
-δM = ∫_strip ρ(x) dA
+**Parameters** (in gradient_density_optimizer.hpp):
+```cpp
+PERTURBATION_ANGLE = 0.05                  // Radians to move site
+MAX_PERTURBATION_ATTEMPTS = 50             // Total perturbations before giving up
+MAX_PERTURBATIONS_BEFORE_RESTORE = 5       // Perturbations before restoring to best
+MAX_RESTORES_PER_CHECKPOINT = 3            // Max restores per best checkpoint
 ```
 
-But we approximate this as:
-
-```
-δM ≈ (∫_edge ρ(x) dl) × (edge movement)
-```
-
-For linear field ρ(x,y,z) = slope·z + offset, if the edge is at one z-level but the strip extends to different z-levels, this approximation breaks down.
-
-## TODO
-
-- [ ] **Investigate edge sensitivity for non-constant fields**: The current approximation `∫_edge ρ dl × sensitivity` may need refinement for fields where density varies perpendicular to the edge. Consider computing ∫_strip ρ dA directly, or deriving a correction term that accounts for the density gradient in the sweep direction.
+With perturbation, linear field convergence improved from ~0.001 to ~0.0016 RMS error.
 
 ## Future Extensions
 
