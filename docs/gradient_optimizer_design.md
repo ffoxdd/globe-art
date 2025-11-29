@@ -148,10 +148,11 @@ where |n| = |sⱼ - sₖ|.
 Therefore:
 
 ```
-∂Mₖ/∂sₖ = (1/|n|) ∫_edge ρ(x) x dl
+∂Mₖ/∂sₖ = (1/|n|) ∫_edge ρ(x) (x - sₖ) dl
+        = (1/|n|) [∫_edge ρ(x) x dl - sₖ ∫_edge ρ(x) dl]
 ```
 
-This is the **ρ-weighted first moment** divided by the inter-site distance.
+This is the **ρ-weighted position moment relative to sₖ** divided by the inter-site distance.
 
 ### Implementation
 
@@ -165,8 +166,9 @@ The `SphericalField` concept provides `edge_gradient_integral(arc_moments)` whic
 The gradient computation becomes:
 ```cpp
 Eigen::Vector3d rho_weighted_moment = field.edge_gradient_integral(arc_moments);
+double edge_integral = field.edge_integral(arc_moments);
 Eigen::Vector3d n_vec = site_j - site_k;
-Eigen::Vector3d edge_grad = rho_weighted_moment / n_vec.norm();
+Eigen::Vector3d edge_grad = (rho_weighted_moment - site_k * edge_integral) / n_vec.norm();
 ```
 
 ## Optimizer Flow
