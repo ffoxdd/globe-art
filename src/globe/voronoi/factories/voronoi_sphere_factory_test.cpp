@@ -7,7 +7,7 @@ using namespace globe;
 TEST(VoronoiSphereFactoryTest, EXPENSIVE_BuildWithConstantDensity) {
     REQUIRE_EXPENSIVE();
 
-    VoronoiSphereFactory factory(5, "constant", 1, 0);
+    VoronoiSphereFactory factory(5, "constant", "ccvd", 1, 0);
 
     auto sphere = factory.build();
 
@@ -17,7 +17,17 @@ TEST(VoronoiSphereFactoryTest, EXPENSIVE_BuildWithConstantDensity) {
 TEST(VoronoiSphereFactoryTest, EXPENSIVE_BuildWithNoiseDensity) {
     REQUIRE_EXPENSIVE();
 
-    VoronoiSphereFactory factory(5, "noise", 1, 0);
+    VoronoiSphereFactory factory(5, "noise", "ccvd", 1, 0);
+
+    auto sphere = factory.build();
+
+    EXPECT_EQ(sphere->size(), 5);
+}
+
+TEST(VoronoiSphereFactoryTest, EXPENSIVE_BuildWithGradientOptimization) {
+    REQUIRE_EXPENSIVE();
+
+    VoronoiSphereFactory factory(5, "constant", "gradient", 10, 0);
 
     auto sphere = factory.build();
 

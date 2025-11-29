@@ -11,6 +11,7 @@ using namespace globe;
 struct Config {
     int points_count;
     std::string density_field;
+    std::string optimization_strategy;
     bool perform_render;
     int optimization_passes;
     int lloyd_passes;
@@ -26,6 +27,7 @@ int main(int argc, char *argv[]) {
         "Configuration:" << std::endl <<
         "  Points: " << config.points_count << std::endl <<
         "  Density: " << config.density_field << std::endl <<
+        "  Optimization strategy: " << config.optimization_strategy << std::endl <<
         "  Render: " << (config.perform_render ? "yes" : "no") << std::endl <<
         "  Optimization passes: " << config.optimization_passes << std::endl <<
         "  Lloyd passes: " << config.lloyd_passes << std::endl <<
@@ -34,6 +36,7 @@ int main(int argc, char *argv[]) {
     VoronoiSphereFactory factory(
         config.points_count,
         config.density_field,
+        config.optimization_strategy,
         config.optimization_passes,
         config.lloyd_passes
     );
@@ -56,6 +59,11 @@ Config parse_arguments(int argc, char *argv[]) {
         ->description("Density field type")
         ->check(CLI::IsMember({"constant", "noise"}))
         ->default_val("noise");
+
+    app.add_option("--optimization-strategy,-s", config.optimization_strategy)
+        ->description("Optimization strategy: ccvd (per-site) or gradient (global)")
+        ->check(CLI::IsMember({"ccvd", "gradient"}))
+        ->default_val("ccvd");
 
     app.add_option("--render", config.perform_render)
         ->description("Enable Qt rendering")

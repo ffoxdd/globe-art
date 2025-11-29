@@ -4,10 +4,12 @@
 #include "../core/voronoi_sphere.hpp"
 #include "../core/random_voronoi_sphere_builder.hpp"
 #include "../optimizers/density_voronoi_sphere_optimizer.hpp"
+#include "../optimizers/gradient_density_optimizer.hpp"
 #include "../optimizers/lloyd_voronoi_sphere_optimizer.hpp"
 #include "../../fields/scalar/noise_field.hpp"
 #include "../../fields/integrable/constant_integrable_field.hpp"
 #include "../../fields/integrable/sampled_integrable_field.hpp"
+#include "../../fields/spherical/constant_spherical_field.hpp"
 #include "../../generators/sphere_point_generator/rejection_sampling_sphere_point_generator.hpp"
 #include "../../generators/sphere_point_generator/poisson_sphere_point_generator/poisson_sphere_point_generator.hpp"
 #include <string>
@@ -22,6 +24,7 @@ class VoronoiSphereFactory {
     VoronoiSphereFactory(
         int points_count,
         std::string density_function,
+        std::string optimization_strategy,
         int optimization_passes,
         int lloyd_passes
     );
@@ -36,15 +39,19 @@ class VoronoiSphereFactory {
 
     int _points_count;
     std::string _density_function;
+    std::string _optimization_strategy;
     size_t _optimization_passes;
     size_t _lloyd_passes;
 
     std::unique_ptr<VoronoiSphere> build_initial();
     std::unique_ptr<VoronoiSphere> optimize_density(std::unique_ptr<VoronoiSphere> voronoi_sphere);
 
+    std::unique_ptr<VoronoiSphere> optimize_ccvd(std::unique_ptr<VoronoiSphere> voronoi_sphere);
+    std::unique_ptr<VoronoiSphere> optimize_gradient(std::unique_ptr<VoronoiSphere> voronoi_sphere);
 
-    std::unique_ptr<VoronoiSphere> optimize_constant(std::unique_ptr<VoronoiSphere> voronoi_sphere);
-    std::unique_ptr<VoronoiSphere> optimize_noise(std::unique_ptr<VoronoiSphere> voronoi_sphere);
+    std::unique_ptr<VoronoiSphere> optimize_constant_ccvd(std::unique_ptr<VoronoiSphere> voronoi_sphere);
+    std::unique_ptr<VoronoiSphere> optimize_noise_ccvd(std::unique_ptr<VoronoiSphere> voronoi_sphere);
+    std::unique_ptr<VoronoiSphere> optimize_constant_gradient(std::unique_ptr<VoronoiSphere> voronoi_sphere);
 
     static double nyquist_density(double max_frequency);
     static size_t sample_count(double max_frequency);
@@ -53,11 +60,13 @@ class VoronoiSphereFactory {
 inline VoronoiSphereFactory::VoronoiSphereFactory(
     int points_count,
     std::string density_function,
+    std::string optimization_strategy,
     int optimization_passes,
     int lloyd_passes
 ) :
     _points_count(points_count),
     _density_function(std::move(density_function)),
+    _optimization_strategy(std::move(optimization_strategy)),
     _optimization_passes(static_cast<size_t>(optimization_passes)),
     _lloyd_passes(static_cast<size_t>(lloyd_passes)) {
 }
@@ -67,7 +76,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::build() {
 
     voronoi_sphere = optimize_density(std::move(voronoi_sphere));
 
-    if (_lloyd_passes > 0) {
+    for (size_t i = 0; i < _lloyd_passes; i++) {
         LloydVoronoiSphereOptimizer lloyd_optimizer(std::move(voronoi_sphere), 1);
         voronoi_sphere = lloyd_optimizer.optimize();
 
@@ -80,10 +89,31 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::build() {
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_density(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
-    if (_density_function == "constant") {
-        return optimize_constant(std::move(voronoi_sphere));
+    if (_optimization_strategy == "gradient") {
+        return optimize_gradient(std::move(voronoi_sphere));
     } else {
-        return optimize_noise(std::move(voronoi_sphere));
+        return optimize_ccvd(std::move(voronoi_sphere));
+    }
+}
+
+inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_ccvd(
+    std::unique_ptr<VoronoiSphere> voronoi_sphere
+) {
+    if (_density_function == "constant") {
+        return optimize_constant_ccvd(std::move(voronoi_sphere));
+    } else {
+        return optimize_noise_ccvd(std::move(voronoi_sphere));
+    }
+}
+
+inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_gradient(
+    std::unique_ptr<VoronoiSphere> voronoi_sphere
+) {
+    if (_density_function == "constant") {
+        return optimize_constant_gradient(std::move(voronoi_sphere));
+    } else {
+        std::cerr << "Gradient optimization not yet implemented for noise field" << std::endl;
+        return voronoi_sphere;
     }
 }
 
@@ -102,7 +132,7 @@ inline size_t VoronoiSphereFactory::sample_count(double max_frequency) {
     return std::max(count, MIN_SAMPLES);
 }
 
-inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant(
+inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_ccvd(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
     auto integrable_field = std::make_unique<ConstantIntegrableField>();
@@ -116,7 +146,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant(
     return optimizer.optimize();
 }
 
-inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_noise(
+inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_noise_ccvd(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
     NoiseField noise_field;
@@ -136,6 +166,21 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_noise(
         std::move(voronoi_sphere),
         std::move(integrable_field),
         _optimization_passes
+    );
+
+    return optimizer.optimize();
+}
+
+inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_gradient(
+    std::unique_ptr<VoronoiSphere> voronoi_sphere
+) {
+    ConstantSphericalField field(1.0);
+
+    GradientDensityOptimizer optimizer(
+        std::move(voronoi_sphere),
+        field,
+        _optimization_passes,
+        0.5
     );
 
     return optimizer.optimize();
