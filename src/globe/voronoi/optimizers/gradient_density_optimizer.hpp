@@ -11,6 +11,7 @@
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../core/voronoi_sphere.hpp"
 #include <Eigen/Core>
+#include <LBFGS.h>
 #include <memory>
 #include <vector>
 #include <iostream>
@@ -28,11 +29,7 @@ class GradientDensityOptimizer {
  public:
     static constexpr size_t DEFAULT_ITERATIONS = 100;
     static constexpr double CONVERGENCE_THRESHOLD = 1e-8;
-    static constexpr double INITIAL_STEP_SIZE = 0.1;
-    static constexpr double MAX_STEP_SIZE = 1.0;
-    static constexpr double MIN_STEP_SIZE = 1e-10;
-    static constexpr double STEP_SHRINK_FACTOR = 0.5;
-    static constexpr double STEP_GROW_FACTOR = 1.2;
+    static constexpr size_t LBFGS_HISTORY_SIZE = 6;
 
     static constexpr double PERTURBATION_ANGLE = 0.05;
     static constexpr size_t MAX_PERTURBATION_ATTEMPTS = 50;
@@ -51,11 +48,24 @@ class GradientDensityOptimizer {
  private:
     using Checkpoint = std::vector<Point3>;
 
+    class ObjectiveFunctor {
+     public:
+        ObjectiveFunctor(GradientDensityOptimizer& optimizer);
+        double operator()(const Eigen::VectorXd& x, Eigen::VectorXd& grad);
+
+        size_t iteration_count() const { return _iteration_count; }
+        double last_rms_error() const { return _last_rms_error; }
+
+     private:
+        GradientDensityOptimizer& _optimizer;
+        size_t _iteration_count = 0;
+        double _last_rms_error = 0.0;
+    };
+
     std::unique_ptr<VoronoiSphere> _voronoi_sphere;
     FieldType _field;
     size_t _max_iterations;
     double _target_mass;
-    double _step_size;
     GeneratorType _point_generator;
 
     Eigen::VectorXd sites_to_vector() const;
@@ -69,11 +79,7 @@ class GradientDensityOptimizer {
     double compute_total_error(const std::vector<double>& mass_errors) const;
     double compute_error() const;
 
-    double backtracking_line_search(
-        const Eigen::VectorXd& x,
-        const Eigen::VectorXd& grad,
-        double current_error
-    );
+    int run_lbfgs_phase(size_t max_iterations);
 
     Checkpoint save_checkpoint() const;
     void restore_checkpoint(const Checkpoint& checkpoint);
@@ -92,8 +98,70 @@ GradientDensityOptimizer<FieldType, GeneratorType>::GradientDensityOptimizer(
     _field(std::move(field)),
     _max_iterations(max_iterations),
     _target_mass(0.0),
-    _step_size(INITIAL_STEP_SIZE),
     _point_generator(std::move(point_generator)) {
+}
+
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::ObjectiveFunctor(
+    GradientDensityOptimizer& optimizer
+) : _optimizer(optimizer) {}
+
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+double GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::operator()(
+    const Eigen::VectorXd& x,
+    Eigen::VectorXd& grad
+) {
+    _optimizer.vector_to_sites_normalized(x);
+
+    double error = _optimizer.compute_error();
+    grad = _optimizer.compute_projected_gradient();
+
+    _last_rms_error = std::sqrt(2.0 * error / _optimizer._voronoi_sphere->size());
+    ++_iteration_count;
+
+    if (_iteration_count % 10 == 0) {
+        double grad_norm = grad.norm();
+        std::cout << std::fixed << std::setprecision(8)
+            << "    L-BFGS iter " << std::setw(4) << _iteration_count
+            << ": RMS error = " << _last_rms_error
+            << ", |grad| = " << std::setprecision(4) << grad_norm
+            << std::defaultfloat << std::endl;
+    }
+
+    return error;
+}
+
+template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+int GradientDensityOptimizer<FieldType, GeneratorType>::run_lbfgs_phase(size_t max_iterations) {
+    LBFGSpp::LBFGSParam<double> param;
+    param.m = LBFGS_HISTORY_SIZE;
+    param.epsilon = CONVERGENCE_THRESHOLD;
+    param.max_iterations = static_cast<int>(max_iterations);
+    param.past = 3;
+    param.delta = 1e-8;
+
+    LBFGSpp::LBFGSSolver<double> solver(param);
+    ObjectiveFunctor functor(*this);
+
+    Eigen::VectorXd x = sites_to_vector();
+    double fx;
+
+    try {
+        int iterations = solver.minimize(functor, x, fx);
+        vector_to_sites_normalized(x);
+
+        std::cout << "  L-BFGS completed: " << iterations << " iterations, "
+            << "final RMS = " << std::fixed << std::setprecision(8)
+            << functor.last_rms_error() << std::defaultfloat << std::endl;
+
+        return iterations;
+    } catch (const std::exception& e) {
+        vector_to_sites_normalized(x);
+        std::cout << "  L-BFGS stopped: " << e.what()
+            << ", RMS = " << std::fixed << std::setprecision(8)
+            << functor.last_rms_error() << std::defaultfloat << std::endl;
+        return -1;
+    }
 }
 
 template<SphericalField FieldType, SpherePointGenerator GeneratorType>
@@ -106,117 +174,82 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
     size_t perturbation_attempts = 0;
     size_t perturbations_since_best = 0;
     size_t restores_to_current_best = 0;
+    size_t total_iterations = 0;
+    size_t stalled_phases = 0;
+    static constexpr size_t MAX_STALLED_PHASES = 3;
 
-    double prev_error = std::numeric_limits<double>::max();
-    size_t stall_count = 0;
-    static constexpr size_t MAX_STALLS = 10;
+    while (total_iterations < _max_iterations) {
+        size_t remaining = _max_iterations - total_iterations;
+        size_t phase_iterations = std::min(remaining, static_cast<size_t>(100));
 
-    for (size_t iteration = 0; iteration < _max_iterations; ++iteration) {
+        std::cout << "Starting L-BFGS phase (iterations " << total_iterations
+            << "-" << (total_iterations + phase_iterations) << ")"
+            << "  [perturb " << perturbation_attempts << "/" << MAX_PERTURBATION_ATTEMPTS
+            << ", since_best " << perturbations_since_best << "/" << MAX_PERTURBATIONS_BEFORE_RESTORE
+            << ", restores " << restores_to_current_best << "/" << MAX_RESTORES_PER_CHECKPOINT << "]"
+            << std::endl;
+
+        int result = run_lbfgs_phase(phase_iterations);
+        total_iterations += (result > 0) ? static_cast<size_t>(result) : phase_iterations;
+
         double error = compute_error();
         double rms_error = std::sqrt(2.0 * error / _voronoi_sphere->size());
 
-        if (iteration % 10 == 0) {
-            std::cout << std::fixed << std::setprecision(8)
-                << "  Iteration " << std::setw(4) << iteration
-                << ": RMS error = " << rms_error
-                << ", step = " << _step_size
-                << "  [perturb " << perturbation_attempts << "/" << MAX_PERTURBATION_ATTEMPTS
-                << ", since_best " << perturbations_since_best << "/" << MAX_PERTURBATIONS_BEFORE_RESTORE
-                << ", restores " << restores_to_current_best << "/" << MAX_RESTORES_PER_CHECKPOINT << "]"
-                << std::defaultfloat << std::endl;
-        }
-
         if (rms_error < CONVERGENCE_THRESHOLD) {
-            std::cout << "Converged at iteration " << iteration << std::endl;
+            std::cout << "Converged at iteration " << total_iterations << std::endl;
             break;
         }
 
+        bool improved = error < best_error * 0.999;
         if (error < best_error) {
             best_error = error;
             best_checkpoint = save_checkpoint();
+        }
+
+        if (improved) {
             perturbations_since_best = 0;
             restores_to_current_best = 0;
-            stall_count = 0;
-        }
-
-        double improvement = (prev_error - error) / prev_error;
-        if (improvement < 1e-6 && iteration > 0) {
-            ++stall_count;
-            if (stall_count >= MAX_STALLS) {
-                if (perturbations_since_best >= MAX_PERTURBATIONS_BEFORE_RESTORE &&
-                    restores_to_current_best < MAX_RESTORES_PER_CHECKPOINT) {
-                    restore_checkpoint(best_checkpoint);
-                    ++restores_to_current_best;
-                    perturbations_since_best = 0;
-                    stall_count = 0;
-                    _step_size = INITIAL_STEP_SIZE;
-                    std::cout << "  [restore #" << restores_to_current_best << "]" << std::endl;
-                    continue;
-                }
-
-                if (perturbation_attempts >= MAX_PERTURBATION_ATTEMPTS) {
-                    std::cout << "Stopped after " << perturbation_attempts
-                        << " perturbation attempts" << std::endl;
-                    break;
-                }
-
-                auto undersized = find_most_undersized_index();
-                if (undersized.has_value() && perturb_site_randomly(undersized.value())) {
-                    ++perturbation_attempts;
-                    ++perturbations_since_best;
-                    stall_count = 0;
-                    _step_size = INITIAL_STEP_SIZE;
-                    std::cout << "  [perturb #" << perturbation_attempts << "]" << std::endl;
-                    continue;
-                }
-            }
+            stalled_phases = 0;
+            std::cout << "  New best: RMS = " << std::fixed << std::setprecision(8)
+                << rms_error << std::defaultfloat << std::endl;
         } else {
-            stall_count = 0;
+            ++stalled_phases;
         }
-        prev_error = error;
 
-        Eigen::VectorXd x = sites_to_vector();
-        Eigen::VectorXd grad = compute_projected_gradient();
+        bool should_perturb = !improved &&
+                              (rms_error > CONVERGENCE_THRESHOLD * 100) &&
+                              (result > 0);
 
-        double step = backtracking_line_search(x, grad, error);
-        if (step < MIN_STEP_SIZE) {
-            ++stall_count;
-            if (stall_count >= MAX_STALLS) {
-                if (perturbations_since_best >= MAX_PERTURBATIONS_BEFORE_RESTORE &&
-                    restores_to_current_best < MAX_RESTORES_PER_CHECKPOINT) {
-                    restore_checkpoint(best_checkpoint);
-                    ++restores_to_current_best;
-                    perturbations_since_best = 0;
-                    stall_count = 0;
-                    _step_size = INITIAL_STEP_SIZE;
-                    std::cout << "  [restore #" << restores_to_current_best << "]" << std::endl;
-                    continue;
-                }
+        if (!should_perturb && stalled_phases >= MAX_STALLED_PHASES) {
+            std::cout << "Optimization stalled at RMS = " << std::fixed << std::setprecision(8)
+                << rms_error << std::defaultfloat << std::endl;
+            break;
+        }
 
-                if (perturbation_attempts >= MAX_PERTURBATION_ATTEMPTS) {
-                    std::cout << "Stopped after " << perturbation_attempts
-                        << " perturbation attempts" << std::endl;
-                    break;
-                }
+        if (should_perturb) {
+            ++perturbations_since_best;
 
-                auto undersized = find_most_undersized_index();
-                if (undersized.has_value() && perturb_site_randomly(undersized.value())) {
-                    ++perturbation_attempts;
-                    ++perturbations_since_best;
-                    stall_count = 0;
-                    _step_size = INITIAL_STEP_SIZE;
-                    std::cout << "  [perturb #" << perturbation_attempts << "]" << std::endl;
-                    continue;
-                }
+            if (perturbations_since_best >= MAX_PERTURBATIONS_BEFORE_RESTORE &&
+                restores_to_current_best < MAX_RESTORES_PER_CHECKPOINT) {
+                restore_checkpoint(best_checkpoint);
+                ++restores_to_current_best;
+                perturbations_since_best = 0;
+                std::cout << "  [restore #" << restores_to_current_best << "]" << std::endl;
+                continue;
             }
-            _step_size = std::max(_step_size * STEP_SHRINK_FACTOR, MIN_STEP_SIZE);
-            continue;
+
+            if (perturbation_attempts >= MAX_PERTURBATION_ATTEMPTS) {
+                std::cout << "Stopped after " << perturbation_attempts
+                    << " perturbation attempts" << std::endl;
+                break;
+            }
+
+            auto undersized = find_most_undersized_index();
+            if (undersized.has_value() && perturb_site_randomly(undersized.value())) {
+                ++perturbation_attempts;
+                std::cout << "  [perturb #" << perturbation_attempts << "]" << std::endl;
+            }
         }
-
-        Eigen::VectorXd new_x = x - step * grad;
-        vector_to_sites_normalized(new_x);
-
-        _step_size = std::min(step * STEP_GROW_FACTOR, MAX_STEP_SIZE);
     }
 
     restore_checkpoint(best_checkpoint);
@@ -227,30 +260,6 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
         << rms_error << std::defaultfloat << std::endl;
 
     return std::move(_voronoi_sphere);
-}
-
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
-double GradientDensityOptimizer<FieldType, GeneratorType>::backtracking_line_search(
-    const Eigen::VectorXd& x,
-    const Eigen::VectorXd& grad,
-    double current_error
-) {
-    double step = _step_size;
-
-    while (step > MIN_STEP_SIZE) {
-        Eigen::VectorXd new_x = x - step * grad;
-        vector_to_sites_normalized(new_x);
-        double new_error = compute_error();
-
-        if (new_error < current_error) {
-            return step;
-        }
-
-        step *= STEP_SHRINK_FACTOR;
-    }
-
-    vector_to_sites_normalized(x);
-    return 0.0;
 }
 
 template<SphericalField FieldType, SpherePointGenerator GeneratorType>
