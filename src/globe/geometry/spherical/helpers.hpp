@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <ranges>
 #include <CGAL/Exact_spherical_kernel_3.h>
+#include <Eigen/Core>
 #include "../../types.hpp"
 #include "../../math/interval.hpp"
 
@@ -74,6 +75,15 @@ inline SphericalPoint3 to_spherical_point(const PointType &point) {
 template<HasXYZ PointType>
 Vector3 to_position_vector(const PointType &point) {
     return Vector3(
+        CGAL::to_double(point.x()),
+        CGAL::to_double(point.y()),
+        CGAL::to_double(point.z())
+    );
+}
+
+template<HasXYZ PointType>
+Eigen::Vector3d to_eigen(const PointType &point) {
+    return Eigen::Vector3d(
         CGAL::to_double(point.x()),
         CGAL::to_double(point.y()),
         CGAL::to_double(point.z())

@@ -18,14 +18,6 @@ struct PolygonMoments {
 
 namespace detail {
 
-inline Eigen::Vector3d to_eigen(const Vector3& v) {
-    return Eigen::Vector3d(v.x(), v.y(), v.z());
-}
-
-inline Eigen::Vector3d to_eigen(const Point3& p) {
-    return Eigen::Vector3d(p.x(), p.y(), p.z());
-}
-
 inline double spherical_triangle_area(
     const Eigen::Vector3d& a,
     const Eigen::Vector3d& b,
@@ -89,7 +81,7 @@ inline Eigen::Matrix3d spherical_triangle_second_moment(
 inline PolygonMoments compute_polygon_moments(const SphericalPolygon& polygon) {
     std::vector<Eigen::Vector3d> vertices;
     for (const auto& point : polygon.points()) {
-        vertices.push_back(detail::to_eigen(point));
+        vertices.push_back(to_eigen(point));
     }
 
     if (vertices.size() < 3) {

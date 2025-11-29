@@ -14,10 +14,6 @@ struct ArcMoments {
     Eigen::Matrix3d second_moment;
 };
 
-inline Eigen::Vector3d to_eigen(const Vector3& v) {
-    return Eigen::Vector3d(v.x(), v.y(), v.z());
-}
-
 inline Eigen::Vector3d find_perpendicular(const Eigen::Vector3d& u) {
     Eigen::Vector3d candidate = (std::abs(u.z()) < 0.9)
         ? Eigen::Vector3d(0, 0, 1)

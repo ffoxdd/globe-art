@@ -5,7 +5,6 @@
 #include "../../geometry/spherical/helpers.hpp"
 #include "../../geometry/spherical/moments/arc_moments.hpp"
 #include "../../geometry/spherical/moments/polygon_moments.hpp"
-#include "../../geometry/spherical/edge_sensitivity.hpp"
 #include "../../fields/spherical/spherical_field.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
 #include "../core/voronoi_sphere.hpp"
@@ -49,6 +48,13 @@ class GradientDensityOptimizer {
     void step(const std::vector<Eigen::Vector3d>& gradients);
     double compute_total_error(const std::vector<double>& mass_errors) const;
     void print_progress(size_t iteration, double error) const;
+
+    static Eigen::Vector3d compute_edge_sensitivity(
+        const Point3& site_i,
+        const Point3& site_j,
+        const Point3& edge_v1,
+        const Point3& edge_v2
+    );
 };
 
 template<SphericalField FieldType>
@@ -193,6 +199,37 @@ void GradientDensityOptimizer<FieldType>::print_progress(
         << "  Iteration " << std::setw(4) << iteration
         << ": RMS error = " << rms_error
         << std::defaultfloat << std::endl;
+}
+
+template<SphericalField FieldType>
+Eigen::Vector3d GradientDensityOptimizer<FieldType>::compute_edge_sensitivity(
+    const Point3& site_i,
+    const Point3& site_j,
+    const Point3& edge_v1,
+    const Point3& edge_v2
+) {
+    Eigen::Vector3d si = to_eigen(site_i).normalized();
+    Eigen::Vector3d sj = to_eigen(site_j).normalized();
+
+    Eigen::Vector3d toward_j = sj - si;
+
+    Eigen::Vector3d tangent = toward_j - si.dot(toward_j) * si;
+    double tangent_norm = tangent.norm();
+
+    if (tangent_norm < GEOMETRIC_EPSILON) {
+        return Eigen::Vector3d::Zero();
+    }
+
+    tangent /= tangent_norm;
+
+    Eigen::Vector3d v1 = to_eigen(edge_v1).normalized();
+    Eigen::Vector3d v2 = to_eigen(edge_v2).normalized();
+
+    double cos_angle = v1.dot(v2);
+    cos_angle = std::clamp(cos_angle, -1.0, 1.0);
+    double edge_length = std::acos(cos_angle);
+
+    return 0.5 * edge_length * tangent;
 }
 
 }
