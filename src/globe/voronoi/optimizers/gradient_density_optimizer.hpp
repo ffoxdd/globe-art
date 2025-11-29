@@ -120,6 +120,9 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
                 << "  Iteration " << std::setw(4) << iteration
                 << ": RMS error = " << rms_error
                 << ", step = " << _step_size
+                << "  [perturb " << perturbation_attempts << "/" << MAX_PERTURBATION_ATTEMPTS
+                << ", since_best " << perturbations_since_best << "/" << MAX_PERTURBATIONS_BEFORE_RESTORE
+                << ", restores " << restores_to_current_best << "/" << MAX_RESTORES_PER_CHECKPOINT << "]"
                 << std::defaultfloat << std::endl;
         }
 
