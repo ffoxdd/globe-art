@@ -4,7 +4,8 @@
 #include <cmath>
 #include <memory>
 
-namespace globe {
+using namespace globe;
+
 namespace {
 
 std::unique_ptr<VoronoiSphere> create_test_voronoi(size_t num_points) {
@@ -23,6 +24,8 @@ std::unique_ptr<VoronoiSphere> create_test_voronoi(size_t num_points) {
     }
 
     return voronoi;
+}
+
 }
 
 TEST(GradientDensityOptimizerTest, ConvergesForConstantField) {
@@ -71,7 +74,4 @@ TEST(GradientDensityOptimizerTest, MassErrorsAreComputable) {
     }
 
     EXPECT_NEAR(total_computed_mass, field.total_mass(), 0.1);
-}
-
-}
 }

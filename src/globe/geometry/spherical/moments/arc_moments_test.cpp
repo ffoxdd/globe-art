@@ -2,8 +2,7 @@
 #include <gtest/gtest.h>
 #include <cmath>
 
-namespace globe {
-namespace {
+using namespace globe;
 
 TEST(ArcMomentsTest, ZeroLengthArc) {
     Point3 p(1, 0, 0);
@@ -75,7 +74,4 @@ TEST(ArcMomentsTest, SecondMomentTrace) {
 
     double trace = moments.second_moment.trace();
     EXPECT_NEAR(trace, moments.length, 1e-10);
-}
-
-}
 }

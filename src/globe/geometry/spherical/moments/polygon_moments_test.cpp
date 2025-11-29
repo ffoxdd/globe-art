@@ -2,7 +2,8 @@
 #include <gtest/gtest.h>
 #include <cmath>
 
-namespace globe {
+using namespace globe;
+
 namespace {
 
 SphericalPolygon make_triangle(const Point3& a, const Point3& b, const Point3& c) {
@@ -34,6 +35,8 @@ SphericalPolygon make_triangle(const Point3& a, const Point3& b, const Point3& c
         detail::SphericalKernel::Point_3(a.x(), a.y(), a.z()));
 
     return SphericalPolygon(arcs);
+}
+
 }
 
 TEST(PolygonMomentsTest, TriangleArea) {
@@ -97,7 +100,4 @@ TEST(PolygonMomentsTest, AreaMatchesSphericalPolygonArea) {
     auto moments = compute_polygon_moments(polygon);
 
     EXPECT_NEAR(moments.area, polygon.area(), 1e-6);
-}
-
-}
 }

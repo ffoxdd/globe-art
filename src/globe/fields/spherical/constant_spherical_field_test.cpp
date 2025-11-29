@@ -2,8 +2,7 @@
 #include <gtest/gtest.h>
 #include <cmath>
 
-namespace globe {
-namespace {
+using namespace globe;
 
 TEST(ConstantSphericalFieldTest, ValueIsConstant) {
     ConstantSphericalField field(2.5);
@@ -52,7 +51,4 @@ TEST(ConstantSphericalFieldTest, DefaultValueIsOne) {
 
 TEST(ConstantSphericalFieldTest, SatisfiesSphericalFieldConcept) {
     static_assert(SphericalField<ConstantSphericalField>);
-}
-
-}
 }
