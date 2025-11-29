@@ -136,6 +136,7 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
             best_checkpoint = save_checkpoint();
             perturbations_since_best = 0;
             restores_to_current_best = 0;
+            stall_count = 0;
         }
 
         double improvement = (prev_error - error) / prev_error;
