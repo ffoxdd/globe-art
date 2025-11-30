@@ -3,16 +3,13 @@
 
 #include "../core/voronoi_sphere.hpp"
 #include "../core/random_voronoi_sphere_builder.hpp"
-#include "../optimizers/density_voronoi_sphere_optimizer.hpp"
 #include "../optimizers/spherical_field_density_optimizer.hpp"
 #include "../optimizers/gradient_density_optimizer.hpp"
 #include "../optimizers/lloyd_voronoi_sphere_optimizer.hpp"
 #include "../../fields/scalar/noise_field.hpp"
-#include "../../fields/integrable/sampled_integrable_field.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
 #include "../../fields/spherical/linear_spherical_field.hpp"
-#include "../../generators/sphere_point_generator/rejection_sampling_sphere_point_generator.hpp"
-#include "../../generators/sphere_point_generator/poisson_sphere_point_generator/poisson_sphere_point_generator.hpp"
+#include "../../fields/spherical/sampled_spherical_field.hpp"
 #include <string>
 #include <memory>
 #include <algorithm>
@@ -33,8 +30,6 @@ class VoronoiSphereFactory {
     std::unique_ptr<VoronoiSphere> build();
 
  private:
-    using NoiseGenerator = PoissonSpherePointGenerator<RejectionSamplingSpherePointGenerator<NoiseField>>;
-
     static constexpr double NYQUIST_SAFETY_FACTOR = 4.0;
     static constexpr size_t MIN_SAMPLES = 1000;
 
@@ -174,18 +169,11 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_noise_ccvd(
     size_t samples = sample_count(noise_field.max_frequency());
     std::cout << "Sample count: " << samples << std::endl;
 
-    RejectionSamplingSpherePointGenerator<NoiseField> rejection_generator(noise_field, 1.0);
-    NoiseGenerator generator(std::move(rejection_generator));
+    SampledSphericalField field(noise_field, RandomSpherePointGenerator<>(), samples);
 
-    auto integrable_field = std::make_unique<SampledIntegrableField<NoiseGenerator>>(
-        std::move(generator),
-        samples,
-        1.0
-    );
-
-    DensityVoronoiSphereOptimizer optimizer(
+    SphericalFieldDensityOptimizer optimizer(
         std::move(voronoi_sphere),
-        std::move(integrable_field),
+        std::move(field),
         _optimization_passes
     );
 

@@ -12,14 +12,11 @@ class NoiseField {
  public:
     NoiseField(Interval output_range = Interval(0, 1), int seed = 1546);
     double value(const Point3 &location);
-    Interval output_range() const { return _output_range; }
     double max_frequency() const;
 
  private:
     anl::CKernel _kernel;
     anl::CInstructionIndex _instruction_index;
-    Interval _output_range;
-    int _seed;
 
     static constexpr double NOISE_FREQUENCY = 1.0;
     static constexpr int NOISE_OCTAVES = 2;
@@ -34,9 +31,7 @@ class NoiseField {
 
 inline NoiseField::NoiseField(Interval output_range, int seed) :
     _kernel(),
-    _instruction_index(initialize_kernel(_kernel, output_range, seed)),
-    _output_range(output_range),
-    _seed(seed) {
+    _instruction_index(initialize_kernel(_kernel, output_range, seed)) {
 }
 
 inline double NoiseField::value(const Point3 &location) {
@@ -100,4 +95,3 @@ inline anl::CInstructionIndex NoiseField::initialize_kernel(anl::CKernel &kernel
 } // namespace globe
 
 #endif //GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_FIELD_H_
-

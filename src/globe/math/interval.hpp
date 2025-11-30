@@ -16,19 +16,19 @@ class Interval;
 class Interval {
  public:
     Interval();
-    Interval(double low, double high);
+    constexpr Interval(double low, double high);
     template<RangeOf<double> DoubleRange> explicit Interval(const DoubleRange &range);
 
-    [[nodiscard]] double low() const;
-    [[nodiscard]] double high() const;
-    [[nodiscard]] double measure() const;
-    [[nodiscard]] double midpoint() const;
-    [[nodiscard]] double clamp(double value) const;
-    [[nodiscard]] bool contains(double value) const;
+    [[nodiscard]] constexpr double low() const;
+    [[nodiscard]] constexpr double high() const;
+    [[nodiscard]] constexpr double measure() const;
+    [[nodiscard]] constexpr double midpoint() const;
+    [[nodiscard]] constexpr double clamp(double value) const;
+    [[nodiscard]] constexpr bool contains(double value) const;
 
-    [[nodiscard]] static Interval hull(const Interval &a, const Interval &b);
-    [[nodiscard]] static Interval hull(const Interval &interval, double value);
-    [[nodiscard]] static Interval hull(double a, double b);
+    [[nodiscard]] static constexpr Interval hull(const Interval &a, const Interval &b);
+    [[nodiscard]] static constexpr Interval hull(const Interval &interval, double value);
+    [[nodiscard]] static constexpr Interval hull(double a, double b);
 
     template<RangeOf<Interval> IntervalRange>
     [[nodiscard]] static Interval hull(const IntervalRange &intervals);
@@ -43,10 +43,12 @@ inline Interval::Interval() :
     _high(std::numeric_limits<double>::lowest()) {
 };
 
-inline Interval::Interval(double low, double high) :
+constexpr Interval::Interval(double low, double high) :
     _low(low),
     _high(high) {
-};
+}
+
+inline const Interval UNIT_INTERVAL{0.0, 1.0};
 
 template<RangeOf<double> DoubleRange>
 Interval::Interval(const DoubleRange &range) {
@@ -56,45 +58,45 @@ Interval::Interval(const DoubleRange &range) {
     _high = *max_it;
 }
 
-inline double Interval::low() const {
+constexpr double Interval::low() const {
     return _low;
 }
 
-inline double Interval::high() const {
+constexpr double Interval::high() const {
     return _high;
 }
 
-inline double Interval::measure() const {
+constexpr double Interval::measure() const {
     return _high - _low;
 }
 
-inline double Interval::midpoint() const {
+constexpr double Interval::midpoint() const {
     return (_low + _high) / 2.0;
 }
 
-inline double Interval::clamp(double value) const {
+constexpr double Interval::clamp(double value) const {
     return std::clamp(value, _low, _high);
 }
 
-inline bool Interval::contains(double value) const {
+constexpr bool Interval::contains(double value) const {
     return _low <= value && value <= _high;
 }
 
-inline Interval Interval::hull(const Interval &a, const Interval &b) {
+constexpr Interval Interval::hull(const Interval &a, const Interval &b) {
     return Interval(
         std::min(a._low, b._low),
         std::max(a._high, b._high)
     );
 }
 
-inline Interval Interval::hull(const Interval &interval, double value) {
+constexpr Interval Interval::hull(const Interval &interval, double value) {
     return Interval(
         std::min(interval._low, value),
         std::max(interval._high, value)
     );
 }
 
-inline Interval Interval::hull(double a, double b) {
+constexpr Interval Interval::hull(double a, double b) {
     return Interval(
         std::min(a, b),
         std::max(a, b)
