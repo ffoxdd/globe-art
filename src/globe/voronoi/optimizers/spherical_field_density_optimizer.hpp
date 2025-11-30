@@ -1,25 +1,30 @@
 #ifndef GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_SPHERICAL_FIELD_DENSITY_OPTIMIZER_HPP_
 #define GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_SPHERICAL_FIELD_DENSITY_OPTIMIZER_HPP_
 
-#include "../../types.hpp"
+#include "../../fields/spherical/spherical_field.hpp"
+#include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
+#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../../geometry/spherical/helpers.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
+#include "../../types.hpp"
 #include "../core/voronoi_sphere.hpp"
-#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
-#include "../../fields/spherical/spherical_field.hpp"
+
 #include <algorithm>
-#include <memory>
-#include <queue>
-#include <vector>
-#include <utility>
-#include <cstddef>
-#include <iostream>
-#include <iomanip>
 #include <atomic>
-#include <tbb/parallel_for.h>
-#include <tbb/blocked_range.h>
-#include <dlib/optimization.h>
+#include <cmath>
+#include <cstddef>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <memory>
 #include <optional>
+#include <queue>
+#include <utility>
+#include <vector>
+
+#include <dlib/optimization.h>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_for.h>
 
 namespace globe {
 

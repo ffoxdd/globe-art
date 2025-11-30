@@ -9,12 +9,6 @@
 
 namespace globe {
 
-struct ArcMoments {
-    double length;
-    Eigen::Vector3d first_moment;
-    Eigen::Matrix3d second_moment;
-};
-
 class SphericalArc {
  public:
     SphericalArc(const Point3& source, const Point3& target, const Vector3& normal);
@@ -24,22 +18,26 @@ class SphericalArc {
     [[nodiscard]] const Point3& target() const { return _target; }
     [[nodiscard]] const Vector3& normal() const { return _normal; }
 
-    [[nodiscard]] double angle() const;
+    [[nodiscard]] double length() const;
     [[nodiscard]] SphericalArc subarc(const Point3& point) const;
     [[nodiscard]] bool contains(const Point3& point) const;
 
-    [[nodiscard]] double length() const;
     [[nodiscard]] Eigen::Vector3d first_moment() const;
     [[nodiscard]] Eigen::Matrix3d second_moment() const;
 
  private:
+    struct Moments {
+        Eigen::Vector3d first;
+        Eigen::Matrix3d second;
+    };
+
     Point3 _source;
     Point3 _target;
     Vector3 _normal;
 
-    mutable std::optional<ArcMoments> _cached_moments;
+    mutable std::optional<Moments> _cached_moments;
 
-    [[nodiscard]] const ArcMoments& moments() const;
+    void compute_moments() const;
 
     static Eigen::Vector3d find_perpendicular(const Eigen::Vector3d& u);
     static Eigen::Vector3d to_eigen(const Point3& p);
@@ -63,8 +61,11 @@ inline SphericalArc::SphericalArc(const Point3& source, const Point3& target) :
     _normal = normalize(cross);
 }
 
-inline double SphericalArc::angle() const {
-    return length();
+inline double SphericalArc::length() const {
+    Eigen::Vector3d u1 = to_eigen(_source).normalized();
+    Eigen::Vector3d u2 = to_eigen(_target).normalized();
+    double cos_theta = std::clamp(u1.dot(u2), -1.0, 1.0);
+    return std::acos(cos_theta);
 }
 
 inline SphericalArc SphericalArc::subarc(const Point3& point) const {
@@ -81,64 +82,62 @@ inline bool SphericalArc::contains(const Point3& point) const {
         return false;
     }
 
-    return subarc(point).angle() < angle() + EPSILON;
-}
-
-inline double SphericalArc::length() const {
-    return moments().length;
+    return subarc(point).length() < length() + EPSILON;
 }
 
 inline Eigen::Vector3d SphericalArc::first_moment() const {
-    return moments().first_moment;
+    if (!_cached_moments) {
+        compute_moments();
+    }
+    return _cached_moments->first;
 }
 
 inline Eigen::Matrix3d SphericalArc::second_moment() const {
-    return moments().second_moment;
+    if (!_cached_moments) {
+        compute_moments();
+    }
+    return _cached_moments->second;
 }
 
-inline const ArcMoments& SphericalArc::moments() const {
-    if (!_cached_moments) {
-        constexpr double EPSILON = 1e-10;
+inline void SphericalArc::compute_moments() const {
+    constexpr double EPSILON = 1e-10;
 
-        Vector3 u1_cgal = normalize(to_position_vector(_source));
-        Vector3 u2_cgal = normalize(to_position_vector(_target));
+    Vector3 u1_cgal = normalize(to_position_vector(_source));
+    Vector3 u2_cgal = normalize(to_position_vector(_target));
 
-        Eigen::Vector3d u1 = to_eigen(u1_cgal);
-        Eigen::Vector3d u2 = to_eigen(u2_cgal);
+    Eigen::Vector3d u1 = to_eigen(u1_cgal);
+    Eigen::Vector3d u2 = to_eigen(u2_cgal);
 
-        double cos_theta = std::clamp(u1.dot(u2), -1.0, 1.0);
-        double theta = std::acos(cos_theta);
-        double sin_theta = std::sin(theta);
+    double cos_theta = std::clamp(u1.dot(u2), -1.0, 1.0);
+    double theta = std::acos(cos_theta);
+    double sin_theta = std::sin(theta);
 
-        if (theta < EPSILON) {
-            _cached_moments = ArcMoments{
-                0.0,
-                Eigen::Vector3d::Zero(),
-                Eigen::Matrix3d::Zero()
-            };
-        } else {
-            Eigen::Vector3d n_unnormalized = u2 - cos_theta * u1;
-            double n_length = n_unnormalized.norm();
-
-            Eigen::Vector3d n = (n_length < EPSILON)
-                ? find_perpendicular(u1)
-                : n_unnormalized / n_length;
-
-            double cos_sin = cos_theta * sin_theta;
-            double integral_cos_squared = (theta + cos_sin) / 2.0;
-            double integral_sin_squared = (theta - cos_sin) / 2.0;
-            double integral_cos_sin = (sin_theta * sin_theta) / 2.0;
-
-            _cached_moments = ArcMoments{
-                theta,
-                sin_theta * u1 + (1.0 - cos_theta) * n,
-                integral_cos_squared * (u1 * u1.transpose()) +
-                    integral_sin_squared * (n * n.transpose()) +
-                    integral_cos_sin * (u1 * n.transpose() + n * u1.transpose())
-            };
-        }
+    if (theta < EPSILON) {
+        _cached_moments = Moments{
+            Eigen::Vector3d::Zero(),
+            Eigen::Matrix3d::Zero()
+        };
+        return;
     }
-    return *_cached_moments;
+
+    Eigen::Vector3d n_unnormalized = u2 - cos_theta * u1;
+    double n_length = n_unnormalized.norm();
+
+    Eigen::Vector3d n = (n_length < EPSILON)
+        ? find_perpendicular(u1)
+        : n_unnormalized / n_length;
+
+    double cos_sin = cos_theta * sin_theta;
+    double integral_cos_squared = (theta + cos_sin) / 2.0;
+    double integral_sin_squared = (theta - cos_sin) / 2.0;
+    double integral_cos_sin = (sin_theta * sin_theta) / 2.0;
+
+    _cached_moments = Moments{
+        sin_theta * u1 + (1.0 - cos_theta) * n,
+        integral_cos_squared * (u1 * u1.transpose()) +
+            integral_sin_squared * (n * n.transpose()) +
+            integral_cos_sin * (u1 * n.transpose() + n * u1.transpose())
+    };
 }
 
 inline Eigen::Vector3d SphericalArc::find_perpendicular(const Eigen::Vector3d& u) {
