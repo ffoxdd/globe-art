@@ -1,4 +1,5 @@
 #include "gradient_density_optimizer.hpp"
+#include "spherical_field_density_optimizer.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
 #include "../../fields/spherical/linear_spherical_field.hpp"
 #include "../../geometry/spherical/moments/arc_moments.hpp"
@@ -95,6 +96,50 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_ConvergesForLinearField) {
     auto result = optimizer.optimize();
 
     EXPECT_EQ(result->size(), 20);
+}
+
+TEST(GradientDensityOptimizerTest, EXPENSIVE_CCVDAfterGradientForLinearField) {
+    REQUIRE_EXPENSIVE();
+
+    auto voronoi = create_test_voronoi(20);
+    LinearSphericalField field(1.0, 2.0);
+
+    std::cout << "\n=== Phase 1: Gradient Optimizer ===" << std::endl;
+    GradientDensityOptimizer<LinearSphericalField> gradient_optimizer(
+        std::move(voronoi),
+        field,
+        500
+    );
+    auto after_gradient = gradient_optimizer.optimize();
+
+    double target_mass = field.total_mass() / after_gradient->size();
+    auto compute_rms_error = [&](VoronoiSphere& v) {
+        double total = 0.0;
+        for (const auto& cell : v.dual_cells()) {
+            auto moments = compute_polygon_moments(cell);
+            double error = field.mass(moments) - target_mass;
+            total += error * error;
+        }
+        return std::sqrt(total / v.size());
+    };
+
+    double gradient_rms = compute_rms_error(*after_gradient);
+    std::cout << "After gradient: RMS = " << gradient_rms << std::endl;
+
+    std::cout << "\n=== Phase 2: CCVD Optimizer ===" << std::endl;
+    SphericalFieldDensityOptimizer<LinearSphericalField> ccvd_optimizer(
+        std::move(after_gradient),
+        field,
+        100
+    );
+    auto after_ccvd = ccvd_optimizer.optimize();
+
+    double ccvd_rms = compute_rms_error(*after_ccvd);
+    std::cout << "After CCVD: RMS = " << ccvd_rms << std::endl;
+
+    std::cout << "\nImprovement: " << (gradient_rms - ccvd_rms) << std::endl;
+
+    EXPECT_EQ(after_ccvd->size(), 20);
 }
 
 TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearField) {
