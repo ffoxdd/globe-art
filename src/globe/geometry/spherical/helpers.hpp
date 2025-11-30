@@ -294,6 +294,27 @@ Vector3 average_vector(const RangeType &vectors) {
     return sum / static_cast<double>(count);
 }
 
+template<HasXYZ PointType>
+double spherical_triangle_area(const PointType &a, const PointType &b, const PointType &c) {
+    Vector3 va = to_position_vector(a);
+    Vector3 vb = to_position_vector(b);
+    Vector3 vc = to_position_vector(c);
+
+    double numerator = CGAL::scalar_product(va, CGAL::cross_product(vb, vc));
+
+    double denominator = 1.0 +
+        CGAL::scalar_product(va, vb) +
+        CGAL::scalar_product(vb, vc) +
+        CGAL::scalar_product(vc, va);
+
+    if (std::abs(denominator) < 1e-15) {
+        return 0.0;
+    }
+
+    double tan_half_omega = std::abs(numerator) / denominator;
+    return 2.0 * std::atan(tan_half_omega);
+}
+
 }
 
 #endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_HELPERS_H_

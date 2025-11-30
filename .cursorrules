@@ -184,6 +184,27 @@ Before making a commit, always verify:
 
 These checks ensure that expensive tests are not accidentally broken and remain executable.
 
+## CGAL Considerations
+
+### Checkpoint/Restore Pattern
+When implementing checkpoint/restore for optimization (saving best state to return to later), rebuild the VoronoiSphere from scratch rather than using `update_site()` in a loop:
+
+```cpp
+// Preferred: rebuild from scratch
+void restore_checkpoint(const std::vector<Point3>& checkpoint) {
+    auto new_voronoi = std::make_unique<VoronoiSphere>();
+    for (const auto& site : checkpoint) {
+        new_voronoi->insert(site);
+    }
+    _voronoi_sphere = std::move(new_voronoi);
+}
+```
+
+While isolated tests show CGAL's triangulation is deterministic, the rebuild approach:
+- Guarantees a clean internal state identical to fresh construction
+- Avoids potential issues from accumulated incremental modifications
+- Ensures consistent edge iteration order (relevant for floating-point summations)
+
 ### Terminal Testing Flags
 The `generate_globe` executable supports command-line flags for terminal/AI-assisted testing:
 - `--points <N>`: Number of points to generate (default: 10)

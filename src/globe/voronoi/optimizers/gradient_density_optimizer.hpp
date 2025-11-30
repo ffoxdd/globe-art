@@ -4,7 +4,7 @@
 #include "../../types.hpp"
 #include "../../geometry/spherical/helpers.hpp"
 #include "../../geometry/spherical/moments/arc_moments.hpp"
-#include "../../geometry/spherical/moments/polygon_moments.hpp"
+#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../fields/spherical/spherical_field.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
 #include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
@@ -181,13 +181,12 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
             break;
         }
 
-        bool improved = error < best_error * 0.999;
-        if (error < best_error) {
+        bool is_new_best = error < best_error;
+        bool significant_improvement = error < best_error * 0.999;
+
+        if (is_new_best) {
             best_error = error;
             best_checkpoint = save_checkpoint();
-        }
-
-        if (improved) {
             perturbations_since_best = 0;
             restores_to_current_best = 0;
             stalled_phases = 0;
@@ -196,7 +195,7 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
             ++stalled_phases;
         }
 
-        bool should_perturb = !improved &&
+        bool should_perturb = !significant_improvement &&
                               (rms_error > CONVERGENCE_THRESHOLD * 100) &&
                               (result != 0);
 
@@ -229,7 +228,7 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
             } else {
                 std::cout << std::endl;
             }
-        } else if (!improved) {
+        } else if (!is_new_best) {
             std::cout << std::endl;
         }
     }
@@ -237,9 +236,8 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
     restore_checkpoint(best_checkpoint);
 
     double final_error = compute_error();
-    double rms_error = std::sqrt(2.0 * final_error / _voronoi_sphere->size());
-    std::cout << "Final RMS error: " << std::fixed << std::setprecision(8)
-        << rms_error << std::defaultfloat << std::endl;
+    double final_rms = std::sqrt(2.0 * final_error / _voronoi_sphere->size());
+    std::cout << "Final RMS error: " << std::fixed << std::setprecision(8) << final_rms << std::defaultfloat << std::endl;
 
     return std::move(_voronoi_sphere);
 }
@@ -307,7 +305,7 @@ std::vector<double> GradientDensityOptimizer<FieldType, GeneratorType>::compute_
 
     size_t i = 0;
     for (const auto& cell : _voronoi_sphere->dual_cells()) {
-        auto moments = compute_polygon_moments(cell);
+        auto moments = cell.moments();
         double mass = _field.mass(moments);
         errors[i] = mass - _target_mass;
         ++i;
