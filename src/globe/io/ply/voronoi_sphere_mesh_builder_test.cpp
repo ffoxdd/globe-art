@@ -36,15 +36,15 @@ TEST(VoronoiSphereMeshBuilderTest, MeshIsValid) {
     EXPECT_FALSE(mesh.is_empty());
 }
 
-TEST(VoronoiSphereMeshBuilderTest, MeshHasVerticesForAllDualArcs) {
+TEST(VoronoiSphereMeshBuilderTest, MeshHasVerticesForAllArcs) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
     VoronoiSphereMeshBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
 
     size_t arc_count = 0;
-    for (const auto &arc : sphere.dual_arcs()) {
-        arc_count++;
+    for (const auto &cell : sphere.cells()) {
+        arc_count += cell.arcs().size();
     }
 
     EXPECT_GT(arc_count, 0);

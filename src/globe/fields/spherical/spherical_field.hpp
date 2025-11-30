@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_SPHERICAL_FIELD_HPP_
 
 #include "../../types.hpp"
-#include "../../geometry/spherical/moments/arc_moments.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include <Eigen/Core>
 
@@ -12,14 +12,14 @@ template<typename T>
 concept SphericalField = requires(
     const T& field,
     const Point3& point,
-    const PolygonMoments& polygon_moments,
-    const ArcMoments& arc_moments
+    const SphericalPolygon& polygon,
+    const SphericalArc& arc
 ) {
     { field.value(point) } -> std::convertible_to<double>;
-    { field.mass(polygon_moments) } -> std::convertible_to<double>;
+    { field.mass(polygon) } -> std::convertible_to<double>;
     { field.total_mass() } -> std::convertible_to<double>;
-    { field.edge_integral(arc_moments) } -> std::convertible_to<double>;
-    { field.edge_gradient_integral(arc_moments) } -> std::convertible_to<Eigen::Vector3d>;
+    { field.edge_integral(arc) } -> std::convertible_to<double>;
+    { field.edge_gradient_integral(arc) } -> std::convertible_to<Eigen::Vector3d>;
 };
 
 }

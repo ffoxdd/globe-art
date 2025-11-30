@@ -99,7 +99,7 @@ inline double LloydVoronoiSphereOptimizer::run_single_pass() {
     double max_movement = 0.0;
 
     size_t index = 0;
-    for (const auto &cell : _voronoi_sphere->dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->cells()) {
         Point3 site = _voronoi_sphere->site(index);
         Point3 centroid = cell.centroid();
 
@@ -120,7 +120,7 @@ inline double LloydVoronoiSphereOptimizer::compute_total_deviation() const {
     double total = 0.0;
 
     size_t index = 0;
-    for (const auto &cell : _voronoi_sphere->dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->cells()) {
         Point3 site = _voronoi_sphere->site(index);
         Point3 centroid = cell.centroid();
 

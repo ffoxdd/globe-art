@@ -303,7 +303,7 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_final_resul
     double max_error = 0.0;
 
     size_t i = 0;
-    for (const auto& cell : _voronoi_sphere->dual_cells()) {
+    for (const auto& cell : _voronoi_sphere->cells()) {
         double cell_mass = mass(cell);
         double error = std::abs(cell_mass - target_mass);
 
@@ -320,8 +320,7 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_final_resul
 
 template<SphericalField FieldType, SpherePointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::mass(const SphericalPolygon& polygon) const {
-    auto moments = polygon.moments();
-    return _field.mass(moments);
+    return _field.mass(polygon);
 }
 
 template<SphericalField FieldType, SpherePointGenerator GeneratorType>
@@ -417,7 +416,7 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::build_cell_mass_heap()
     CellMassHeap heap;
 
     size_t i = 0;
-    for (const auto& cell : _voronoi_sphere->dual_cells()) {
+    for (const auto& cell : _voronoi_sphere->cells()) {
         double cell_mass = mass(cell);
         heap.push({i, cell_mass});
         i++;
@@ -442,7 +441,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_mass_er
     std::vector<SphericalPolygon> cells;
     cells.reserve(_voronoi_sphere->size());
 
-    for (const auto& cell : _voronoi_sphere->dual_cells()) {
+    for (const auto& cell : _voronoi_sphere->cells()) {
         cells.push_back(cell);
     }
 
@@ -472,7 +471,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_centroi
     double total_error = 0.0;
 
     size_t i = 0;
-    for (const auto& cell : _voronoi_sphere->dual_cells()) {
+    for (const auto& cell : _voronoi_sphere->cells()) {
         Point3 site = _voronoi_sphere->site(i);
         Point3 centroid = cell.centroid();
         double deviation = angular_distance(
@@ -514,7 +513,7 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::find_most_undersized_v
     double largest_deficit = 0.0;
     size_t i = 0;
 
-    for (const auto& cell : _voronoi_sphere->dual_cells()) {
+    for (const auto& cell : _voronoi_sphere->cells()) {
         double cell_mass = mass(cell);
         double deficit = target_mass - cell_mass;
 

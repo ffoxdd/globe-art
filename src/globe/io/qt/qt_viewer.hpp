@@ -9,6 +9,7 @@
 #include <functional>
 #include "../../types.hpp"
 #include "../../geometry/spherical/helpers.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
 
 namespace globe {
 
@@ -36,6 +37,7 @@ public:
     void add_segment(const Point3 &source, const Point3 &target, const CGAL::IO::Color &color = BLACK);
     void add_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color = BLACK);
     void add_arc(const Arc &arc, const CGAL::IO::Color &color = BLACK);
+    void add_arc(const SphericalArc &arc, const CGAL::IO::Color &color = BLACK);
     void add_text(const Point3 &point, const std::string &text);
     void clear();
     void show();
@@ -80,6 +82,10 @@ inline void QtViewer::add_arc(const Point3 &point1, const Point3 &point2, const 
 
 inline void QtViewer::add_arc(const Arc &arc, const CGAL::IO::Color &color) {
     add_arc(to_point(arc.source()), to_point(arc.target()), color);
+}
+
+inline void QtViewer::add_arc(const SphericalArc &arc, const CGAL::IO::Color &color) {
+    add_arc(arc.source(), arc.target(), color);
 }
 
 inline void QtViewer::add_text(const Point3 &point, const std::string &text) {

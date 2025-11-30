@@ -3,7 +3,7 @@
 
 #include "../../types.hpp"
 #include "../../geometry/spherical/helpers.hpp"
-#include "../../geometry/spherical/moments/arc_moments.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../fields/spherical/spherical_field.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
@@ -304,9 +304,8 @@ std::vector<double> GradientDensityOptimizer<FieldType, GeneratorType>::compute_
     std::vector<double> errors(n);
 
     size_t i = 0;
-    for (const auto& cell : _voronoi_sphere->dual_cells()) {
-        auto moments = cell.moments();
-        double mass = _field.mass(moments);
+    for (const auto& cell : _voronoi_sphere->cells()) {
+        double mass = _field.mass(cell);
         errors[i] = mass - _target_mass;
         ++i;
     }
@@ -330,12 +329,9 @@ std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType, GeneratorType>:
             size_t j = edge_info.neighbor_index;
             Point3 site_j = _voronoi_sphere->site(j);
 
-            Point3 v1 = to_point(edge_info.arc.source());
-            Point3 v2 = to_point(edge_info.arc.target());
-
-            auto arc_moments = compute_arc_moments(v1, v2);
-            Eigen::Vector3d rho_weighted_moment = _field.edge_gradient_integral(arc_moments);
-            double edge_integral = _field.edge_integral(arc_moments);
+            const SphericalArc& arc = edge_info.arc;
+            Eigen::Vector3d rho_weighted_moment = _field.edge_gradient_integral(arc);
+            double edge_integral = _field.edge_integral(arc);
 
             Eigen::Vector3d n_vec = to_eigen(site_j) - s_k;
             double n_norm = n_vec.norm();

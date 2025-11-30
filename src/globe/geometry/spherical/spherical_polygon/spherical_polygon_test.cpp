@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "spherical_polygon.hpp"
+#include "../spherical_arc.hpp"
 #include "../../../testing/arc_factory.hpp"
 #include <cmath>
 
@@ -8,7 +9,7 @@ using globe::testing::make_arc;
 
 TEST(SphericalPolygonTest, SimplePolygon) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
-       std::vector<Arc>{
+       std::vector<SphericalArc>{
            make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
            make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
            make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
@@ -24,7 +25,7 @@ TEST(SphericalPolygonTest, SimplePolygon) {
 
 TEST(SphericalPolygonTest, InsideOutPolygon) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
-       std::vector<Arc>{
+       std::vector<SphericalArc>{
            make_arc(Vector3(0, -1, 0), Point3(1, 0, 0), Point3(0, 0, 1)),
            make_arc(Vector3(-1, 0, 0), Point3(0, 0, 1), Point3(0, 1, 0)),
            make_arc(Vector3(0, 0, -1), Point3(0, 1, 0), Point3(1, 0, 0)),
@@ -40,7 +41,7 @@ TEST(SphericalPolygonTest, InsideOutPolygon) {
 
 TEST(SphericalPolygonTest, Hemisphere) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
-       std::vector<Arc>{
+       std::vector<SphericalArc>{
            make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
            make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
            make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
@@ -55,7 +56,7 @@ TEST(SphericalPolygonTest, Hemisphere) {
 
 TEST(SphericalPolygonTest, PathologicalHemisphere) {
    SphericalPolygon spherical_polygon = SphericalPolygon(
-       std::vector<Arc>{
+       std::vector<SphericalArc>{
            make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(-1, 0, 0)),
            make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(1, 0, 0)),
        }
@@ -70,7 +71,7 @@ TEST(SphericalPolygonTest, PointOnArcCircumcircle) {
    // The arc goes from (1, 0, 0) to (0, 1, 0) along the equator
    // A point on the arc's supporting circle but on the arc itself should be inside
    SphericalPolygon spherical_polygon = SphericalPolygon(
-       std::vector<Arc>{
+       std::vector<SphericalArc>{
            make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
            make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
            make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
@@ -107,7 +108,7 @@ TEST(SphericalPolygonTest, PolygonWithWrappedThetaBoundingBox) {
     Vector3 v3 = CGAL::cross_product(to_position_vector(p3), to_position_vector(p4));
     Vector3 v4 = CGAL::cross_product(to_position_vector(p4), to_position_vector(p1));
 
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(v1, p1, p2),
         make_arc(v2, p2, p3),
         make_arc(v3, p3, p4),
@@ -144,7 +145,7 @@ TEST(SphericalPolygonTest, BoundingBoxWrappedThetaMeasure) {
     Vector3 v3 = CGAL::cross_product(to_position_vector(p3), to_position_vector(p4));
     Vector3 v4 = CGAL::cross_product(to_position_vector(p4), to_position_vector(p1));
 
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(v1, p1, p2),
         make_arc(v2, p2, p3),
         make_arc(v3, p3, p4),
@@ -181,7 +182,7 @@ TEST(SphericalPolygonTest, BoundingSphereRadiusWithWrappedTheta) {
 
 TEST(SphericalPolygonTest, CentroidReturnsPointOnUnitSphere) {
     SphericalPolygon polygon = SphericalPolygon(
-        std::vector<Arc>{
+        std::vector<SphericalArc>{
             make_arc(Vector3(Vector3(0, 0, 1)), Point3(Point3(1, 0, 0)), Point3(Point3(0, 1, 0))),
             make_arc(Vector3(Vector3(1, 0, 0)), Point3(Point3(0, 1, 0)), Point3(Point3(0, 0, 1))),
             make_arc(Vector3(Vector3(0, 1, 0)), Point3(Point3(0, 0, 1)), Point3(Point3(1, 0, 0))),
@@ -200,7 +201,7 @@ TEST(SphericalPolygonTest, CentroidReturnsPointOnUnitSphere) {
 
 TEST(SphericalPolygonTest, CentroidIsOnUnitSphere) {
     SphericalPolygon polygon = SphericalPolygon(
-        std::vector<Arc>{
+        std::vector<SphericalArc>{
             make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
             make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
             make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
@@ -221,7 +222,7 @@ TEST(SphericalPolygonTest, CentroidIsOnUnitSphere) {
 TEST(SphericalPolygonTest, CentroidForSymmetricPolygon) {
     const double sqrt3 = std::sqrt(3);
     SphericalPolygon polygon = SphericalPolygon(
-        std::vector<Arc>{
+        std::vector<SphericalArc>{
             make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0.5, sqrt3 / 2, 0)),
             make_arc(Vector3(0, 0, 1), Point3(0.5, sqrt3 / 2, 0), Point3(-0.5, sqrt3 / 2, 0)),
             make_arc(Vector3(0, 0, 1), Point3(-0.5, sqrt3 / 2, 0), Point3(-1, 0, 0)),
@@ -243,7 +244,7 @@ TEST(SphericalPolygonTest, CentroidForSymmetricPolygon) {
 }
 
 TEST(SphericalPolygonTest, ArcThetaExtrema_FullCircle) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
         make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
@@ -256,7 +257,7 @@ TEST(SphericalPolygonTest, ArcThetaExtrema_FullCircle) {
 }
 
 TEST(SphericalPolygonTest, BoundingBox_IncludesNorthPoleZ) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
         make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
@@ -274,7 +275,7 @@ TEST(SphericalPolygonTest, BoundingBox_IncludesNorthPoleZ) {
 }
 
 TEST(SphericalPolygonTest, BoundingBox_IncludesSouthPoleZ) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, -1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(0, 0, -1), Point3(0, 1, 0), Point3(-1, 0, 0)),
         make_arc(Vector3(0, 0, -1), Point3(-1, 0, 0), Point3(0, -1, 0)),
@@ -295,7 +296,7 @@ TEST(SphericalPolygonTest, BoundingBox_PoleZEvenWhenArcsDontReach) {
     double z_arc = 0.9;
     double r_arc = std::sqrt(1.0 - z_arc * z_arc);
 
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(r_arc, 0, z_arc), Point3(0, r_arc, z_arc)),
         make_arc(Vector3(0, 0, 1), Point3(0, r_arc, z_arc), Point3(-r_arc, 0, z_arc)),
         make_arc(Vector3(0, 0, 1), Point3(-r_arc, 0, z_arc), Point3(0, -r_arc, z_arc)),
@@ -313,7 +314,7 @@ TEST(SphericalPolygonTest, BoundingBox_PoleZEvenWhenArcsDontReach) {
 }
 
 TEST(SphericalPolygonTest, BoundingSphereRadiusContainsAllVertices) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
         make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
@@ -329,7 +330,7 @@ TEST(SphericalPolygonTest, BoundingSphereRadiusContainsAllVertices) {
 }
 
 TEST(SphericalPolygonTest, BoundingSphereRadiusIsMinimalForSymmetricPolygon) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
         make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
@@ -349,7 +350,7 @@ TEST(SphericalPolygonTest, BoundingSphereRadiusIsMinimalForSymmetricPolygon) {
 }
 
 TEST(SphericalPolygonTest, AreaOfOctant) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
         make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
@@ -360,7 +361,7 @@ TEST(SphericalPolygonTest, AreaOfOctant) {
 }
 
 TEST(SphericalPolygonTest, AreaOfHemisphere) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
         make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
@@ -372,58 +373,53 @@ TEST(SphericalPolygonTest, AreaOfHemisphere) {
 }
 
 TEST(SphericalPolygonTest, MomentsArea) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
         make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
     });
 
-    auto moments = polygon.moments();
-
     double expected_area = M_PI / 2.0;
-    EXPECT_NEAR(moments.area, expected_area, 1e-6);
-    EXPECT_NEAR(moments.area, polygon.area(), 1e-6);
+    EXPECT_NEAR(polygon.area(), expected_area, 1e-6);
 }
 
 TEST(SphericalPolygonTest, MomentsFirstMomentDirection) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
         make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
     });
 
-    auto moments = polygon.moments();
+    Eigen::Vector3d first_moment = polygon.first_moment();
 
-    EXPECT_GT(moments.first_moment.x(), 0);
-    EXPECT_GT(moments.first_moment.y(), 0);
-    EXPECT_GT(moments.first_moment.z(), 0);
+    EXPECT_GT(first_moment.x(), 0);
+    EXPECT_GT(first_moment.y(), 0);
+    EXPECT_GT(first_moment.z(), 0);
 
-    EXPECT_NEAR(moments.first_moment.x(), moments.first_moment.y(), 1e-6);
-    EXPECT_NEAR(moments.first_moment.y(), moments.first_moment.z(), 1e-6);
+    EXPECT_NEAR(first_moment.x(), first_moment.y(), 1e-6);
+    EXPECT_NEAR(first_moment.y(), first_moment.z(), 1e-6);
 }
 
 TEST(SphericalPolygonTest, MomentsSecondMomentSymmetric) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
         make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
     });
 
-    auto moments = polygon.moments();
+    Eigen::Matrix3d second_moment = polygon.second_moment();
 
-    EXPECT_NEAR(moments.second_moment(0, 1), moments.second_moment(1, 0), 1e-10);
-    EXPECT_NEAR(moments.second_moment(0, 2), moments.second_moment(2, 0), 1e-10);
-    EXPECT_NEAR(moments.second_moment(1, 2), moments.second_moment(2, 1), 1e-10);
+    EXPECT_NEAR(second_moment(0, 1), second_moment(1, 0), 1e-10);
+    EXPECT_NEAR(second_moment(0, 2), second_moment(2, 0), 1e-10);
+    EXPECT_NEAR(second_moment(1, 2), second_moment(2, 1), 1e-10);
 }
 
 TEST(SphericalPolygonTest, MomentsSecondMomentTrace) {
-    SphericalPolygon polygon(std::vector<Arc>{
+    SphericalPolygon polygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
         make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
     });
 
-    auto moments = polygon.moments();
-
-    EXPECT_NEAR(moments.second_moment.trace(), moments.area, 1e-6);
+    EXPECT_NEAR(polygon.second_moment().trace(), polygon.area(), 1e-6);
 }

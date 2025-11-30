@@ -2,6 +2,7 @@
 #define GLOBEART_SRC_GLOBE_VORONOI_CORE_VORONOI_SPHERE_HPP_
 
 #include "../../types.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "circulator_iterator.hpp"
 #include <cstddef>
@@ -12,7 +13,7 @@ namespace globe {
 
 struct CellEdgeInfo {
     size_t neighbor_index;
-    Arc arc;
+    SphericalArc arc;
 };
 
 class VoronoiSphere {
@@ -21,8 +22,9 @@ class VoronoiSphere {
 
     void insert(Point3 point);
     std::size_t size() const;
-    auto dual_arcs() const;
-    auto dual_cells() const;
+
+    SphericalPolygon cell(size_t index) const;
+    auto cells() const;
 
     Point3 site(size_t index) const;
     void update_site(size_t index, Point3 new_position);
@@ -45,11 +47,16 @@ class VoronoiSphere {
     std::vector<VertexHandle> _handles;
     std::unordered_map<VertexHandle, size_t> _handle_to_index;
 
-    auto all_edges() const;
     auto static edge_circulator_range(EdgeCirculator edge_circulator);
     auto incident_edges_range(VertexHandle vertex_handle) const;
-    std::vector<Arc> dual_cell_arcs(size_t index) const;
+    std::vector<SphericalArc> cell_arcs(size_t index) const;
     size_t vertex_index(VertexHandle handle) const;
+
+    static SphericalArc to_spherical_arc(const Arc& cgal_arc);
+    static Vector3 arc_normal(const Arc& arc);
+
+    template<typename P>
+    static Point3 to_point(const P& p);
 };
 
 inline VoronoiSphere::VoronoiSphere() {
@@ -77,21 +84,6 @@ inline std::size_t VoronoiSphere::size() const {
     return _triangulation.number_of_vertices();
 }
 
-inline auto VoronoiSphere::all_edges() const {
-    return std::ranges::subrange(
-        _triangulation.all_edges_begin(),
-        _triangulation.all_edges_end()
-    );
-}
-
-inline auto VoronoiSphere::dual_arcs() const {
-    return all_edges() | std::views::transform(
-        [this](Edge edge) {
-            return this->_triangulation.dual_on_sphere(edge);
-        }
-    );
-}
-
 inline Point3 VoronoiSphere::site(size_t index) const {
     return _triangulation.point(_handles[index]);
 }
@@ -103,20 +95,31 @@ inline void VoronoiSphere::update_site(size_t index, Point3 new_position) {
     _handle_to_index[_handles[index]] = index;
 }
 
-inline std::vector<Arc> VoronoiSphere::dual_cell_arcs(size_t index) const {
+inline std::vector<SphericalArc> VoronoiSphere::cell_arcs(size_t index) const {
+    if (_triangulation.dimension() < 2) {
+        return {};
+    }
+
     VertexHandle vertex_handle = _handles[index];
-    auto range = incident_edges_range(vertex_handle) | std::views::transform(
-        [this](Edge edge) {
-            return this->_triangulation.dual_on_sphere(edge);
-        }
-    );
-    return {range.begin(), range.end()};
+    std::vector<SphericalArc> arcs;
+
+    for (const auto& edge : incident_edges_range(vertex_handle)) {
+        Arc cgal_arc = _triangulation.dual_on_sphere(edge);
+        arcs.push_back(to_spherical_arc(cgal_arc));
+    }
+
+    return arcs;
 }
 
-inline auto VoronoiSphere::dual_cells() const {
-    return std::views::iota(size_t(0), size()) | std::views::transform(
+inline SphericalPolygon VoronoiSphere::cell(size_t index) const {
+    return SphericalPolygon(cell_arcs(index));
+}
+
+inline auto VoronoiSphere::cells() const {
+    size_t count = (_triangulation.dimension() >= 2) ? size() : 0;
+    return std::views::iota(size_t(0), count) | std::views::transform(
         [this](size_t index) {
-            return SphericalPolygon(dual_cell_arcs(index));
+            return cell(index);
         }
     );
 }
@@ -144,15 +147,47 @@ inline std::vector<CellEdgeInfo> VoronoiSphere::cell_edges(size_t index) const {
         size_t neighbor_idx = vertex_index(neighbor_handle);
 
         if (neighbor_idx < size()) {
-            Arc arc = _triangulation.dual_on_sphere(edge);
-            result.push_back({neighbor_idx, arc});
+            Arc cgal_arc = _triangulation.dual_on_sphere(edge);
+            result.push_back({neighbor_idx, to_spherical_arc(cgal_arc)});
         }
     }
 
     return result;
 }
 
-} // namespace globe
+inline SphericalArc VoronoiSphere::to_spherical_arc(const Arc& cgal_arc) {
+    Point3 source = to_point(cgal_arc.source());
+    Point3 target = to_point(cgal_arc.target());
+    Vector3 normal = arc_normal(cgal_arc);
+    return SphericalArc(source, target, normal);
+}
+
+inline Vector3 VoronoiSphere::arc_normal(const Arc& arc) {
+    auto circle = arc.supporting_circle();
+    auto plane = circle.supporting_plane();
+    auto normal = plane.orthogonal_vector();
+
+    double x = CGAL::to_double(normal.x());
+    double y = CGAL::to_double(normal.y());
+    double z = CGAL::to_double(normal.z());
+
+    double len = std::sqrt(x * x + y * y + z * z);
+    if (len < 1e-15) {
+        return Vector3(0, 0, 1);
+    }
+
+    return Vector3(x / len, y / len, z / len);
+}
+
+template<typename P>
+inline Point3 VoronoiSphere::to_point(const P& p) {
+    return Point3(
+        CGAL::to_double(p.x()),
+        CGAL::to_double(p.y()),
+        CGAL::to_double(p.z())
+    );
+}
+
+}
 
 #endif //GLOBEART_SRC_GLOBE_VORONOI_CORE_VORONOI_SPHERE_HPP_
-

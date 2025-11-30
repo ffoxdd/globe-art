@@ -1,8 +1,12 @@
 #include "constant_spherical_field.hpp"
+#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
+#include "../../testing/arc_factory.hpp"
 #include <gtest/gtest.h>
 #include <cmath>
 
 using namespace globe;
+using globe::testing::make_arc;
 
 TEST(ConstantSphericalFieldTest, ValueIsConstant) {
     ConstantSphericalField field(2.5);
@@ -15,25 +19,24 @@ TEST(ConstantSphericalFieldTest, ValueIsConstant) {
 TEST(ConstantSphericalFieldTest, MassIsValueTimesArea) {
     ConstantSphericalField field(3.0);
 
-    PolygonMoments moments{
-        .area = 2.0,
-        .first_moment = Eigen::Vector3d::Zero(),
-        .second_moment = Eigen::Matrix3d::Zero()
-    };
+    SphericalPolygon polygon(std::vector<SphericalArc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0)),
+    });
 
-    EXPECT_DOUBLE_EQ(field.mass(moments), 6.0);
+    double expected = 3.0 * polygon.area();
+    EXPECT_DOUBLE_EQ(field.mass(polygon), expected);
 }
 
 TEST(ConstantSphericalFieldTest, EdgeIntegralIsValueTimesLength) {
     ConstantSphericalField field(4.0);
 
-    ArcMoments moments{
-        .length = 1.5,
-        .first_moment = Eigen::Vector3d::Zero(),
-        .second_moment = Eigen::Matrix3d::Zero()
-    };
+    SphericalArc arc = make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0));
 
-    EXPECT_DOUBLE_EQ(field.edge_integral(moments), 6.0);
+    double expected = 4.0 * arc.length();
+    EXPECT_DOUBLE_EQ(field.edge_integral(arc), expected);
 }
 
 TEST(ConstantSphericalFieldTest, TotalMassIsValueTimesSphereArea) {

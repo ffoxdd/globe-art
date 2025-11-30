@@ -40,8 +40,10 @@ inline void VoronoiSphereQtRenderer::draw_voronoi_sphere(
 ) {
     viewer.clear();
 
-    for (const auto &arc : voronoi_sphere.dual_arcs()) {
-        viewer.add_arc(arc, CGAL::IO::Color(140, 140, 140));
+    for (const auto& cell : voronoi_sphere.cells()) {
+        for (const auto& arc : cell.arcs()) {
+            viewer.add_arc(arc, CGAL::IO::Color(140, 140, 140));
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 #include "gradient_density_optimizer.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
 #include "../../fields/spherical/linear_spherical_field.hpp"
-#include "../../geometry/spherical/moments/arc_moments.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/helpers.hpp"
 #include "../../testing/geometric_assertions.hpp"
 #include <gtest/gtest.h>
@@ -73,9 +73,8 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
     auto compute_mass_errors = [&]() {
         std::vector<double> errors(voronoi->size());
         size_t i = 0;
-        for (const auto& cell : voronoi->dual_cells()) {
-            auto moments = cell.moments();
-            errors[i] = field.mass(moments) - target_mass;
+        for (const auto& cell : voronoi->cells()) {
+            errors[i] = field.mass(cell) - target_mass;
             ++i;
         }
         return errors;
@@ -96,9 +95,8 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
 
     auto compute_error_for = [&](VoronoiSphere& v) {
         double total = 0.0;
-        for (const auto& cell : v.dual_cells()) {
-            auto moments = cell.moments();
-            double mass_error = field.mass(moments) - target_mass;
+        for (const auto& cell : v.cells()) {
+            double mass_error = field.mass(cell) - target_mass;
             total += mass_error * mass_error;
         }
         return total / 2.0;
@@ -116,12 +114,9 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
             size_t j = edge_info.neighbor_index;
             Point3 site_j = voronoi->site(j);
 
-            Point3 v1 = to_point(edge_info.arc.source());
-            Point3 v2 = to_point(edge_info.arc.target());
-
-            auto arc_moments = compute_arc_moments(v1, v2);
-            Eigen::Vector3d rho_weighted_moment = field.edge_gradient_integral(arc_moments);
-            double edge_integral = field.edge_integral(arc_moments);
+            const SphericalArc& arc = edge_info.arc;
+            Eigen::Vector3d rho_weighted_moment = field.edge_gradient_integral(arc);
+            double edge_integral = field.edge_integral(arc);
 
             Eigen::Vector3d n_vec = to_eigen(site_j) - s_k;
             double n_norm = n_vec.norm();

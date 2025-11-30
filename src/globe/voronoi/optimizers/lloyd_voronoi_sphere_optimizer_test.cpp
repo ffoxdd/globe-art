@@ -9,7 +9,7 @@ TEST(LloydVoronoiSphereOptimizerTest, ReducesDeviation) {
 
     double initial_deviation = 0.0;
     size_t index = 0;
-    for (const auto &cell : voronoi->dual_cells()) {
+    for (const auto &cell : voronoi->cells()) {
         Point3 site = voronoi->site(index);
         Point3 centroid = cell.centroid();
         double deviation = angular_distance(
@@ -26,7 +26,7 @@ TEST(LloydVoronoiSphereOptimizerTest, ReducesDeviation) {
 
     double final_deviation = 0.0;
     index = 0;
-    for (const auto &cell : optimized->dual_cells()) {
+    for (const auto &cell : optimized->cells()) {
         Point3 site = optimized->site(index);
         Point3 centroid = cell.centroid();
         double deviation = angular_distance(

@@ -4,6 +4,7 @@
 #include "../scalar/mock_scalar_field.hpp"
 #include "../scalar/constant_scalar_field.hpp"
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../testing/test_fixtures.hpp"
 #include "../../testing/geometric_assertions.hpp"
 #include "../../testing/arc_factory.hpp"
@@ -17,7 +18,7 @@ using ::testing::_;
 
 SphericalPolygon make_northern_hemisphere_polygon() {
     return SphericalPolygon(
-        std::vector<Arc>{
+        std::vector<SphericalArc>{
             make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
             make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
             make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
