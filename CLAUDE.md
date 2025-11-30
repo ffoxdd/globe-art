@@ -170,6 +170,27 @@ Examples:
 - Test with more points and noise: `./generate_globe --no-render --points 50`
 - Visual debugging with fewer points: `./generate_globe --points 10`
 
+## CGAL Considerations
+
+### Order-Agnostic Operations
+Important geometric computations should produce identical results regardless of equivalent but different orderings of connectivity/combinatorics. For example, polygon area and moment calculations should not depend on edge iteration order. Use exact arithmetic where needed to achieve this.
+
+### Checkpoint/Restore Pattern
+When implementing checkpoint/restore for optimization (saving best state to return to later), rebuild the VoronoiSphere from scratch rather than using `update_site()` in a loop:
+
+```cpp
+// Preferred: rebuild from scratch
+void restore_checkpoint(const std::vector<Point3>& checkpoint) {
+    auto new_voronoi = std::make_unique<VoronoiSphere>();
+    for (const auto& site : checkpoint) {
+        new_voronoi->insert(site);
+    }
+    _voronoi_sphere = std::move(new_voronoi);
+}
+```
+
+The rebuild approach is preferred for performance - bulk insertion is faster than updating each site individually.
+
 ## Code Style Preferences
 
 ### Naming Conventions

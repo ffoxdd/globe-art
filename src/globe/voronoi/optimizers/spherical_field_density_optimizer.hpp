@@ -3,7 +3,7 @@
 
 #include "../../types.hpp"
 #include "../../geometry/spherical/helpers.hpp"
-#include "../../geometry/spherical/moments/polygon_moments.hpp"
+#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../core/voronoi_sphere.hpp"
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../../fields/spherical/spherical_field.hpp"
@@ -320,7 +320,7 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_final_resul
 
 template<SphericalField FieldType, SpherePointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::mass(const SphericalPolygon& polygon) const {
-    auto moments = compute_polygon_moments(polygon);
+    auto moments = polygon.moments();
     return _field.mass(moments);
 }
 
@@ -583,9 +583,11 @@ template<SphericalField FieldType, SpherePointGenerator GeneratorType>
 void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::restore_checkpoint(
     const Checkpoint& checkpoint
 ) {
-    for (size_t i = 0; i < checkpoint.size(); i++) {
-        _voronoi_sphere->update_site(i, checkpoint[i]);
+    auto new_voronoi = std::make_unique<VoronoiSphere>();
+    for (const auto& site : checkpoint) {
+        new_voronoi->insert(site);
     }
+    _voronoi_sphere = std::move(new_voronoi);
 }
 
 }

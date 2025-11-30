@@ -370,3 +370,60 @@ TEST(SphericalPolygonTest, AreaOfHemisphere) {
     double expected_area = 2.0 * M_PI;
     EXPECT_NEAR(polygon.area(), expected_area, 1e-9);
 }
+
+TEST(SphericalPolygonTest, MomentsArea) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
+        make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
+    });
+
+    auto moments = polygon.moments();
+
+    double expected_area = M_PI / 2.0;
+    EXPECT_NEAR(moments.area, expected_area, 1e-6);
+    EXPECT_NEAR(moments.area, polygon.area(), 1e-6);
+}
+
+TEST(SphericalPolygonTest, MomentsFirstMomentDirection) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
+        make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
+    });
+
+    auto moments = polygon.moments();
+
+    EXPECT_GT(moments.first_moment.x(), 0);
+    EXPECT_GT(moments.first_moment.y(), 0);
+    EXPECT_GT(moments.first_moment.z(), 0);
+
+    EXPECT_NEAR(moments.first_moment.x(), moments.first_moment.y(), 1e-6);
+    EXPECT_NEAR(moments.first_moment.y(), moments.first_moment.z(), 1e-6);
+}
+
+TEST(SphericalPolygonTest, MomentsSecondMomentSymmetric) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
+        make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
+    });
+
+    auto moments = polygon.moments();
+
+    EXPECT_NEAR(moments.second_moment(0, 1), moments.second_moment(1, 0), 1e-10);
+    EXPECT_NEAR(moments.second_moment(0, 2), moments.second_moment(2, 0), 1e-10);
+    EXPECT_NEAR(moments.second_moment(1, 2), moments.second_moment(2, 1), 1e-10);
+}
+
+TEST(SphericalPolygonTest, MomentsSecondMomentTrace) {
+    SphericalPolygon polygon(std::vector<Arc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
+        make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
+    });
+
+    auto moments = polygon.moments();
+
+    EXPECT_NEAR(moments.second_moment.trace(), moments.area, 1e-6);
+}

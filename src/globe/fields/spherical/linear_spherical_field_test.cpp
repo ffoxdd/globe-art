@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "linear_spherical_field.hpp"
-#include "../../geometry/spherical/moments/polygon_moments.hpp"
+#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../geometry/spherical/moments/arc_moments.hpp"
 
 using namespace globe;

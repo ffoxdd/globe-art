@@ -589,9 +589,11 @@ template<IntegrableField IntegrableFieldType, SpherePointGenerator GeneratorType
 void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::restore_checkpoint(
     const Checkpoint &checkpoint
 ) {
-    for (size_t i = 0; i < checkpoint.size(); i++) {
-        _voronoi_sphere->update_site(i, checkpoint[i]);
+    auto new_voronoi = std::make_unique<VoronoiSphere>();
+    for (const auto& site : checkpoint) {
+        new_voronoi->insert(site);
     }
+    _voronoi_sphere = std::move(new_voronoi);
 }
 
 } // namespace globe
