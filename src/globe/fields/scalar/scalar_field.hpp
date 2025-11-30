@@ -2,7 +2,6 @@
 #define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_SCALAR_FIELD_H_
 
 #include "../../types.hpp"
-#include "../../math/interval.hpp"
 
 namespace globe {
 
@@ -12,7 +11,6 @@ concept ScalarField = requires(
     const Point3 &location
 ) {
     { scalar_field.value(location) } -> std::convertible_to<double>;
-    { scalar_field.output_range() } -> std::convertible_to<Interval>;
 };
 
 template<typename T>

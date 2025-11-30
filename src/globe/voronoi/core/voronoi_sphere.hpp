@@ -6,6 +6,7 @@
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "circulator_iterator.hpp"
 #include <cstddef>
+#include <memory>
 #include <ranges>
 #include <unordered_map>
 
@@ -19,6 +20,11 @@ struct CellEdgeInfo {
 class VoronoiSphere {
  public:
     explicit VoronoiSphere();
+
+    VoronoiSphere(const VoronoiSphere&) = delete;
+    VoronoiSphere& operator=(const VoronoiSphere&) = delete;
+    VoronoiSphere(VoronoiSphere&&) = default;
+    VoronoiSphere& operator=(VoronoiSphere&&) = default;
 
     void insert(Point3 point);
     std::size_t size() const;
@@ -43,7 +49,7 @@ class VoronoiSphere {
     using Edge = Triangulation::Edge;
     using EdgeCirculatorIterator = CirculatorIterator<EdgeCirculator, Edge>;
 
-    Triangulation _triangulation;
+    std::unique_ptr<Triangulation> _triangulation;
     std::vector<VertexHandle> _handles;
     std::unordered_map<VertexHandle, size_t> _handle_to_index;
 
@@ -59,11 +65,12 @@ class VoronoiSphere {
     static Point3 to_point(const P& p);
 };
 
-inline VoronoiSphere::VoronoiSphere() {
+inline VoronoiSphere::VoronoiSphere() :
+    _triangulation(std::make_unique<Triangulation>()) {
 }
 
 inline void VoronoiSphere::insert(Point3 point) {
-    VertexHandle handle = _triangulation.insert(point);
+    VertexHandle handle = _triangulation->insert(point);
     size_t index = _handles.size();
     _handles.push_back(handle);
     _handle_to_index[handle] = index;
@@ -77,26 +84,26 @@ inline auto VoronoiSphere::edge_circulator_range(EdgeCirculator edge_circulator)
 }
 
 inline auto VoronoiSphere::incident_edges_range(VertexHandle vertex_handle) const {
-    return edge_circulator_range(_triangulation.incident_edges(vertex_handle));
+    return edge_circulator_range(_triangulation->incident_edges(vertex_handle));
 }
 
 inline std::size_t VoronoiSphere::size() const {
-    return _triangulation.number_of_vertices();
+    return _triangulation->number_of_vertices();
 }
 
 inline Point3 VoronoiSphere::site(size_t index) const {
-    return _triangulation.point(_handles[index]);
+    return _triangulation->point(_handles[index]);
 }
 
 inline void VoronoiSphere::update_site(size_t index, Point3 new_position) {
     _handle_to_index.erase(_handles[index]);
-    _triangulation.remove(_handles[index]);
-    _handles[index] = _triangulation.insert(new_position);
+    _triangulation->remove(_handles[index]);
+    _handles[index] = _triangulation->insert(new_position);
     _handle_to_index[_handles[index]] = index;
 }
 
 inline std::vector<SphericalArc> VoronoiSphere::cell_arcs(size_t index) const {
-    if (_triangulation.dimension() < 2) {
+    if (_triangulation->dimension() < 2) {
         return {};
     }
 
@@ -104,7 +111,7 @@ inline std::vector<SphericalArc> VoronoiSphere::cell_arcs(size_t index) const {
     std::vector<SphericalArc> arcs;
 
     for (const auto& edge : incident_edges_range(vertex_handle)) {
-        Arc cgal_arc = _triangulation.dual_on_sphere(edge);
+        Arc cgal_arc = _triangulation->dual_on_sphere(edge);
         arcs.push_back(to_spherical_arc(cgal_arc));
     }
 
@@ -116,7 +123,7 @@ inline SphericalPolygon VoronoiSphere::cell(size_t index) const {
 }
 
 inline auto VoronoiSphere::cells() const {
-    size_t count = (_triangulation.dimension() >= 2) ? size() : 0;
+    size_t count = (_triangulation->dimension() >= 2) ? size() : 0;
     return std::views::iota(size_t(0), count) | std::views::transform(
         [this](size_t index) {
             return cell(index);
@@ -147,7 +154,7 @@ inline std::vector<CellEdgeInfo> VoronoiSphere::cell_edges(size_t index) const {
         size_t neighbor_idx = vertex_index(neighbor_handle);
 
         if (neighbor_idx < size()) {
-            Arc cgal_arc = _triangulation.dual_on_sphere(edge);
+            Arc cgal_arc = _triangulation->dual_on_sphere(edge);
             result.push_back({neighbor_idx, to_spherical_arc(cgal_arc)});
         }
     }

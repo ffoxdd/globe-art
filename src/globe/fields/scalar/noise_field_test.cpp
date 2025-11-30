@@ -44,12 +44,11 @@ std::vector<int> test_seeds() {
 TEST(NoiseFieldTest, EXPENSIVE_CanConfigureOutputRange) {
     REQUIRE_EXPENSIVE();
 
-    Interval output_range = Interval(-0.01, 0.02);
+    Interval output_range(-0.01, 0.02);
     RandomPointGenerator point_generator;
 
     for (int seed : test_seeds()) {
         NoiseField noise_field(output_range, seed);
-        Interval expected_range = noise_field.output_range();
 
         auto points = point_generator.generate(SAMPLE_COUNT);
         std::vector<double> values;
@@ -71,11 +70,11 @@ TEST(NoiseFieldTest, EXPENSIVE_CanConfigureOutputRange) {
 TEST(NoiseFieldTest, EXPENSIVE_OutputDistributionUsesFullRange) {
     REQUIRE_EXPENSIVE();
 
+    Interval expected_range(0, 1);
     RandomPointGenerator point_generator;
 
     for (int seed : test_seeds()) {
-        NoiseField noise_field(Interval(0, 1), seed);
-        Interval expected_range = noise_field.output_range();
+        NoiseField noise_field(expected_range, seed);
 
         auto points = point_generator.generate(SAMPLE_COUNT);
         std::vector<double> values;
@@ -90,4 +89,3 @@ TEST(NoiseFieldTest, EXPENSIVE_OutputDistributionUsesFullRange) {
         EXPECT_LT(metrics.clipping_ratio, 0.1) << "Failed for seed " << seed;
     }
 }
-
