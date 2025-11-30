@@ -27,11 +27,10 @@ inline VoronoiSphereMeshBuilder::VoronoiSphereMeshBuilder(
 inline SurfaceMesh VoronoiSphereMeshBuilder::build(const VoronoiSphere &voronoi_sphere) {
     SurfaceMesh mesh;
 
-    for (const auto &arc : voronoi_sphere.dual_arcs()) {
-        Point3 source = to_point(arc.source());
-        Point3 target = to_point(arc.target());
-
-        _mesh_builder.build_arc(mesh, source, target);
+    for (const auto &cell : voronoi_sphere.cells()) {
+        for (const auto &arc : cell.arcs()) {
+            _mesh_builder.build_arc(mesh, arc.source(), arc.target());
+        }
     }
 
     return std::move(mesh);

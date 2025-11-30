@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 #include "linear_spherical_field.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
-#include "../../geometry/spherical/moments/arc_moments.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
+#include "../../testing/arc_factory.hpp"
 
 using namespace globe;
+using globe::testing::make_arc;
 
 TEST(LinearSphericalFieldTest, ValueReturnsLinearFunctionOfZ) {
     LinearSphericalField field(2.0, 1.0);
@@ -25,25 +27,24 @@ TEST(LinearSphericalFieldTest, DefaultParametersGiveIdentityOnZ) {
 TEST(LinearSphericalFieldTest, MassUsesFirstMomentZ) {
     LinearSphericalField field(2.0, 3.0);
 
-    PolygonMoments moments;
-    moments.area = 0.5;
-    moments.first_moment = Eigen::Vector3d(0.1, 0.2, 0.3);
-    moments.second_moment = Eigen::Matrix3d::Zero();
+    SphericalPolygon polygon(std::vector<SphericalArc>{
+        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
+        make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0)),
+    });
 
-    double expected = 2.0 * 0.3 + 3.0 * 0.5;
-    EXPECT_DOUBLE_EQ(field.mass(moments), expected);
+    double expected = 2.0 * polygon.first_moment().z() + 3.0 * polygon.area();
+    EXPECT_DOUBLE_EQ(field.mass(polygon), expected);
 }
 
 TEST(LinearSphericalFieldTest, EdgeIntegralUsesFirstMomentZ) {
     LinearSphericalField field(2.0, 3.0);
 
-    ArcMoments moments;
-    moments.length = 0.4;
-    moments.first_moment = Eigen::Vector3d(0.1, 0.2, 0.3);
-    moments.second_moment = Eigen::Matrix3d::Zero();
+    SphericalArc arc = make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0));
 
-    double expected = 2.0 * 0.3 + 3.0 * 0.4;
-    EXPECT_DOUBLE_EQ(field.edge_integral(moments), expected);
+    double expected = 2.0 * arc.first_moment().z() + 3.0 * arc.length();
+    EXPECT_DOUBLE_EQ(field.edge_integral(arc), expected);
 }
 
 TEST(LinearSphericalFieldTest, TotalMassOnlyIncludesOffset) {

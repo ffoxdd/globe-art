@@ -3,7 +3,7 @@
 
 #include "spherical_field.hpp"
 #include "../../types.hpp"
-#include "../../geometry/spherical/moments/arc_moments.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 
 namespace globe {
@@ -13,9 +13,9 @@ class LinearSphericalField {
     explicit LinearSphericalField(double slope = 1.0, double offset = 0.0);
 
     [[nodiscard]] double value(const Point3& point) const;
-    [[nodiscard]] double mass(const PolygonMoments& moments) const;
-    [[nodiscard]] double edge_integral(const ArcMoments& moments) const;
-    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const ArcMoments& moments) const;
+    [[nodiscard]] double mass(const SphericalPolygon& polygon) const;
+    [[nodiscard]] double edge_integral(const SphericalArc& arc) const;
+    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const SphericalArc& arc) const;
 
     [[nodiscard]] double total_mass() const;
 
@@ -33,18 +33,18 @@ inline double LinearSphericalField::value(const Point3& point) const {
     return _slope * point.z() + _offset;
 }
 
-inline double LinearSphericalField::mass(const PolygonMoments& moments) const {
-    return _slope * moments.first_moment.z() + _offset * moments.area;
+inline double LinearSphericalField::mass(const SphericalPolygon& polygon) const {
+    return _slope * polygon.first_moment().z() + _offset * polygon.area();
 }
 
-inline double LinearSphericalField::edge_integral(const ArcMoments& moments) const {
-    return _slope * moments.first_moment.z() + _offset * moments.length;
+inline double LinearSphericalField::edge_integral(const SphericalArc& arc) const {
+    return _slope * arc.first_moment().z() + _offset * arc.length();
 }
 
 inline Eigen::Vector3d LinearSphericalField::edge_gradient_integral(
-    const ArcMoments& moments
+    const SphericalArc& arc
 ) const {
-    return _slope * moments.second_moment.col(2) + _offset * moments.first_moment;
+    return _slope * arc.second_moment().col(2) + _offset * arc.first_moment();
 }
 
 inline double LinearSphericalField::total_mass() const {

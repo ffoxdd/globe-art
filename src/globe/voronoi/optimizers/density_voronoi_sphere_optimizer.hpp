@@ -292,7 +292,7 @@ void DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::print_fi
     double max_error = 0.0;
 
     size_t i = 0;
-    for (const auto &cell : _voronoi_sphere->dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->cells()) {
         double cell_mass = mass(cell);
         double error = std::abs(cell_mass - target_mass);
 
@@ -412,7 +412,7 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::build_cell_ma
     CellMassHeap heap;
 
     size_t i = 0;
-    for (const auto &cell : _voronoi_sphere->dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->cells()) {
         double cell_mass = mass(cell);
         heap.push({i, cell_mass});
         i++;
@@ -437,7 +437,7 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::comput
     std::vector<SphericalPolygon> cells;
     cells.reserve(_voronoi_sphere->size());
 
-    for (const auto &cell : _voronoi_sphere->dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->cells()) {
         cells.push_back(cell);
     }
 
@@ -467,7 +467,7 @@ double DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::comput
     double total_error = 0.0;
 
     size_t i = 0;
-    for (const auto &cell : _voronoi_sphere->dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->cells()) {
         Point3 site = _voronoi_sphere->site(i);
         Point3 centroid = cell.centroid();
         double deviation = angular_distance(
@@ -509,7 +509,7 @@ DensityVoronoiSphereOptimizer<IntegrableFieldType, GeneratorType>::find_most_und
     double largest_deficit = 0.0;
     size_t i = 0;
 
-    for (const auto &cell : _voronoi_sphere->dual_cells()) {
+    for (const auto &cell : _voronoi_sphere->cells()) {
         double cell_mass = mass(cell);
         double deficit = target_mass - cell_mass;
 

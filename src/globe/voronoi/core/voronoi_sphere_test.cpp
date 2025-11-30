@@ -73,35 +73,35 @@ TEST(VoronoiSphereTest, UpdateSiteChangesPosition) {
     EXPECT_TRUE(points_approximately_equal(sphere.site(0), updated));
 }
 
-TEST(VoronoiSphereTest, DualArcsReturnsNonEmptyRange) {
+TEST(VoronoiSphereTest, CellArcsReturnsNonEmptyRange) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
 
     size_t arc_count = 0;
-    for (const auto &arc : sphere.dual_arcs()) {
-        arc_count++;
+    for (const auto &cell : sphere.cells()) {
+        arc_count += cell.arcs().size();
     }
 
     EXPECT_GT(arc_count, 0);
 }
 
-TEST(VoronoiSphereTest, DualArcsIsEmptyForEmptySphere) {
+TEST(VoronoiSphereTest, CellArcsIsEmptyForEmptySphere) {
     VoronoiSphere sphere;
 
     size_t arc_count = 0;
-    for (const auto &arc : sphere.dual_arcs()) {
-        arc_count++;
+    for (const auto &cell : sphere.cells()) {
+        arc_count += cell.arcs().size();
     }
 
     EXPECT_EQ(arc_count, 0);
 }
 
-TEST(VoronoiSphereTest, DualArcsIsEmptyForSinglePoint) {
+TEST(VoronoiSphereTest, CellArcsIsEmptyForSinglePoint) {
     VoronoiSphere sphere;
     sphere.insert(Point3(1, 0, 0));
 
     size_t arc_count = 0;
-    for (const auto &arc : sphere.dual_arcs()) {
-        arc_count++;
+    for (const auto &cell : sphere.cells()) {
+        arc_count += cell.arcs().size();
     }
 
     EXPECT_EQ(arc_count, 0);
@@ -111,7 +111,7 @@ TEST(VoronoiSphereTest, DualCellsReturnsSphericalPolygons) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
 
     size_t cell_count = 0;
-    for (const auto &cell : sphere.dual_cells()) {
+    for (const auto &cell : sphere.cells()) {
         // Constructor already validates with CGAL_precondition
         cell_count++;
     }
@@ -123,7 +123,7 @@ TEST(VoronoiSphereTest, DualCellsIsEmptyForEmptySphere) {
     VoronoiSphere sphere;
 
     size_t cell_count = 0;
-    for (const auto &cell : sphere.dual_cells()) {
+    for (const auto &cell : sphere.cells()) {
         cell_count++;
     }
 

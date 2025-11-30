@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "constant_integrable_field.hpp"
+#include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../testing/arc_factory.hpp"
 #include "../../types.hpp"
@@ -10,7 +11,7 @@ using globe::testing::make_arc;
 namespace {
 
 SphericalPolygon make_octant() {
-    return SphericalPolygon(std::vector<Arc>{
+    return SphericalPolygon(std::vector<SphericalArc>{
         make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
         make_arc(Vector3(1, 0, 0), Point3(0, 1, 0), Point3(0, 0, 1)),
         make_arc(Vector3(0, 1, 0), Point3(0, 0, 1), Point3(1, 0, 0)),
