@@ -218,7 +218,7 @@ Point3 SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::interpo
     Eigen::Vector3d source = to_eigen(arc.source());
     Eigen::Vector3d target = to_eigen(arc.target());
 
-    double theta = arc.angle();
+    double theta = arc.length();
     if (theta < 1e-10) {
         return arc.source();
     }

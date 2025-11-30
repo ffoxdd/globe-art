@@ -269,7 +269,7 @@ Point3 MonteCarloSphericalField<ScalarFieldType, SpherePointGeneratorType, Inter
     Eigen::Vector3d source(arc.source().x(), arc.source().y(), arc.source().z());
     Eigen::Vector3d target(arc.target().x(), arc.target().y(), arc.target().z());
 
-    double theta = arc.angle();
+    double theta = arc.length();
     if (theta < 1e-10) {
         return arc.source();
     }
