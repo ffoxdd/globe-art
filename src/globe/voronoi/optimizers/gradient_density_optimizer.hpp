@@ -119,15 +119,6 @@ double GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::ope
     _last_rms_error = std::sqrt(2.0 * error / _optimizer._voronoi_sphere->size());
     ++_iteration_count;
 
-    if (_iteration_count % 10 == 0) {
-        double grad_norm = grad.norm();
-        std::cout << std::fixed << std::setprecision(8)
-            << "    L-BFGS iter " << std::setw(4) << _iteration_count
-            << ": RMS error = " << _last_rms_error
-            << ", |grad| = " << std::setprecision(4) << grad_norm
-            << std::defaultfloat << std::endl;
-    }
-
     return error;
 }
 
@@ -149,17 +140,9 @@ int GradientDensityOptimizer<FieldType, GeneratorType>::run_lbfgs_phase(size_t m
     try {
         int iterations = solver.minimize(functor, x, fx);
         vector_to_sites_normalized(x);
-
-        std::cout << "  L-BFGS completed: " << iterations << " iterations, "
-            << "final RMS = " << std::fixed << std::setprecision(8)
-            << functor.last_rms_error() << std::defaultfloat << std::endl;
-
         return iterations;
-    } catch (const std::exception& e) {
+    } catch (const std::exception&) {
         vector_to_sites_normalized(x);
-        std::cout << "  L-BFGS stopped: " << e.what()
-            << ", RMS = " << std::fixed << std::setprecision(8)
-            << functor.last_rms_error() << std::defaultfloat << std::endl;
         return -1;
     }
 }
@@ -181,13 +164,7 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
     while (total_iterations < _max_iterations) {
         size_t remaining = _max_iterations - total_iterations;
         size_t phase_iterations = std::min(remaining, static_cast<size_t>(100));
-
-        std::cout << "Starting L-BFGS phase (iterations " << total_iterations
-            << "-" << (total_iterations + phase_iterations) << ")"
-            << "  [perturb " << perturbation_attempts << "/" << MAX_PERTURBATION_ATTEMPTS
-            << ", since_best " << perturbations_since_best << "/" << MAX_PERTURBATIONS_BEFORE_RESTORE
-            << ", restores " << restores_to_current_best << "/" << MAX_RESTORES_PER_CHECKPOINT << "]"
-            << std::endl;
+        size_t start_iteration = total_iterations;
 
         int result = run_lbfgs_phase(phase_iterations);
         total_iterations += (result > 0) ? static_cast<size_t>(result) : phase_iterations;
@@ -195,8 +172,12 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
         double error = compute_error();
         double rms_error = std::sqrt(2.0 * error / _voronoi_sphere->size());
 
+        std::cout << "  L-BFGS " << std::setw(4) << start_iteration << "-" <<
+            std::setw(4) << std::left << total_iterations << std::right <<
+            ": RMS " << std::fixed << std::setprecision(8) << rms_error << std::defaultfloat;
+
         if (rms_error < CONVERGENCE_THRESHOLD) {
-            std::cout << "Converged at iteration " << total_iterations << std::endl;
+            std::cout << " [converged]" << std::endl;
             break;
         }
 
@@ -210,8 +191,7 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
             perturbations_since_best = 0;
             restores_to_current_best = 0;
             stalled_phases = 0;
-            std::cout << "  New best: RMS = " << std::fixed << std::setprecision(8)
-                << rms_error << std::defaultfloat << std::endl;
+            std::cout << " [new best]" << std::endl;
         } else {
             ++stalled_phases;
         }
@@ -221,8 +201,7 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
                               (result != 0);
 
         if (!should_perturb && stalled_phases >= MAX_STALLED_PHASES) {
-            std::cout << "Optimization stalled at RMS = " << std::fixed << std::setprecision(8)
-                << rms_error << std::defaultfloat << std::endl;
+            std::cout << " [stalled]" << std::endl;
             break;
         }
 
@@ -234,21 +213,24 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
                 restore_checkpoint(best_checkpoint);
                 ++restores_to_current_best;
                 perturbations_since_best = 0;
-                std::cout << "  [restore #" << restores_to_current_best << "]" << std::endl;
+                std::cout << " [restore #" << restores_to_current_best << "]" << std::endl;
                 continue;
             }
 
             if (perturbation_attempts >= MAX_PERTURBATION_ATTEMPTS) {
-                std::cout << "Stopped after " << perturbation_attempts
-                    << " perturbation attempts" << std::endl;
+                std::cout << " [max perturb]" << std::endl;
                 break;
             }
 
             auto undersized = find_most_undersized_index();
             if (undersized.has_value() && perturb_site_randomly(undersized.value())) {
                 ++perturbation_attempts;
-                std::cout << "  [perturb #" << perturbation_attempts << "]" << std::endl;
+                std::cout << " [perturb #" << perturbation_attempts << "]" << std::endl;
+            } else {
+                std::cout << std::endl;
             }
+        } else if (!improved) {
+            std::cout << std::endl;
         }
     }
 
@@ -398,9 +380,11 @@ GradientDensityOptimizer<FieldType, GeneratorType>::save_checkpoint() const {
 
 template<SphericalField FieldType, SpherePointGenerator GeneratorType>
 void GradientDensityOptimizer<FieldType, GeneratorType>::restore_checkpoint(const Checkpoint& checkpoint) {
-    for (size_t i = 0; i < checkpoint.size(); ++i) {
-        _voronoi_sphere->update_site(i, checkpoint[i]);
+    auto new_voronoi = std::make_unique<VoronoiSphere>();
+    for (const auto& site : checkpoint) {
+        new_voronoi->insert(site);
     }
+    _voronoi_sphere = std::move(new_voronoi);
 }
 
 template<SphericalField FieldType, SpherePointGenerator GeneratorType>
