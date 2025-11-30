@@ -17,6 +17,7 @@ concept SphericalField = requires(
 ) {
     { field.value(point) } -> std::convertible_to<double>;
     { field.mass(polygon_moments) } -> std::convertible_to<double>;
+    { field.total_mass() } -> std::convertible_to<double>;
     { field.edge_integral(arc_moments) } -> std::convertible_to<double>;
     { field.edge_gradient_integral(arc_moments) } -> std::convertible_to<Eigen::Vector3d>;
 };
