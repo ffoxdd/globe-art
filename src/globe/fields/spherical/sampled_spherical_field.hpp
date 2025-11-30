@@ -70,8 +70,6 @@ class SampledSphericalField {
         const SphericalArc& arc,
         double t
     ) const;
-
-    static Eigen::Vector3d to_eigen(const Point3& p);
 };
 
 template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
@@ -177,7 +175,7 @@ Eigen::Vector3d SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>
         double t = (i + 0.5) / _edge_samples;
         Point3 point = interpolate_on_arc(arc, t);
         double density = _field.value(point);
-        sum += density * to_eigen(point);
+        sum += density * globe::to_eigen(point);
     }
 
     return sum * arc_length / _edge_samples;
@@ -215,8 +213,8 @@ Point3 SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::interpo
     const SphericalArc& arc,
     double t
 ) const {
-    Eigen::Vector3d source = to_eigen(arc.source());
-    Eigen::Vector3d target = to_eigen(arc.target());
+    Eigen::Vector3d source = globe::to_eigen(arc.source());
+    Eigen::Vector3d target = globe::to_eigen(arc.target());
 
     double theta = arc.length();
     if (theta < 1e-10) {
@@ -231,13 +229,6 @@ Point3 SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::interpo
     result.normalize();
 
     return Point3(result.x(), result.y(), result.z());
-}
-
-template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
-Eigen::Vector3d SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::to_eigen(
-    const Point3& p
-) {
-    return Eigen::Vector3d(p.x(), p.y(), p.z());
 }
 
 static_assert(SphericalField<SampledSphericalField<NoiseField>>);

@@ -1,6 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_ARC_HPP_
 #define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_ARC_HPP_
 
+#include "helpers.hpp"
 #include "../../types.hpp"
 #include <CGAL/Kernel/global_functions.h>
 #include <Eigen/Core>
@@ -40,10 +41,6 @@ class SphericalArc {
     void compute_moments() const;
 
     static Eigen::Vector3d find_perpendicular(const Eigen::Vector3d& u);
-    static Eigen::Vector3d to_eigen(const Point3& p);
-    static Eigen::Vector3d to_eigen(const Vector3& v);
-    static Vector3 normalize(const Vector3& v);
-    static Vector3 to_position_vector(const Point3& p);
 };
 
 inline SphericalArc::SphericalArc(
@@ -55,15 +52,15 @@ inline SphericalArc::SphericalArc(
 
 inline SphericalArc::SphericalArc(const Point3& source, const Point3& target) :
     _source(source), _target(target) {
-    Vector3 v1 = to_position_vector(source);
-    Vector3 v2 = to_position_vector(target);
+    Vector3 v1 = globe::to_position_vector(source);
+    Vector3 v2 = globe::to_position_vector(target);
     Vector3 cross = CGAL::cross_product(v1, v2);
-    _normal = normalize(cross);
+    _normal = globe::normalize(cross);
 }
 
 inline double SphericalArc::length() const {
-    Eigen::Vector3d u1 = to_eigen(_source).normalized();
-    Eigen::Vector3d u2 = to_eigen(_target).normalized();
+    Eigen::Vector3d u1 = globe::to_eigen(_source).normalized();
+    Eigen::Vector3d u2 = globe::to_eigen(_target).normalized();
     double cos_theta = std::clamp(u1.dot(u2), -1.0, 1.0);
     return std::acos(cos_theta);
 }
@@ -75,7 +72,7 @@ inline SphericalArc SphericalArc::subarc(const Point3& point) const {
 inline bool SphericalArc::contains(const Point3& point) const {
     constexpr double EPSILON = 1e-10;
 
-    Vector3 p = to_position_vector(point);
+    Vector3 p = globe::to_position_vector(point);
 
     double dot_normal = CGAL::scalar_product(_normal, p);
     if (std::abs(dot_normal) > EPSILON) {
@@ -102,11 +99,11 @@ inline Eigen::Matrix3d SphericalArc::second_moment() const {
 inline void SphericalArc::compute_moments() const {
     constexpr double EPSILON = 1e-10;
 
-    Vector3 u1_cgal = normalize(to_position_vector(_source));
-    Vector3 u2_cgal = normalize(to_position_vector(_target));
+    Vector3 u1_cgal = globe::normalize(globe::to_position_vector(_source));
+    Vector3 u2_cgal = globe::normalize(globe::to_position_vector(_target));
 
-    Eigen::Vector3d u1 = to_eigen(u1_cgal);
-    Eigen::Vector3d u2 = to_eigen(u2_cgal);
+    Eigen::Vector3d u1 = globe::to_eigen(u1_cgal);
+    Eigen::Vector3d u2 = globe::to_eigen(u2_cgal);
 
     double cos_theta = std::clamp(u1.dot(u2), -1.0, 1.0);
     double theta = std::acos(cos_theta);
@@ -147,26 +144,6 @@ inline Eigen::Vector3d SphericalArc::find_perpendicular(const Eigen::Vector3d& u
 
     Eigen::Vector3d perp = candidate - u.dot(candidate) * u;
     return perp.normalized();
-}
-
-inline Eigen::Vector3d SphericalArc::to_eigen(const Point3& p) {
-    return Eigen::Vector3d(p.x(), p.y(), p.z());
-}
-
-inline Eigen::Vector3d SphericalArc::to_eigen(const Vector3& v) {
-    return Eigen::Vector3d(v.x(), v.y(), v.z());
-}
-
-inline Vector3 SphericalArc::normalize(const Vector3& v) {
-    double len = std::sqrt(v.squared_length());
-    if (len < 1e-15) {
-        return Vector3(0, 0, 1);
-    }
-    return v / len;
-}
-
-inline Vector3 SphericalArc::to_position_vector(const Point3& p) {
-    return Vector3(p.x(), p.y(), p.z());
 }
 
 }
