@@ -8,7 +8,6 @@
 #include "../optimizers/gradient_density_optimizer.hpp"
 #include "../optimizers/lloyd_voronoi_sphere_optimizer.hpp"
 #include "../../fields/scalar/noise_field.hpp"
-#include "../../fields/integrable/constant_integrable_field.hpp"
 #include "../../fields/integrable/sampled_integrable_field.hpp"
 #include "../../fields/spherical/constant_spherical_field.hpp"
 #include "../../fields/spherical/linear_spherical_field.hpp"
@@ -157,7 +156,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_cc
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_linear_ccvd(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
-    LinearSphericalField field(1.0, 2.0);
+    LinearSphericalField field(2.0, 2.0);
 
     SphericalFieldDensityOptimizer optimizer(
         std::move(voronoi_sphere),
@@ -210,7 +209,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_gr
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_linear_gradient(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
-    LinearSphericalField field(1.0, 2.0);
+    LinearSphericalField field(2.0, 2.0);
 
     GradientDensityOptimizer optimizer(
         std::move(voronoi_sphere),
