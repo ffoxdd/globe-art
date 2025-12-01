@@ -22,23 +22,15 @@ inline cgal::Vector3 normalize(const cgal::Vector3 &vector) {
     };
 }
 
-inline cgal::Vector3 normal(const cgal::Vector3 &v1, const cgal::Vector3 &v2) {
-    return normalize(::CGAL::cross_product(v1, v2));
-}
-
-template<VectorXYZ PointType>
+template<cgal::VectorXYZ PointType>
 inline cgal::Vector3 normal(const PointType &p1, const PointType &p2) {
-    return normal(cgal::to_vector(p1), cgal::to_vector(p2));
+    return normalize(::CGAL::cross_product(cgal::to_vector(p1), cgal::to_vector(p2)));
 }
 
-inline cgal::Point3 interpolate(const cgal::Vector3 &v1, const cgal::Vector3 &v2, double t) {
-    VectorS2 result = globe::interpolate(to_vector_s2(v1), to_vector_s2(v2), t);
-    return cgal::to_point(result);
-}
-
-template<VectorXYZ PointType>
+template<cgal::VectorXYZ PointType>
 inline cgal::Point3 interpolate(const PointType &point1, const PointType &point2, double t) {
-    return interpolate(cgal::to_vector(point1), cgal::to_vector(point2), t);
+    VectorS2 result = globe::interpolate(to_vector_s2(point1), to_vector_s2(point2), t);
+    return cgal::to_point(result);
 }
 
 }
