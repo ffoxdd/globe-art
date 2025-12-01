@@ -166,3 +166,46 @@ TEST(VoronoiSphereTest, UpdateSitePreservesOtherSites) {
     EXPECT_TRUE(points_approximately_equal(sphere.site(3), p3));
 }
 
+TEST(VoronoiSphereTest, ArcsReturnsAllCellArcs) {
+    VoronoiSphere sphere = create_simple_voronoi_sphere();
+
+    size_t arcs_via_cells = 0;
+    for (const auto &cell : sphere.cells()) {
+        arcs_via_cells += cell.arcs().size();
+    }
+
+    size_t arcs_via_arcs = 0;
+    for (const auto &arc : sphere.arcs()) {
+        (void)arc;
+        arcs_via_arcs++;
+    }
+
+    EXPECT_EQ(arcs_via_arcs, arcs_via_cells);
+    EXPECT_GT(arcs_via_arcs, 0);
+}
+
+TEST(VoronoiSphereTest, ArcsIsEmptyForEmptySphere) {
+    VoronoiSphere sphere;
+
+    size_t arc_count = 0;
+    for (const auto &arc : sphere.arcs()) {
+        (void)arc;
+        arc_count++;
+    }
+
+    EXPECT_EQ(arc_count, 0);
+}
+
+TEST(VoronoiSphereTest, ArcsIsEmptyForSinglePoint) {
+    VoronoiSphere sphere;
+    sphere.insert(cgal::Point3(1, 0, 0));
+
+    size_t arc_count = 0;
+    for (const auto &arc : sphere.arcs()) {
+        (void)arc;
+        arc_count++;
+    }
+
+    EXPECT_EQ(arc_count, 0);
+}
+

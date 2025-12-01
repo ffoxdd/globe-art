@@ -34,6 +34,7 @@ class VoronoiSphere {
 
     SphericalPolygon cell(size_t index) const;
     auto cells() const;
+    auto arcs() const;
 
     cgal::Point3 site(size_t index) const;
     void update_site(size_t index, cgal::Point3 new_position);
@@ -133,6 +134,14 @@ inline auto VoronoiSphere::cells() const {
             return cell(index);
         }
     );
+}
+
+inline auto VoronoiSphere::arcs() const {
+    return cells() | std::views::transform(
+        [](const SphericalPolygon &cell) {
+            return cell.arcs();
+        }
+    ) | std::views::join;
 }
 
 inline size_t VoronoiSphere::vertex_index(VertexHandle handle) const {

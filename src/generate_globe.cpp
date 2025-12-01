@@ -1,13 +1,13 @@
 #include "globe/voronoi/factories/voronoi_sphere_factory.hpp"
-#include "globe/io/qt/voronoi_sphere_renderer.hpp"
+#include "globe/io/qt/application.hpp"
+#include "globe/io/qt/voronoi_sphere_drawer.hpp"
 #include <CLI/CLI.hpp>
-#include <CGAL/Basic_viewer.h>
-#include <QtWidgets/QApplication>
 #include <iostream>
 #include <string>
 
 using namespace globe;
-using io::qt::VoronoiSphereRenderer;
+using io::qt::Application;
+using io::qt::VoronoiSphereDrawer;
 
 struct Config {
     int points_count;
@@ -44,7 +44,11 @@ int main(int argc, char *argv[]) {
 
     auto voronoi_sphere = factory.build();
 
-    return render(*voronoi_sphere, config.perform_render, argc, argv);
+    return render(
+        *voronoi_sphere,
+        config.perform_render,
+        argc, argv
+    );
 }
 
 Config parse_arguments(int argc, char *argv[]) {
@@ -99,9 +103,8 @@ int render(
         return 0;
     }
 
-    ::CGAL::Qt::init_ogl_context(4, 3);
-    QApplication qt_app(argc, argv);
-    VoronoiSphereRenderer renderer("Globe");
-    auto viewer = renderer.render(voronoi_sphere);
-    return qt_app.exec();
+    Application application(argc, argv);
+    VoronoiSphereDrawer drawer("Globe");
+    drawer.show(voronoi_sphere);
+    return application.run();
 }

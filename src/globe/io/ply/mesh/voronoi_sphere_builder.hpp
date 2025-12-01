@@ -28,10 +28,8 @@ inline VoronoiSphereBuilder::VoronoiSphereBuilder(
 inline SurfaceMesh VoronoiSphereBuilder::build(const VoronoiSphere &voronoi_sphere) {
     Builder builder(_samples_per_arc, _arc_thickness);
 
-    for (const auto &cell : voronoi_sphere.cells()) {
-        for (const auto &arc : cell.arcs()) {
-            builder.add_arc(arc);
-        }
+    for (const auto &arc : voronoi_sphere.arcs()) {
+        builder.add_arc(arc);
     }
 
     return builder.build();
