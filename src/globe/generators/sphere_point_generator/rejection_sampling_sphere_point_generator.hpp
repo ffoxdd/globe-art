@@ -3,8 +3,8 @@
 
 #include "../../types.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
-#include "../../fields/scalar/scalar_field.hpp"
-#include "../../fields/scalar/constant_scalar_field.hpp"
+#include "../../fields/scalar/field.hpp"
+#include "../../fields/scalar/constant_field.hpp"
 #include "../../math/interval_sampler/interval_sampler.hpp"
 #include "sphere_point_generator.hpp"
 #include "random_sphere_point_generator.hpp"
@@ -14,7 +14,7 @@
 namespace globe {
 
 template<
-    ScalarField DensityFieldType = ConstantScalarField,
+    fields::scalar::Field DensityFieldType = fields::scalar::ConstantField,
     SpherePointGenerator UnderlyingGeneratorType = RandomSpherePointGenerator<>,
     IntervalSampler IntervalSamplerType = UniformIntervalSampler
 >
@@ -55,14 +55,14 @@ class RejectionSamplingSpherePointGenerator {
     [[nodiscard]] double sample_acceptance();
 };
 
-template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
+template<fields::scalar::Field DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
 std::vector<VectorS2> RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::generate(
     size_t count
 ) {
     return generate(count, SphericalBoundingBox::full_sphere());
 }
 
-template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
+template<fields::scalar::Field DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
 std::vector<VectorS2> RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::generate(
     size_t count,
     const SphericalBoundingBox &bounding_box
@@ -97,14 +97,14 @@ std::vector<VectorS2> RejectionSamplingSpherePointGenerator<DensityFieldType, Un
     return points;
 }
 
-template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
+template<fields::scalar::Field DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
 bool RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::candidate_accepted(
     const VectorS2 &candidate
 ) {
     return sample_acceptance() <= acceptance_threshold(candidate);
 }
 
-template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
+template<fields::scalar::Field DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
 double RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::acceptance_threshold(
     const VectorS2 &point
 ) {
@@ -112,7 +112,7 @@ double RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGenerat
     return std::clamp(density / _max_density, 0.0, 1.0);
 }
 
-template<ScalarField DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
+template<fields::scalar::Field DensityFieldType, SpherePointGenerator UnderlyingGeneratorType, IntervalSampler IntervalSamplerType>
 double RejectionSamplingSpherePointGenerator<DensityFieldType, UnderlyingGeneratorType, IntervalSamplerType>::sample_acceptance() {
     return _interval_sampler.sample(Interval(0.0, 1.0));
 }

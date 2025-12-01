@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
 #include "rejection_sampling_sphere_point_generator.hpp"
-#include "../../fields/scalar/constant_scalar_field.hpp"
+#include "../../fields/scalar/constant_field.hpp"
 #include "../../testing/geometric_assertions.hpp"
 
 using namespace globe;
+using fields::scalar::ConstantField;
 using globe::testing::is_on_unit_sphere;
 
 TEST(RejectionSamplingSpherePointGeneratorTest, GenerateReturnsExactCount) {
@@ -36,7 +37,7 @@ TEST(RejectionSamplingSpherePointGeneratorTest, AllPointsOnUnitSphere) {
 }
 
 TEST(RejectionSamplingSpherePointGeneratorTest, UniformDensityAcceptsAll) {
-    ConstantScalarField uniform_field(1.0);
+    ConstantField uniform_field(1.0);
     RejectionSamplingSpherePointGenerator generator(uniform_field, 1.0);
     constexpr size_t count = 100;
 
@@ -47,7 +48,7 @@ TEST(RejectionSamplingSpherePointGeneratorTest, UniformDensityAcceptsAll) {
 }
 
 TEST(RejectionSamplingSpherePointGeneratorTest, HalfDensityRejectsApproximatelyHalf) {
-    ConstantScalarField half_density_field(0.5);
+    ConstantField half_density_field(0.5);
     RejectionSamplingSpherePointGenerator generator(half_density_field, 1.0);
     constexpr size_t count = 100;
 
@@ -59,7 +60,7 @@ TEST(RejectionSamplingSpherePointGeneratorTest, HalfDensityRejectsApproximatelyH
 }
 
 TEST(RejectionSamplingSpherePointGeneratorTest, ZeroDensityNeverAccepts) {
-    ConstantScalarField zero_field(0.0);
+    ConstantField zero_field(0.0);
     RejectionSamplingSpherePointGenerator generator(zero_field, 1.0);
 
     auto points = generator.generate(0);
@@ -68,7 +69,7 @@ TEST(RejectionSamplingSpherePointGeneratorTest, ZeroDensityNeverAccepts) {
 }
 
 TEST(RejectionSamplingSpherePointGeneratorTest, LastAttemptCountTracksAttempts) {
-    ConstantScalarField field(0.25);
+    ConstantField field(0.25);
     RejectionSamplingSpherePointGenerator generator(field, 1.0);
     constexpr size_t count = 50;
 

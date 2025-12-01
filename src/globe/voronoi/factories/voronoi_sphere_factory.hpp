@@ -7,15 +7,20 @@
 #include "../optimizers/gradient_density_optimizer.hpp"
 #include "../optimizers/lloyd_voronoi_sphere_optimizer.hpp"
 #include "../../fields/scalar/noise_field.hpp"
-#include "../../fields/spherical/constant_spherical_field.hpp"
-#include "../../fields/spherical/linear_spherical_field.hpp"
-#include "../../fields/spherical/sampled_spherical_field.hpp"
+#include "../../fields/spherical/constant_field.hpp"
+#include "../../fields/spherical/linear_field.hpp"
+#include "../../fields/spherical/sampled_field.hpp"
 #include <string>
 #include <memory>
 #include <algorithm>
 #include <iostream>
 
 namespace globe {
+
+using fields::scalar::NoiseField;
+using fields::spherical::ConstantField;
+using fields::spherical::LinearField;
+using fields::spherical::SampledField;
 
 class VoronoiSphereFactory {
  public:
@@ -137,7 +142,7 @@ inline size_t VoronoiSphereFactory::sample_count(double max_frequency) {
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_ccvd(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
-    ConstantSphericalField field(1.0);
+    ConstantField field(1.0);
 
     SphericalFieldDensityOptimizer optimizer(
         std::move(voronoi_sphere),
@@ -151,7 +156,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_cc
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_linear_ccvd(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
-    LinearSphericalField field(2.0, 2.0);
+    LinearField field(2.0, 2.0);
 
     SphericalFieldDensityOptimizer optimizer(
         std::move(voronoi_sphere),
@@ -169,7 +174,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_noise_ccvd(
     size_t samples = sample_count(noise_field.max_frequency());
     std::cout << "Sample count: " << samples << std::endl;
 
-    SampledSphericalField field(noise_field, RandomSpherePointGenerator<>(), samples);
+    SampledField field(noise_field, RandomSpherePointGenerator<>(), samples);
 
     SphericalFieldDensityOptimizer optimizer(
         std::move(voronoi_sphere),
@@ -183,7 +188,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_noise_ccvd(
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_gradient(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
-    ConstantSphericalField field(1.0);
+    ConstantField field(1.0);
 
     GradientDensityOptimizer optimizer(
         std::move(voronoi_sphere),
@@ -197,7 +202,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_constant_gr
 inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_linear_gradient(
     std::unique_ptr<VoronoiSphere> voronoi_sphere
 ) {
-    LinearSphericalField field(2.0, 2.0);
+    LinearField field(2.0, 2.0);
 
     GradientDensityOptimizer optimizer(
         std::move(voronoi_sphere),

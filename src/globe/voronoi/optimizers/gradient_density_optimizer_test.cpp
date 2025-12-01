@@ -1,6 +1,6 @@
 #include "gradient_density_optimizer.hpp"
-#include "../../fields/spherical/constant_spherical_field.hpp"
-#include "../../fields/spherical/linear_spherical_field.hpp"
+#include "../../fields/spherical/constant_field.hpp"
+#include "../../fields/spherical/linear_field.hpp"
 #include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/helpers.hpp"
 #include "../../testing/geometric_assertions.hpp"
@@ -8,6 +8,8 @@
 #include <cmath>
 
 using namespace globe;
+using fields::spherical::ConstantField;
+using fields::spherical::LinearField;
 
 namespace {
 
@@ -33,7 +35,7 @@ std::unique_ptr<VoronoiSphere> create_test_voronoi(size_t num_points) {
 
 TEST(GradientDensityOptimizerTest, ConvergesForConstantField) {
     auto voronoi = create_test_voronoi(10);
-    ConstantSphericalField field(1.0);
+    ConstantField field(1.0);
 
     GradientDensityOptimizer optimizer(
         std::move(voronoi),
@@ -50,9 +52,9 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_ConvergesForLinearField) {
     REQUIRE_EXPENSIVE();
 
     auto voronoi = create_test_voronoi(10);
-    LinearSphericalField field(1.0, 2.0);
+    LinearField field(1.0, 2.0);
 
-    GradientDensityOptimizer<LinearSphericalField> optimizer(
+    GradientDensityOptimizer<LinearField> optimizer(
         std::move(voronoi),
         field,
         50
@@ -67,7 +69,7 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
     REQUIRE_EXPENSIVE();
 
     auto voronoi = create_test_voronoi(6);
-    LinearSphericalField field(1.0, 2.0);
+    LinearField field(1.0, 2.0);
     double target_mass = field.total_mass() / voronoi->size();
 
     auto compute_mass_errors = [&]() {

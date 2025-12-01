@@ -1,5 +1,6 @@
 - Rename DensityVoronoiSphereOptimizer to something mentioning CCVD
 - Make GradientDensityOptimizer mention that it's for VoronoiSpheres
+- Make scalar fields act on Euclidean vectors
 
 ## Future Refactoring
 

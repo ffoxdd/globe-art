@@ -2,7 +2,6 @@
 #define GLOBEART_SRC_GLOBE_TYPES_H_
 
 #include <Eigen/Core>
-#include <concepts>
 
 namespace globe {
 

@@ -1,12 +1,12 @@
-#ifndef GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_FIELD_H_
-#define GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_FIELD_H_
+#ifndef GLOBEART_SRC_GLOBE_FIELDS_SCALAR_NOISE_FIELD_HPP_
+#define GLOBEART_SRC_GLOBE_FIELDS_SCALAR_NOISE_FIELD_HPP_
 
 #include "../../types.hpp"
 #include "../../math/interval.hpp"
 #include <anl/anl.h>
 #include <cmath>
 
-namespace globe {
+namespace globe::fields::scalar {
 
 class NoiseField {
  public:
@@ -92,6 +92,6 @@ inline anl::CInstructionIndex NoiseField::initialize_kernel(anl::CKernel &kernel
     return instruction_index;
 }
 
-} // namespace globe
+} // namespace globe::fields::scalar
 
-#endif //GLOBEART_SRC_GLOBE_NOISE_GENERATOR_NOISE_FIELD_H_
+#endif //GLOBEART_SRC_GLOBE_FIELDS_SCALAR_NOISE_FIELD_HPP_

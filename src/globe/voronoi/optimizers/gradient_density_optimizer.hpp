@@ -5,8 +5,8 @@
 #include "../../geometry/spherical/helpers.hpp"
 #include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
-#include "../../fields/spherical/spherical_field.hpp"
-#include "../../fields/spherical/constant_spherical_field.hpp"
+#include "../../fields/spherical/field.hpp"
+#include "../../fields/spherical/constant_field.hpp"
 #include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../core/voronoi_sphere.hpp"
@@ -22,7 +22,7 @@
 namespace globe {
 
 template<
-    SphericalField FieldType = ConstantSphericalField,
+    fields::spherical::Field FieldType = fields::spherical::ConstantField,
     SpherePointGenerator GeneratorType = RandomSpherePointGenerator<>
 >
 class GradientDensityOptimizer {
@@ -87,7 +87,7 @@ class GradientDensityOptimizer {
     bool perturb_site_randomly(size_t index);
 };
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 GradientDensityOptimizer<FieldType, GeneratorType>::GradientDensityOptimizer(
     std::unique_ptr<VoronoiSphere> voronoi_sphere,
     FieldType field,
@@ -101,12 +101,12 @@ GradientDensityOptimizer<FieldType, GeneratorType>::GradientDensityOptimizer(
     _point_generator(std::move(point_generator)) {
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::ObjectiveFunctor(
     GradientDensityOptimizer& optimizer
 ) : _optimizer(optimizer) {}
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 double GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::operator()(
     const Eigen::VectorXd& x,
     Eigen::VectorXd& grad
@@ -122,7 +122,7 @@ double GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::ope
     return error;
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 int GradientDensityOptimizer<FieldType, GeneratorType>::run_lbfgs_phase(size_t max_iterations) {
     LBFGSpp::LBFGSParam<double> param;
     param.m = LBFGS_HISTORY_SIZE;
@@ -147,7 +147,7 @@ int GradientDensityOptimizer<FieldType, GeneratorType>::run_lbfgs_phase(size_t m
     }
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType>::optimize() {
     _target_mass = _field.total_mass() / _voronoi_sphere->size();
     std::cout << "Target mass per cell: " << _target_mass << std::endl;
@@ -242,7 +242,7 @@ std::unique_ptr<VoronoiSphere> GradientDensityOptimizer<FieldType, GeneratorType
     return std::move(_voronoi_sphere);
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 Eigen::VectorXd GradientDensityOptimizer<FieldType, GeneratorType>::sites_to_vector() const {
     size_t n = _voronoi_sphere->size();
     Eigen::VectorXd x(3 * n);
@@ -257,7 +257,7 @@ Eigen::VectorXd GradientDensityOptimizer<FieldType, GeneratorType>::sites_to_vec
     return x;
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 void GradientDensityOptimizer<FieldType, GeneratorType>::vector_to_sites_normalized(const Eigen::VectorXd& x) {
     size_t n = _voronoi_sphere->size();
 
@@ -268,13 +268,13 @@ void GradientDensityOptimizer<FieldType, GeneratorType>::vector_to_sites_normali
     }
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 double GradientDensityOptimizer<FieldType, GeneratorType>::compute_error() const {
     auto mass_errors = compute_mass_errors();
     return compute_total_error(mass_errors);
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 Eigen::VectorXd GradientDensityOptimizer<FieldType, GeneratorType>::compute_projected_gradient() const {
     auto mass_errors = compute_mass_errors();
     auto gradients = compute_gradients(mass_errors);
@@ -298,7 +298,7 @@ Eigen::VectorXd GradientDensityOptimizer<FieldType, GeneratorType>::compute_proj
     return grad;
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 std::vector<double> GradientDensityOptimizer<FieldType, GeneratorType>::compute_mass_errors() const {
     size_t n = _voronoi_sphere->size();
     std::vector<double> errors(n);
@@ -313,7 +313,7 @@ std::vector<double> GradientDensityOptimizer<FieldType, GeneratorType>::compute_
     return errors;
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType, GeneratorType>::compute_gradients(
     const std::vector<double>& mass_errors
 ) const {
@@ -348,7 +348,7 @@ std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType, GeneratorType>:
     return gradients;
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 double GradientDensityOptimizer<FieldType, GeneratorType>::compute_total_error(
     const std::vector<double>& mass_errors
 ) const {
@@ -359,7 +359,7 @@ double GradientDensityOptimizer<FieldType, GeneratorType>::compute_total_error(
     return sum / 2.0;
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 typename GradientDensityOptimizer<FieldType, GeneratorType>::Checkpoint
 GradientDensityOptimizer<FieldType, GeneratorType>::save_checkpoint() const {
     Checkpoint checkpoint;
@@ -372,7 +372,7 @@ GradientDensityOptimizer<FieldType, GeneratorType>::save_checkpoint() const {
     return checkpoint;
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 void GradientDensityOptimizer<FieldType, GeneratorType>::restore_checkpoint(const Checkpoint& checkpoint) {
     auto new_voronoi = std::make_unique<VoronoiSphere>();
     for (const auto& site : checkpoint) {
@@ -381,7 +381,7 @@ void GradientDensityOptimizer<FieldType, GeneratorType>::restore_checkpoint(cons
     _voronoi_sphere = std::move(new_voronoi);
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 std::optional<size_t> GradientDensityOptimizer<FieldType, GeneratorType>::find_most_undersized_index() const {
     auto mass_errors = compute_mass_errors();
 
@@ -414,7 +414,7 @@ std::optional<size_t> GradientDensityOptimizer<FieldType, GeneratorType>::find_m
     return std::nullopt;
 }
 
-template<SphericalField FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
 bool GradientDensityOptimizer<FieldType, GeneratorType>::perturb_site_randomly(size_t index) {
     cgal::Point3 site = _voronoi_sphere->site(index);
     Eigen::Vector3d s(site.x(), site.y(), site.z());

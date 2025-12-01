@@ -5,7 +5,10 @@
 #include "../../math/interval.hpp"
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 
-using namespace globe;
+using namespace globe::fields::scalar;
+using globe::Interval;
+using globe::RandomSpherePointGenerator;
+using globe::VectorS2;
 using globe::testing::compute_statistics;
 using globe::testing::expect_range_coverage;
 

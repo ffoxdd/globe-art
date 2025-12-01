@@ -1,15 +1,15 @@
-#ifndef GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_SPHERICAL_FIELD_HPP_
-#define GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_SPHERICAL_FIELD_HPP_
+#ifndef GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_FIELD_HPP_
+#define GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_FIELD_HPP_
 
 #include "../../types.hpp"
 #include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include <Eigen/Core>
 
-namespace globe {
+namespace globe::fields::spherical {
 
 template<typename T>
-concept SphericalField = requires(
+concept Field = requires(
     const T& field,
     const VectorS2& point,
     const SphericalPolygon& polygon,
@@ -22,6 +22,6 @@ concept SphericalField = requires(
     { field.edge_gradient_integral(arc) } -> std::convertible_to<Eigen::Vector3d>;
 };
 
-}
+} // namespace globe::fields::spherical
 
-#endif //GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_SPHERICAL_FIELD_HPP_
+#endif //GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_FIELD_HPP_
