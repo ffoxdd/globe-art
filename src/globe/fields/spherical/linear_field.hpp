@@ -3,19 +3,21 @@
 
 #include "field.hpp"
 #include "../../types.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
+#include "../../geometry/spherical/arc.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
 
 namespace globe::fields::spherical {
+
+using geometry::spherical::UNIT_SPHERE_AREA;
 
 class LinearField {
  public:
     explicit LinearField(double slope = 1.0, double offset = 0.0);
 
     [[nodiscard]] double value(const VectorS2& point) const;
-    [[nodiscard]] double mass(const SphericalPolygon& polygon) const;
-    [[nodiscard]] double edge_integral(const SphericalArc& arc) const;
-    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const SphericalArc& arc) const;
+    [[nodiscard]] double mass(const Polygon& polygon) const;
+    [[nodiscard]] double edge_integral(const Arc& arc) const;
+    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const Arc& arc) const;
 
     [[nodiscard]] double total_mass() const;
 
@@ -33,16 +35,16 @@ inline double LinearField::value(const VectorS2& point) const {
     return _slope * point.z() + _offset;
 }
 
-inline double LinearField::mass(const SphericalPolygon& polygon) const {
+inline double LinearField::mass(const Polygon& polygon) const {
     return _slope * polygon.first_moment().z() + _offset * polygon.area();
 }
 
-inline double LinearField::edge_integral(const SphericalArc& arc) const {
+inline double LinearField::edge_integral(const Arc& arc) const {
     return _slope * arc.first_moment().z() + _offset * arc.length();
 }
 
 inline Eigen::Vector3d LinearField::edge_gradient_integral(
-    const SphericalArc& arc
+    const Arc& arc
 ) const {
     return _slope * arc.second_moment().col(2) + _offset * arc.first_moment();
 }

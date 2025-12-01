@@ -1,30 +1,35 @@
-#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_UNIFORM_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
-#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_UNIFORM_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_UNIFORM_BOUNDING_BOX_SAMPLER_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_UNIFORM_BOUNDING_BOX_SAMPLER_HPP_
 
 #include "../../../types.hpp"
-#include "../spherical_bounding_box.hpp"
+#include "../bounding_box.hpp"
 #include "../helpers.hpp"
 #include "../../../math/interval_sampler/interval_sampler.hpp"
 #include "../../../math/circular_interval_sampler/uniform_circular_interval_sampler.hpp"
 #include <cmath>
 
-namespace globe {
+namespace globe::geometry::spherical {
+
+using globe::VectorS2;
+using globe::IntervalSampler;
+using globe::UniformIntervalSampler;
+using globe::UniformCircularIntervalSampler;
 
 template<
     IntervalSampler IntervalSamplerType = UniformIntervalSampler,
     typename CircularIntervalSamplerType = UniformCircularIntervalSampler
 >
-class UniformSphericalBoundingBoxSampler {
+class UniformBoundingBoxSampler {
  public:
-    UniformSphericalBoundingBoxSampler() = default;
+    UniformBoundingBoxSampler() = default;
 
-    UniformSphericalBoundingBoxSampler(
+    UniformBoundingBoxSampler(
         IntervalSamplerType interval_sampler,
         CircularIntervalSamplerType circular_interval_sampler
     ) : _interval_sampler(std::move(interval_sampler)),
         _circular_interval_sampler(std::move(circular_interval_sampler)) {}
 
-    [[nodiscard]] inline VectorS2 sample(const SphericalBoundingBox &bounding_box) {
+    [[nodiscard]] inline VectorS2 sample(const BoundingBox &bounding_box) {
         double theta_val = _circular_interval_sampler.sample(bounding_box.theta_interval());
         double z = _interval_sampler.sample(bounding_box.z_interval());
 
@@ -41,6 +46,14 @@ class UniformSphericalBoundingBoxSampler {
     CircularIntervalSamplerType _circular_interval_sampler;
 };
 
+} // namespace globe::geometry::spherical
+
+namespace globe {
+template<
+    IntervalSampler IntervalSamplerType = UniformIntervalSampler,
+    typename CircularIntervalSamplerType = UniformCircularIntervalSampler
+>
+using UniformSphericalBoundingBoxSampler = geometry::spherical::UniformBoundingBoxSampler<IntervalSamplerType, CircularIntervalSamplerType>;
 }
 
-#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_UNIFORM_SPHERICAL_BOUNDING_BOX_SAMPLER_HPP_
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_UNIFORM_BOUNDING_BOX_SAMPLER_HPP_

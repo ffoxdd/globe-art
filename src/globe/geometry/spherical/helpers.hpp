@@ -4,9 +4,12 @@
 #include <cmath>
 #include <algorithm>
 #include "../../types.hpp"
-#include "../../cgal_types.hpp"
+#include <CGAL/basic.h>
 
-namespace globe {
+namespace globe::geometry::spherical {
+
+using globe::VectorS2;
+using globe::GEOMETRIC_EPSILON;
 
 constexpr double UNIT_SPHERE_AREA = 4.0 * M_PI;
 
@@ -14,25 +17,10 @@ inline double distance(const VectorS2 &a, const VectorS2 &b) {
     CGAL_precondition(std::abs(a.squaredNorm() - 1.0) < GEOMETRIC_EPSILON);
     CGAL_precondition(std::abs(b.squaredNorm() - 1.0) < GEOMETRIC_EPSILON);
 
-    double cos_theta = a.dot(b);
-    return std::acos(std::clamp(cos_theta, -1.0, 1.0));
+    double cos_theta = std::clamp(a.dot(b), -1.0, 1.0);
+    return std::acos(cos_theta);
 }
 
-inline VectorS2 interpolate(const VectorS2 &source, const VectorS2 &target, double t) {
-    double theta = distance(source, target);
-
-    if (theta < GEOMETRIC_EPSILON) {
-        return source;
-    }
-
-    double sin_theta = std::sin(theta);
-    double a = std::sin((1.0 - t) * theta) / sin_theta;
-    double b = std::sin(t * theta) / sin_theta;
-
-    VectorS2 result = a * source + b * target;
-    return result.normalized();
-}
-
-}
+} // namespace globe::geometry::spherical
 
 #endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_HELPERS_H_

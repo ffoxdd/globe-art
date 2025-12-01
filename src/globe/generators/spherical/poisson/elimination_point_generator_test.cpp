@@ -7,7 +7,7 @@
 using namespace globe::generators::spherical::poisson;
 using globe::generators::spherical::RandomPointGenerator;
 using globe::VectorS2;
-using globe::distance;
+using globe::geometry::spherical::distance;
 
 TEST(EliminationPointGeneratorTest, GeneratesRequestedCount) {
     EliminationPointGenerator<> generator;

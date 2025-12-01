@@ -5,7 +5,7 @@
 #include "../../generators/spherical/point_generator.hpp"
 #include "../../generators/spherical/random_point_generator.hpp"
 #include "../../geometry/spherical/helpers.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
 #include "../../types.hpp"
 #include "../core/voronoi_sphere.hpp"
 
@@ -27,6 +27,8 @@
 #include <tbb/parallel_for.h>
 
 namespace globe {
+
+using geometry::spherical::distance;
 
 namespace detail {
 
@@ -157,7 +159,7 @@ class SphericalFieldDensityOptimizer {
     >;
     using Checkpoint = std::vector<cgal::Point3>;
 
-    double mass(const SphericalPolygon& polygon) const;
+    double mass(const Polygon& polygon) const;
     double average_mass() const;
     double optimize_vertex_position(size_t index, double target_mass, double previous_error);
     void adjust_mass(size_t max_passes);
@@ -369,7 +371,7 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_final_resul
 }
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::mass(const SphericalPolygon& polygon) const {
+double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::mass(const Polygon& polygon) const {
     return _field.mass(polygon);
 }
 
@@ -489,7 +491,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_objecti
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_mass_error(double target_mass) {
-    std::vector<SphericalPolygon> cells;
+    std::vector<Polygon> cells;
     cells.reserve(_voronoi_sphere->size());
 
     for (const auto& cell : _voronoi_sphere->cells()) {

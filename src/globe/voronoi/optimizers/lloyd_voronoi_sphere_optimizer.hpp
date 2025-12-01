@@ -4,7 +4,7 @@
 #include "../../types.hpp"
 #include "../../geometry/spherical/helpers.hpp"
 #include "../core/voronoi_sphere.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
 #include <memory>
 #include <cstddef>
 #include <iostream>
@@ -12,6 +12,8 @@
 #include <cmath>
 
 namespace globe {
+
+using geometry::spherical::distance;
 
 class LloydVoronoiSphereOptimizer {
  public:

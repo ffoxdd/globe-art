@@ -1,12 +1,12 @@
 #include "constant_field.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
+#include "../../geometry/spherical/arc.hpp"
 #include <gtest/gtest.h>
 #include <cmath>
 
 using namespace globe::fields::spherical;
-using globe::SphericalArc;
-using globe::SphericalPolygon;
+using globe::Arc;
+using globe::Polygon;
 using globe::VectorS2;
 
 TEST(ConstantFieldTest, ValueIsConstant) {
@@ -20,11 +20,11 @@ TEST(ConstantFieldTest, ValueIsConstant) {
 TEST(ConstantFieldTest, MassIsValueTimesArea) {
     ConstantField field(3.0);
 
-    SphericalPolygon polygon(std::vector<SphericalArc>{
-        SphericalArc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
+    Polygon polygon(std::vector<Arc>{
+        Arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
     });
 
     double expected = 3.0 * polygon.area();
@@ -34,7 +34,7 @@ TEST(ConstantFieldTest, MassIsValueTimesArea) {
 TEST(ConstantFieldTest, EdgeIntegralIsValueTimesLength) {
     ConstantField field(4.0);
 
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     double expected = 4.0 * arc.length();
     EXPECT_DOUBLE_EQ(field.edge_integral(arc), expected);

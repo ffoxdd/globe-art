@@ -107,7 +107,7 @@ TEST(VoronoiSphereTest, CellArcsIsEmptyForSinglePoint) {
     EXPECT_EQ(arc_count, 0);
 }
 
-TEST(VoronoiSphereTest, DualCellsReturnsSphericalPolygons) {
+TEST(VoronoiSphereTest, DualCellsReturnsPolygons) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
 
     size_t cell_count = 0;

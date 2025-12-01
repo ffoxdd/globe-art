@@ -66,33 +66,9 @@ When a class has internal helper classes that exist purely to support its implem
 - The helpers are implementation details, not part of the public interface
 - Tests for the helpers can be separate files within the directory
 
-Example structures:
-```
-math/
-├── interval.hpp
-├── interval_sampler/
-│   ├── interval_sampler.hpp              # concept definition
-│   ├── uniform_interval_sampler.hpp      # implementation
-│   └── uniform_interval_sampler_test.cpp # tests alongside implementation
-├── circular_interval.hpp
-└── circular_interval_sampler/
-    ├── circular_interval_sampler.hpp
-    ├── uniform_circular_interval_sampler.hpp
-    └── uniform_circular_interval_sampler_test.cpp
-
-geometry/spherical/
-├── spherical_polygon/
-│   ├── spherical_polygon.hpp                           # main class
-│   ├── spherical_polygon_test.cpp
-│   ├── spherical_polygon_bounding_box_calculator.hpp   # internal helper
-│   └── spherical_polygon_bounding_box_calculator_test.cpp
-└── spherical_bounding_box.hpp
-```
-
 ### Dependency Injection via Concepts
 **ALL injected dependencies must use concepts** - not just random/slow ones. Any dependency injected via template parameter should be constrained by a concept:
-- Use concepts to constrain ALL injected template parameters (e.g., `SpherePointGenerator`, `IntervalSampler`, `ScalarField`, `IntegrableField`)
-- Concepts define the interface without specifying implementation
+- Use concepts to constrain ALL injected template parameters
 - Template parameters must use the concept as the constraint, never `typename`
 - Provide concrete default template arguments for production use
 - This enables dependency injection while maintaining type safety and clear interfaces

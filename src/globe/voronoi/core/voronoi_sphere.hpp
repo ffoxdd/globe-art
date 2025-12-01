@@ -2,11 +2,11 @@
 #define GLOBEART_SRC_GLOBE_VORONOI_CORE_VORONOI_SPHERE_HPP_
 
 #include "../../cgal_types.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
+#include "../../geometry/spherical/arc.hpp"
 #include <CGAL/Exact_spherical_kernel_3.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_2.h>
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
 #include "circulator_iterator.hpp"
 #include <cstddef>
 #include <memory>
@@ -17,7 +17,7 @@ namespace globe {
 
 struct CellEdgeInfo {
     size_t neighbor_index;
-    SphericalArc arc;
+    Arc arc;
 };
 
 class VoronoiSphere {
@@ -32,7 +32,7 @@ class VoronoiSphere {
     void insert(cgal::Point3 point);
     std::size_t size() const;
 
-    SphericalPolygon cell(size_t index) const;
+    Polygon cell(size_t index) const;
     auto cells() const;
     auto arcs() const;
 
@@ -47,7 +47,7 @@ class VoronoiSphere {
     using Triangulation = ::CGAL::Delaunay_triangulation_on_sphere_2<
         ::CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>
     >;
-    using Arc = Triangulation::Arc_on_sphere_2;
+    using CGALArc = Triangulation::Arc_on_sphere_2;
 
     using VertexHandle = Triangulation::Vertex_handle;
     using EdgeCirculator = Triangulation::Edge_circulator;
@@ -60,11 +60,11 @@ class VoronoiSphere {
 
     auto static edge_circulator_range(EdgeCirculator edge_circulator);
     auto incident_edges_range(VertexHandle vertex_handle) const;
-    std::vector<SphericalArc> cell_arcs(size_t index) const;
+    std::vector<Arc> cell_arcs(size_t index) const;
     size_t vertex_index(VertexHandle handle) const;
 
-    static SphericalArc to_spherical_arc(const Arc& cgal_arc);
-    static VectorS2 arc_normal(const Arc& arc);
+    static Arc to_spherical_arc(const CGALArc& cgal_arc);
+    static VectorS2 arc_normal(const CGALArc& arc);
 
     template<typename P>
     static cgal::Point3 to_point(const P& p);
@@ -107,24 +107,24 @@ inline void VoronoiSphere::update_site(size_t index, cgal::Point3 new_position) 
     _handle_to_index[_handles[index]] = index;
 }
 
-inline std::vector<SphericalArc> VoronoiSphere::cell_arcs(size_t index) const {
+inline std::vector<Arc> VoronoiSphere::cell_arcs(size_t index) const {
     if (_triangulation->dimension() < 2) {
         return {};
     }
 
     VertexHandle vertex_handle = _handles[index];
-    std::vector<SphericalArc> arcs;
+    std::vector<Arc> arcs;
 
     for (const auto& edge : incident_edges_range(vertex_handle)) {
-        Arc cgal_arc = _triangulation->dual_on_sphere(edge);
+        CGALArc cgal_arc = _triangulation->dual_on_sphere(edge);
         arcs.push_back(to_spherical_arc(cgal_arc));
     }
 
     return arcs;
 }
 
-inline SphericalPolygon VoronoiSphere::cell(size_t index) const {
-    return SphericalPolygon(cell_arcs(index));
+inline Polygon VoronoiSphere::cell(size_t index) const {
+    return Polygon(cell_arcs(index));
 }
 
 inline auto VoronoiSphere::cells() const {
@@ -138,7 +138,7 @@ inline auto VoronoiSphere::cells() const {
 
 inline auto VoronoiSphere::arcs() const {
     return cells() | std::views::transform(
-        [](const SphericalPolygon &cell) {
+        [](const Polygon &cell) {
             return cell.arcs();
         }
     ) | std::views::join;
@@ -167,7 +167,7 @@ inline std::vector<CellEdgeInfo> VoronoiSphere::cell_edges(size_t index) const {
         size_t neighbor_idx = vertex_index(neighbor_handle);
 
         if (neighbor_idx < size()) {
-            Arc cgal_arc = _triangulation->dual_on_sphere(edge);
+            CGALArc cgal_arc = _triangulation->dual_on_sphere(edge);
             result.push_back({neighbor_idx, to_spherical_arc(cgal_arc)});
         }
     }
@@ -175,14 +175,14 @@ inline std::vector<CellEdgeInfo> VoronoiSphere::cell_edges(size_t index) const {
     return result;
 }
 
-inline SphericalArc VoronoiSphere::to_spherical_arc(const Arc& cgal_arc) {
+inline Arc VoronoiSphere::to_spherical_arc(const CGALArc& cgal_arc) {
     VectorS2 source = to_vector_s2(to_point(cgal_arc.source()));
     VectorS2 target = to_vector_s2(to_point(cgal_arc.target()));
     VectorS2 normal = arc_normal(cgal_arc);
-    return SphericalArc(source, target, normal);
+    return Arc(source, target, normal);
 }
 
-inline VectorS2 VoronoiSphere::arc_normal(const Arc& arc) {
+inline VectorS2 VoronoiSphere::arc_normal(const CGALArc& arc) {
     auto circle = arc.supporting_circle();
     auto plane = circle.supporting_plane();
     auto normal = plane.orthogonal_vector();

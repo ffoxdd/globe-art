@@ -1,18 +1,22 @@
-#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_ARC_HPP_
-#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_ARC_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_ARC_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_ARC_HPP_
 
+#include "helpers.hpp"
 #include "../../types.hpp"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <cmath>
 #include <optional>
 
-namespace globe {
+namespace globe::geometry::spherical {
 
-class SphericalArc {
+using globe::VectorS2;
+using globe::GEOMETRIC_EPSILON;
+
+class Arc {
  public:
-    SphericalArc(const VectorS2& source, const VectorS2& target, const VectorS2& normal);
-    SphericalArc(const VectorS2& source, const VectorS2& target);
+    Arc(const VectorS2& source, const VectorS2& target, const VectorS2& normal);
+    Arc(const VectorS2& source, const VectorS2& target);
 
     [[nodiscard]] const VectorS2& source() const { return _source; }
     [[nodiscard]] const VectorS2& target() const { return _target; }
@@ -20,7 +24,7 @@ class SphericalArc {
 
     [[nodiscard]] double length() const;
     [[nodiscard]] VectorS2 interpolate(double t) const;
-    [[nodiscard]] SphericalArc subarc(const VectorS2& point) const;
+    [[nodiscard]] Arc subarc(const VectorS2& point) const;
     [[nodiscard]] bool contains(const VectorS2& point) const;
 
     [[nodiscard]] VectorS2 first_moment() const;
@@ -43,24 +47,23 @@ class SphericalArc {
     static VectorS2 find_perpendicular(const VectorS2& u);
 };
 
-inline SphericalArc::SphericalArc(
+inline Arc::Arc(
     const VectorS2& source,
     const VectorS2& target,
     const VectorS2& normal
 ) : _source(source), _target(target), _normal(normal) {
 }
 
-inline SphericalArc::SphericalArc(const VectorS2& source, const VectorS2& target) :
+inline Arc::Arc(const VectorS2& source, const VectorS2& target) :
     _source(source), _target(target) {
     _normal = _source.cross(_target).normalized();
 }
 
-inline double SphericalArc::length() const {
-    double cos_theta = std::clamp(_source.dot(_target), -1.0, 1.0);
-    return std::acos(cos_theta);
+inline double Arc::length() const {
+    return distance(_source, _target);
 }
 
-inline VectorS2 SphericalArc::interpolate(double t) const {
+inline VectorS2 Arc::interpolate(double t) const {
     double theta = length();
 
     if (theta < GEOMETRIC_EPSILON) {
@@ -74,11 +77,11 @@ inline VectorS2 SphericalArc::interpolate(double t) const {
     return (a * _source + b * _target).normalized();
 }
 
-inline SphericalArc SphericalArc::subarc(const VectorS2& point) const {
-    return SphericalArc(_source, point, _normal);
+inline Arc Arc::subarc(const VectorS2& point) const {
+    return Arc(_source, point, _normal);
 }
 
-inline bool SphericalArc::contains(const VectorS2& point) const {
+inline bool Arc::contains(const VectorS2& point) const {
     constexpr double EPSILON = 1e-10;
 
     double dot_normal = _normal.dot(point);
@@ -89,28 +92,28 @@ inline bool SphericalArc::contains(const VectorS2& point) const {
     return subarc(point).length() < length() + EPSILON;
 }
 
-inline VectorS2 SphericalArc::first_moment() const {
+inline VectorS2 Arc::first_moment() const {
     if (!_cached_moments) {
         compute_moments();
     }
     return _cached_moments->first;
 }
 
-inline Eigen::Matrix3d SphericalArc::second_moment() const {
+inline Eigen::Matrix3d Arc::second_moment() const {
     if (!_cached_moments) {
         compute_moments();
     }
     return _cached_moments->second;
 }
 
-inline void SphericalArc::compute_moments() const {
+inline void Arc::compute_moments() const {
     constexpr double EPSILON = 1e-10;
 
     VectorS2 u1 = _source.normalized();
     VectorS2 u2 = _target.normalized();
 
-    double cos_theta = std::clamp(u1.dot(u2), -1.0, 1.0);
-    double theta = std::acos(cos_theta);
+    double theta = distance(u1, u2);
+    double cos_theta = std::cos(theta);
     double sin_theta = std::sin(theta);
 
     if (theta < EPSILON) {
@@ -141,7 +144,7 @@ inline void SphericalArc::compute_moments() const {
     };
 }
 
-inline VectorS2 SphericalArc::find_perpendicular(const VectorS2& u) {
+inline VectorS2 Arc::find_perpendicular(const VectorS2& u) {
     VectorS2 candidate = (std::abs(u.z()) < 0.9)
         ? VectorS2(0, 0, 1)
         : VectorS2(1, 0, 0);
@@ -150,6 +153,11 @@ inline VectorS2 SphericalArc::find_perpendicular(const VectorS2& u) {
     return perp.normalized();
 }
 
+} // namespace globe::geometry::spherical
+
+namespace globe {
+using Arc = geometry::spherical::Arc;
+using SphericalArc = Arc;  // deprecated alias
 }
 
-#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_ARC_HPP_
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_ARC_HPP_

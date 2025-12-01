@@ -3,7 +3,9 @@
 
 #include "../../math/interval.hpp"
 
-namespace globe {
+namespace globe::geometry::cartesian {
+
+using globe::Interval;
 
 class BoundingBox {
  public:
@@ -52,6 +54,10 @@ inline BoundingBox BoundingBox::unit_cube() {
     return BoundingBox(Interval(-1, 1), Interval(-1, 1), Interval(-1, 1));
 }
 
+} // namespace globe::geometry::cartesian
+
+namespace globe {
+using geometry::cartesian::BoundingBox;
 }
 
 #endif //GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_HPP_

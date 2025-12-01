@@ -1,8 +1,10 @@
-#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_POLYGON_BOUNDING_BOX_CALCULATOR_HPP_
-#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_POLYGON_BOUNDING_BOX_CALCULATOR_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_POLYGON_BOUNDING_BOX_CALCULATOR_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_POLYGON_BOUNDING_BOX_CALCULATOR_HPP_
 
-#include "../spherical_bounding_box.hpp"
-#include "../spherical_arc.hpp"
+// IWYU pragma: private; include "polygon.hpp"
+
+#include "../bounding_box.hpp"
+#include "../arc.hpp"
 #include "../helpers.hpp"
 #include "../../../types.hpp"
 #include "../../../math/interval.hpp"
@@ -11,18 +13,24 @@
 #include <algorithm>
 #include <ranges>
 
-namespace globe {
+namespace globe::geometry::spherical::polygon {
 
-class SphericalPolygonBoundingBoxCalculator {
+using globe::Interval;
+using globe::VectorS2;
+using globe::geometry::spherical::Arc;
+using globe::geometry::spherical::BoundingBox;
+using globe::geometry::spherical::ThetaInterval;
+
+class BoundingBoxCalculator {
  public:
-    explicit SphericalPolygonBoundingBoxCalculator(const std::vector<SphericalArc>& arcs);
+    explicit BoundingBoxCalculator(const std::vector<Arc>& arcs);
 
-    [[nodiscard]] SphericalBoundingBox calculate() const;
+    [[nodiscard]] BoundingBox calculate() const;
 
  private:
     static constexpr double EPSILON = 1e-10;
 
-    const std::vector<SphericalArc>& _arcs;
+    const std::vector<Arc>& _arcs;
 
     [[nodiscard]] ThetaInterval theta_interval() const;
     [[nodiscard]] Interval z_interval() const;
@@ -30,9 +38,9 @@ class SphericalPolygonBoundingBoxCalculator {
     [[nodiscard]] auto arc_theta_intervals() const;
     [[nodiscard]] bool contains_point(const VectorS2& point) const;
 
-    [[nodiscard]] static ThetaInterval arc_theta_interval(const SphericalArc& arc);
-    [[nodiscard]] static Interval arc_z_interval(const SphericalArc& arc);
-    [[nodiscard]] static Interval z_interval_from_endpoints(const SphericalArc& arc);
+    [[nodiscard]] static ThetaInterval arc_theta_interval(const Arc& arc);
+    [[nodiscard]] static Interval arc_z_interval(const Arc& arc);
+    [[nodiscard]] static Interval z_interval_from_endpoints(const Arc& arc);
     [[nodiscard]] static double theta(const VectorS2& point);
     [[nodiscard]] static bool is_zero(const VectorS2& v);
     [[nodiscard]] static bool is_zero(double v);
@@ -41,27 +49,27 @@ class SphericalPolygonBoundingBoxCalculator {
     [[nodiscard]] static bool parallel(const VectorS2& v1, const VectorS2& v2);
 };
 
-inline SphericalPolygonBoundingBoxCalculator::SphericalPolygonBoundingBoxCalculator(
-    const std::vector<SphericalArc>& arcs
+inline BoundingBoxCalculator::BoundingBoxCalculator(
+    const std::vector<Arc>& arcs
 ) : _arcs(arcs) {}
 
-inline auto SphericalPolygonBoundingBoxCalculator::arc_z_intervals() const {
+inline auto BoundingBoxCalculator::arc_z_intervals() const {
     return _arcs | std::views::transform(
-        [](const SphericalArc& arc) { return arc_z_interval(arc); }
+        [](const Arc& arc) { return arc_z_interval(arc); }
     );
 }
 
-inline auto SphericalPolygonBoundingBoxCalculator::arc_theta_intervals() const {
+inline auto BoundingBoxCalculator::arc_theta_intervals() const {
     return _arcs | std::views::transform(
-        [](const SphericalArc& arc) { return arc_theta_interval(arc); }
+        [](const Arc& arc) { return arc_theta_interval(arc); }
     );
 }
 
-inline ThetaInterval SphericalPolygonBoundingBoxCalculator::theta_interval() const {
+inline ThetaInterval BoundingBoxCalculator::theta_interval() const {
     return ThetaInterval::hull(arc_theta_intervals());
 }
 
-inline Interval SphericalPolygonBoundingBoxCalculator::z_interval() const {
+inline Interval BoundingBoxCalculator::z_interval() const {
     Interval interval = Interval::hull(arc_z_intervals());
 
     VectorS2 north_pole(0, 0, 1);
@@ -78,15 +86,15 @@ inline Interval SphericalPolygonBoundingBoxCalculator::z_interval() const {
     return interval;
 }
 
-inline SphericalBoundingBox SphericalPolygonBoundingBoxCalculator::calculate() const {
+inline BoundingBox BoundingBoxCalculator::calculate() const {
     if (_arcs.empty()) {
-        return SphericalBoundingBox::full_sphere();
+        return BoundingBox::full_sphere();
     }
 
     return {theta_interval(), z_interval()};
 }
 
-inline bool SphericalPolygonBoundingBoxCalculator::contains_point(const VectorS2& point) const {
+inline bool BoundingBoxCalculator::contains_point(const VectorS2& point) const {
     double angle_sum = 0;
 
     for (const auto& arc : _arcs) {
@@ -96,7 +104,7 @@ inline bool SphericalPolygonBoundingBoxCalculator::contains_point(const VectorS2
         VectorS2 ap = a.cross(point).normalized();
         VectorS2 bp = b.cross(point).normalized();
 
-        double angle = globe::distance(ap, bp);
+        double angle = distance(ap, bp);
         const VectorS2& normal = arc.normal();
 
         double sign = normal.dot(point);
@@ -111,7 +119,7 @@ inline bool SphericalPolygonBoundingBoxCalculator::contains_point(const VectorS2
     return std::fabs(angle_sum - (2 * M_PI)) < M_PI;
 }
 
-inline Interval SphericalPolygonBoundingBoxCalculator::arc_z_interval(const SphericalArc& arc) {
+inline Interval BoundingBoxCalculator::arc_z_interval(const Arc& arc) {
     const VectorS2& n = arc.normal();
     Interval z_int = z_interval_from_endpoints(arc);
     VectorS2 n_cross_z = n.cross(VectorS2(0, 0, 1));
@@ -140,7 +148,7 @@ inline Interval SphericalPolygonBoundingBoxCalculator::arc_z_interval(const Sphe
     return z_int;
 }
 
-inline ThetaInterval SphericalPolygonBoundingBoxCalculator::arc_theta_interval(const SphericalArc& arc) {
+inline ThetaInterval BoundingBoxCalculator::arc_theta_interval(const Arc& arc) {
     const VectorS2& n = arc.normal();
     const VectorS2& source_v = arc.source();
     const VectorS2& target_v = arc.target();
@@ -216,32 +224,32 @@ inline ThetaInterval SphericalPolygonBoundingBoxCalculator::arc_theta_interval(c
     return result;
 }
 
-inline Interval SphericalPolygonBoundingBoxCalculator::z_interval_from_endpoints(const SphericalArc& arc) {
+inline Interval BoundingBoxCalculator::z_interval_from_endpoints(const Arc& arc) {
     return Interval::hull(arc.source().z(), arc.target().z());
 }
 
-inline double SphericalPolygonBoundingBoxCalculator::theta(const VectorS2& point) {
+inline double BoundingBoxCalculator::theta(const VectorS2& point) {
     double t = std::atan2(point.y(), point.x());
     return t < 0.0 ? t + 2.0 * M_PI : t;
 }
 
-inline bool SphericalPolygonBoundingBoxCalculator::is_zero(const VectorS2& v) {
+inline bool BoundingBoxCalculator::is_zero(const VectorS2& v) {
     return v.squaredNorm() < EPSILON;
 }
 
-inline bool SphericalPolygonBoundingBoxCalculator::is_zero(double v) {
+inline bool BoundingBoxCalculator::is_zero(double v) {
     return std::abs(v) < EPSILON;
 }
 
-inline VectorS2 SphericalPolygonBoundingBoxCalculator::project_to_xy_plane(const VectorS2& v) {
+inline VectorS2 BoundingBoxCalculator::project_to_xy_plane(const VectorS2& v) {
     return VectorS2(v.x(), v.y(), 0.0);
 }
 
-inline VectorS2 SphericalPolygonBoundingBoxCalculator::perpendicular_in_xy_plane(const VectorS2& v) {
+inline VectorS2 BoundingBoxCalculator::perpendicular_in_xy_plane(const VectorS2& v) {
     return VectorS2(v.y(), -v.x(), 0.0);
 }
 
-inline bool SphericalPolygonBoundingBoxCalculator::parallel(const VectorS2& v1, const VectorS2& v2) {
+inline bool BoundingBoxCalculator::parallel(const VectorS2& v1, const VectorS2& v2) {
     double v1_squared_length = v1.squaredNorm();
     double v2_squared_length = v2.squaredNorm();
 
@@ -253,6 +261,14 @@ inline bool SphericalPolygonBoundingBoxCalculator::parallel(const VectorS2& v1, 
     return cross.squaredNorm() / (v1_squared_length * v2_squared_length) < EPSILON;
 }
 
+} // namespace globe::geometry::spherical::polygon
+
+namespace globe::geometry::spherical {
+using PolygonBoundingBoxCalculator = polygon::BoundingBoxCalculator;
 }
 
-#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_POLYGON_BOUNDING_BOX_CALCULATOR_HPP_
+namespace globe {
+using PolygonBoundingBoxCalculator = geometry::spherical::polygon::BoundingBoxCalculator;
+}
+
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_POLYGON_BOUNDING_BOX_CALCULATOR_HPP_

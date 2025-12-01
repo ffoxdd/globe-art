@@ -3,19 +3,21 @@
 
 #include "field.hpp"
 #include "../../types.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
+#include "../../geometry/spherical/arc.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
 
 namespace globe::fields::spherical {
+
+using geometry::spherical::UNIT_SPHERE_AREA;
 
 class ConstantField {
  public:
     explicit ConstantField(double value = 1.0);
 
     [[nodiscard]] double value(const VectorS2& point) const;
-    [[nodiscard]] double mass(const SphericalPolygon& polygon) const;
-    [[nodiscard]] double edge_integral(const SphericalArc& arc) const;
-    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const SphericalArc& arc) const;
+    [[nodiscard]] double mass(const Polygon& polygon) const;
+    [[nodiscard]] double edge_integral(const Arc& arc) const;
+    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const Arc& arc) const;
 
     [[nodiscard]] double total_mass() const;
 
@@ -31,16 +33,16 @@ inline double ConstantField::value([[maybe_unused]] const VectorS2& point) const
     return _value;
 }
 
-inline double ConstantField::mass(const SphericalPolygon& polygon) const {
+inline double ConstantField::mass(const Polygon& polygon) const {
     return _value * polygon.area();
 }
 
-inline double ConstantField::edge_integral(const SphericalArc& arc) const {
+inline double ConstantField::edge_integral(const Arc& arc) const {
     return _value * arc.length();
 }
 
 inline Eigen::Vector3d ConstantField::edge_gradient_integral(
-    const SphericalArc& arc
+    const Arc& arc
 ) const {
     return _value * arc.first_moment();
 }

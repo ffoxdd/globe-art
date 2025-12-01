@@ -5,7 +5,10 @@
 #include "../bounding_box.hpp"
 #include "../../../math/interval_sampler/interval_sampler.hpp"
 
-namespace globe {
+namespace globe::geometry::cartesian {
+
+using globe::IntervalSampler;
+using globe::UniformIntervalSampler;
 
 template<IntervalSampler IntervalSamplerType = UniformIntervalSampler>
 class UniformBoundingBoxSampler {
@@ -27,6 +30,11 @@ class UniformBoundingBoxSampler {
     IntervalSamplerType _interval_sampler;
 };
 
+} // namespace globe::geometry::cartesian
+
+namespace globe {
+template<IntervalSampler IntervalSamplerType = UniformIntervalSampler>
+using UniformBoundingBoxSampler = geometry::cartesian::UniformBoundingBoxSampler<IntervalSamplerType>;
 }
 
 #endif //GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_SAMPLER_UNIFORM_BOUNDING_BOX_SAMPLER_HPP_

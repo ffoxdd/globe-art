@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 #include "linear_field.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
+#include "../../geometry/spherical/arc.hpp"
 
 using namespace globe::fields::spherical;
-using globe::SphericalArc;
-using globe::SphericalPolygon;
+using globe::Arc;
+using globe::Polygon;
 using globe::VectorS2;
-using globe::UNIT_SPHERE_AREA;
+using globe::geometry::spherical::UNIT_SPHERE_AREA;
 
 TEST(LinearFieldTest, ValueReturnsLinearFunctionOfZ) {
     LinearField field(2.0, 1.0);
@@ -29,11 +29,11 @@ TEST(LinearFieldTest, DefaultParametersGiveIdentityOnZ) {
 TEST(LinearFieldTest, MassUsesFirstMomentZ) {
     LinearField field(2.0, 3.0);
 
-    SphericalPolygon polygon(std::vector<SphericalArc>{
-        SphericalArc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
+    Polygon polygon(std::vector<Arc>{
+        Arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
     });
 
     double expected = 2.0 * polygon.first_moment().z() + 3.0 * polygon.area();
@@ -43,7 +43,7 @@ TEST(LinearFieldTest, MassUsesFirstMomentZ) {
 TEST(LinearFieldTest, EdgeIntegralUsesFirstMomentZ) {
     LinearField field(2.0, 3.0);
 
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     double expected = 2.0 * arc.first_moment().z() + 3.0 * arc.length();
     EXPECT_DOUBLE_EQ(field.edge_integral(arc), expected);

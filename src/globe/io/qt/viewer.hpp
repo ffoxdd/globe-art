@@ -9,7 +9,7 @@
 #include <functional>
 #include "../../cgal_types.hpp"
 #include "../../types.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
+#include "../../geometry/spherical/arc.hpp"
 
 namespace globe::io::qt {
 
@@ -37,7 +37,7 @@ public:
 
     void add_point(const VectorS2 &point, const Color &color = BLACK);
     void add_segment(const VectorS2 &source, const VectorS2 &target, const Color &color = BLACK);
-    void add_arc(const SphericalArc &arc, const Color &color = BLACK);
+    void add_arc(const Arc &arc, const Color &color = BLACK);
     void add_text(const VectorS2 &point, const std::string &text);
     void clear();
     void show();
@@ -70,7 +70,7 @@ inline void Viewer::add_segment(const VectorS2 &source, const VectorS2 &target, 
     _scene.add_segment(cgal::to_point(source), cgal::to_point(target), color);
 }
 
-inline void Viewer::add_arc(const SphericalArc &arc, const Color &color) {
+inline void Viewer::add_arc(const Arc &arc, const Color &color) {
     for (int i = 0; i < ARC_SEGMENTS; ++i) {
         double t1 = static_cast<double>(i) / ARC_SEGMENTS;
         double t2 = static_cast<double>(i + 1) / ARC_SEGMENTS;

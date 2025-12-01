@@ -21,6 +21,7 @@ using fields::scalar::NoiseField;
 using fields::spherical::ConstantField;
 using fields::spherical::LinearField;
 using fields::spherical::SampledField;
+using geometry::spherical::UNIT_SPHERE_AREA;
 
 class VoronoiSphereFactory {
  public:

@@ -1,16 +1,16 @@
 #include <gtest/gtest.h>
 #include "sampled_field.hpp"
 #include "../scalar/constant_field.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
+#include "../../geometry/spherical/arc.hpp"
 
 using namespace globe::fields::spherical;
 using globe::fields::scalar::ConstantField;
 using globe::generators::spherical::RandomPointGenerator;
-using globe::SphericalArc;
-using globe::SphericalPolygon;
+using globe::Arc;
+using globe::Polygon;
 using globe::VectorS2;
-using globe::UNIT_SPHERE_AREA;
+using globe::geometry::spherical::UNIT_SPHERE_AREA;
 
 TEST(SampledFieldTest, SatisfiesFieldConcept) {
     static_assert(Field<SampledField<ConstantField>>);
@@ -41,11 +41,11 @@ TEST(SampledFieldTest, MassReturnsZeroForEmptySamples) {
         0
     );
 
-    SphericalPolygon polygon(std::vector<SphericalArc>{
-        SphericalArc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
+    Polygon polygon(std::vector<Arc>{
+        Arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
     });
 
     EXPECT_DOUBLE_EQ(field.mass(polygon), 0.0);

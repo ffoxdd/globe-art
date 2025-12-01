@@ -1,9 +1,10 @@
-#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_POLYGON_HPP_
-#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_POLYGON_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_POLYGON_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_POLYGON_HPP_
 
-#include "../spherical_bounding_box.hpp"
-#include "../spherical_arc.hpp"
-#include "spherical_polygon_bounding_box_calculator.hpp"
+#include "../bounding_box.hpp"
+#include "../arc.hpp"
+#include "../helpers.hpp"
+#include "bounding_box_calculator.hpp"
 #include "../../../types.hpp"
 #include "../../../std_ext/ranges.hpp"
 #include <Eigen/Core>
@@ -14,15 +15,21 @@
 #include <algorithm>
 #include <cassert>
 
-namespace globe {
+namespace globe::geometry::spherical::polygon {
 
-class SphericalPolygon {
+using globe::VectorS2;
+using globe::all_circular_adjacent_pairs;
+using globe::circular_adjacent_pairs;
+using globe::geometry::spherical::Arc;
+using globe::geometry::spherical::BoundingBox;
+
+class Polygon {
  public:
-    explicit SphericalPolygon(std::vector<SphericalArc> arcs);
+    explicit Polygon(std::vector<Arc> arcs);
 
-    [[nodiscard]] const std::vector<SphericalArc>& arcs() const { return _arcs; }
+    [[nodiscard]] const std::vector<Arc>& arcs() const { return _arcs; }
     [[nodiscard]] auto points() const;
-    [[nodiscard]] SphericalBoundingBox bounding_box() const;
+    [[nodiscard]] BoundingBox bounding_box() const;
     [[nodiscard]] VectorS2 centroid() const;
     [[nodiscard]] double bounding_sphere_radius() const;
 
@@ -35,7 +42,7 @@ class SphericalPolygon {
  private:
     static constexpr double EPSILON = 1e-10;
 
-    std::vector<SphericalArc> _arcs;
+    std::vector<Arc> _arcs;
 
     [[nodiscard]] bool empty() const;
     [[nodiscard]] bool arcs_form_closed_loop() const;
@@ -47,27 +54,26 @@ class SphericalPolygon {
     [[nodiscard]] static double spherical_triangle_area(
         const VectorS2& a, const VectorS2& b, const VectorS2& c
     );
-    [[nodiscard]] static double angular_distance(const VectorS2& a, const VectorS2& b);
 };
 
-inline SphericalPolygon::SphericalPolygon(std::vector<SphericalArc> arcs) :
+inline Polygon::Polygon(std::vector<Arc> arcs) :
     _arcs(std::move(arcs)) {
 
     assert(!empty());
     assert(arcs_form_closed_loop());
 }
 
-inline auto SphericalPolygon::points() const {
+inline auto Polygon::points() const {
     return _arcs | std::views::transform(
-        [](const SphericalArc& arc) { return arc.source(); }
+        [](const Arc& arc) { return arc.source(); }
     );
 }
 
-inline bool SphericalPolygon::empty() const {
+inline bool Polygon::empty() const {
     return _arcs.empty();
 }
 
-inline bool SphericalPolygon::arcs_form_closed_loop() const {
+inline bool Polygon::arcs_form_closed_loop() const {
     return all_circular_adjacent_pairs(_arcs, [](const auto& pair) {
         const auto& [prev, next] = pair;
         const VectorS2& prev_target = prev.target();
@@ -77,15 +83,15 @@ inline bool SphericalPolygon::arcs_form_closed_loop() const {
     });
 }
 
-inline bool SphericalPolygon::is_convex() const {
+inline bool Polygon::is_convex() const {
     return true;
 }
 
-inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
-    return SphericalPolygonBoundingBoxCalculator(_arcs).calculate();
+inline BoundingBox Polygon::bounding_box() const {
+    return BoundingBoxCalculator(_arcs).calculate();
 }
 
-inline VectorS2 SphericalPolygon::centroid() const {
+inline VectorS2 Polygon::centroid() const {
     if (empty()) {
         return bounding_box().center();
     }
@@ -112,7 +118,7 @@ inline VectorS2 SphericalPolygon::centroid() const {
     return average / len;
 }
 
-inline double SphericalPolygon::bounding_sphere_radius() const {
+inline double Polygon::bounding_sphere_radius() const {
     if (empty()) {
         return 0.0;
     }
@@ -128,7 +134,7 @@ inline double SphericalPolygon::bounding_sphere_radius() const {
     return std::sqrt(max_squared_distance);
 }
 
-inline double SphericalPolygon::area() const {
+inline double Polygon::area() const {
     if (_arcs.size() < 3) {
         return 0.0;
     }
@@ -148,7 +154,7 @@ inline double SphericalPolygon::area() const {
     return angle_sum - static_cast<double>(_arcs.size() - 2) * M_PI;
 }
 
-inline VectorS2 SphericalPolygon::first_moment() const {
+inline VectorS2 Polygon::first_moment() const {
     if (_arcs.size() < 3) {
         return VectorS2::Zero();
     }
@@ -168,7 +174,7 @@ inline VectorS2 SphericalPolygon::first_moment() const {
     return total;
 }
 
-inline Eigen::Matrix3d SphericalPolygon::second_moment() const {
+inline Eigen::Matrix3d Polygon::second_moment() const {
     if (_arcs.size() < 3) {
         return Eigen::Matrix3d::Zero();
     }
@@ -190,7 +196,7 @@ inline Eigen::Matrix3d SphericalPolygon::second_moment() const {
     return total;
 }
 
-inline bool SphericalPolygon::contains(const VectorS2& point) const {
+inline bool Polygon::contains(const VectorS2& point) const {
     assert(is_convex());
 
     for (const auto& arc : _arcs) {
@@ -205,15 +211,15 @@ inline bool SphericalPolygon::contains(const VectorS2& point) const {
     return true;
 }
 
-inline double SphericalPolygon::spherical_angle(
+inline double Polygon::spherical_angle(
     const VectorS2& a, const VectorS2& b, const VectorS2& c
 ) {
-    VectorS2 ba = b.cross(a);
-    VectorS2 bc = b.cross(c);
-    return angular_distance(ba, bc);
+    VectorS2 ba = b.cross(a).normalized();
+    VectorS2 bc = b.cross(c).normalized();
+    return distance(ba, bc);
 }
 
-inline double SphericalPolygon::spherical_triangle_area(
+inline double Polygon::spherical_triangle_area(
     const VectorS2& a, const VectorS2& b, const VectorS2& c
 ) {
     VectorS2 va = a.normalized();
@@ -231,13 +237,14 @@ inline double SphericalPolygon::spherical_triangle_area(
     return 2.0 * std::atan(tan_half_omega);
 }
 
-inline double SphericalPolygon::angular_distance(const VectorS2& a, const VectorS2& b) {
-    VectorS2 a_norm = a.normalized();
-    VectorS2 b_norm = b.normalized();
-    double cos_theta = std::clamp(a_norm.dot(b_norm), -1.0, 1.0);
-    return std::acos(cos_theta);
+} // namespace globe::geometry::spherical::polygon
+
+namespace globe::geometry::spherical {
+using Polygon = polygon::Polygon;
 }
 
+namespace globe {
+using Polygon = geometry::spherical::polygon::Polygon;
 }
 
-#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_POLYGON_HPP_
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_POLYGON_HPP_

@@ -1,24 +1,24 @@
 #include <gtest/gtest.h>
-#include "spherical_arc.hpp"
+#include "arc.hpp"
 #include <cmath>
 
 using namespace globe;
 
-TEST(SphericalArcTest, LengthOfQuarterArc) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+TEST(ArcTest, LengthOfQuarterArc) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     EXPECT_NEAR(arc.length(), M_PI / 2.0, 1e-10);
 }
 
-TEST(SphericalArcTest, LengthOfZeroArc) {
+TEST(ArcTest, LengthOfZeroArc) {
     VectorS2 p(1, 0, 0);
-    SphericalArc arc(p, p, VectorS2(0, 0, 1));
+    Arc arc(p, p, VectorS2(0, 0, 1));
 
     EXPECT_NEAR(arc.length(), 0.0, 1e-10);
 }
 
-TEST(SphericalArcTest, LengthDoesNotComputeMoments) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+TEST(ArcTest, LengthDoesNotComputeMoments) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     double length1 = arc.length();
     double length2 = arc.length();
@@ -26,8 +26,8 @@ TEST(SphericalArcTest, LengthDoesNotComputeMoments) {
     EXPECT_DOUBLE_EQ(length1, length2);
 }
 
-TEST(SphericalArcTest, FirstMomentOfQuarterArc) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+TEST(ArcTest, FirstMomentOfQuarterArc) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     VectorS2 moment = arc.first_moment();
 
@@ -36,8 +36,8 @@ TEST(SphericalArcTest, FirstMomentOfQuarterArc) {
     EXPECT_NEAR(moment.z(), 0.0, 1e-10);
 }
 
-TEST(SphericalArcTest, FirstMomentTowardsPole) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 0, 1), VectorS2(0, 1, 0));
+TEST(ArcTest, FirstMomentTowardsPole) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 0, 1), VectorS2(0, 1, 0));
 
     VectorS2 moment = arc.first_moment();
 
@@ -46,8 +46,8 @@ TEST(SphericalArcTest, FirstMomentTowardsPole) {
     EXPECT_NEAR(moment.z(), 1.0, 1e-10);
 }
 
-TEST(SphericalArcTest, SecondMomentIsSymmetric) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+TEST(ArcTest, SecondMomentIsSymmetric) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     Eigen::Matrix3d moment = arc.second_moment();
 
@@ -56,31 +56,31 @@ TEST(SphericalArcTest, SecondMomentIsSymmetric) {
     EXPECT_NEAR(moment(1, 2), moment(2, 1), 1e-10);
 }
 
-TEST(SphericalArcTest, SecondMomentTraceEqualsLength) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+TEST(ArcTest, SecondMomentTraceEqualsLength) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     double trace = arc.second_moment().trace();
 
     EXPECT_NEAR(trace, arc.length(), 1e-10);
 }
 
-TEST(SphericalArcTest, ZeroArcHasZeroMoments) {
+TEST(ArcTest, ZeroArcHasZeroMoments) {
     VectorS2 p(1, 0, 0);
-    SphericalArc arc(p, p, VectorS2(0, 0, 1));
+    Arc arc(p, p, VectorS2(0, 0, 1));
 
     EXPECT_NEAR(arc.first_moment().norm(), 0.0, 1e-10);
     EXPECT_NEAR(arc.second_moment().norm(), 0.0, 1e-10);
 }
 
-TEST(SphericalArcTest, ContainsSourceAndTarget) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+TEST(ArcTest, ContainsSourceAndTarget) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     EXPECT_TRUE(arc.contains(arc.source()));
     EXPECT_TRUE(arc.contains(arc.target()));
 }
 
-TEST(SphericalArcTest, ContainsMidpoint) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+TEST(ArcTest, ContainsMidpoint) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     double inv_sqrt2 = 1.0 / std::sqrt(2.0);
     VectorS2 midpoint(inv_sqrt2, inv_sqrt2, 0);
@@ -88,27 +88,27 @@ TEST(SphericalArcTest, ContainsMidpoint) {
     EXPECT_TRUE(arc.contains(midpoint));
 }
 
-TEST(SphericalArcTest, DoesNotContainPointOffArc) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+TEST(ArcTest, DoesNotContainPointOffArc) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     EXPECT_FALSE(arc.contains(VectorS2(-1, 0, 0)));
     EXPECT_FALSE(arc.contains(VectorS2(0, 0, 1)));
 }
 
-TEST(SphericalArcTest, SubarcHasShorterLength) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+TEST(ArcTest, SubarcHasShorterLength) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     double inv_sqrt2 = 1.0 / std::sqrt(2.0);
     VectorS2 midpoint(inv_sqrt2, inv_sqrt2, 0);
 
-    SphericalArc subarc = arc.subarc(midpoint);
+    Arc subarc = arc.subarc(midpoint);
 
     EXPECT_LT(subarc.length(), arc.length());
     EXPECT_NEAR(subarc.length(), arc.length() / 2.0, 1e-10);
 }
 
-TEST(SphericalArcTest, InterpolateAtZeroReturnsSource) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
+TEST(ArcTest, InterpolateAtZeroReturnsSource) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
 
     VectorS2 result = arc.interpolate(0.0);
 
@@ -117,8 +117,8 @@ TEST(SphericalArcTest, InterpolateAtZeroReturnsSource) {
     EXPECT_NEAR(result.z(), 0.0, 1e-10);
 }
 
-TEST(SphericalArcTest, InterpolateAtOneReturnsTarget) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
+TEST(ArcTest, InterpolateAtOneReturnsTarget) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
 
     VectorS2 result = arc.interpolate(1.0);
 
@@ -127,8 +127,8 @@ TEST(SphericalArcTest, InterpolateAtOneReturnsTarget) {
     EXPECT_NEAR(result.z(), 0.0, 1e-10);
 }
 
-TEST(SphericalArcTest, InterpolateAtHalfReturnsMidpoint) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
+TEST(ArcTest, InterpolateAtHalfReturnsMidpoint) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
 
     VectorS2 result = arc.interpolate(0.5);
 
@@ -138,8 +138,8 @@ TEST(SphericalArcTest, InterpolateAtHalfReturnsMidpoint) {
     EXPECT_NEAR(result.z(), 0.0, 1e-10);
 }
 
-TEST(SphericalArcTest, InterpolatedPointLiesOnArc) {
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
+TEST(ArcTest, InterpolatedPointLiesOnArc) {
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
 
     EXPECT_TRUE(arc.contains(arc.interpolate(0.25)));
     EXPECT_TRUE(arc.contains(arc.interpolate(0.5)));

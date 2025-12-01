@@ -1,7 +1,7 @@
 #include "gradient_density_optimizer.hpp"
 #include "../../fields/spherical/constant_field.hpp"
 #include "../../fields/spherical/linear_field.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
+#include "../../geometry/spherical/arc.hpp"
 #include "../../geometry/spherical/helpers.hpp"
 #include "../../testing/geometric_assertions.hpp"
 #include <gtest/gtest.h>
@@ -116,7 +116,7 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
             size_t j = edge_info.neighbor_index;
             cgal::Point3 site_j = voronoi->site(j);
 
-            const SphericalArc& arc = edge_info.arc;
+            const Arc& arc = edge_info.arc;
             Eigen::Vector3d rho_weighted_moment = field.edge_gradient_integral(arc);
             double edge_integral = field.edge_integral(arc);
 

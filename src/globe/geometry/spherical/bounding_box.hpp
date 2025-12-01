@@ -1,18 +1,23 @@
-#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_BOUNDING_BOX_HPP_
-#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_BOUNDING_BOX_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_BOUNDING_BOX_HPP_
+#define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_BOUNDING_BOX_HPP_
 
 #include "../../math/interval.hpp"
 #include "../../math/circular_interval.hpp"
 #include "../../types.hpp"
 #include <cmath>
 
-namespace globe {
+namespace globe::geometry::spherical {
+
+using globe::Interval;
+using globe::CircularInterval;
+using globe::TWO_PI;
+using globe::VectorS2;
 
 using ThetaInterval = CircularInterval<TWO_PI>;
 
-class SphericalBoundingBox {
+class BoundingBox {
  public:
-    SphericalBoundingBox(ThetaInterval theta_interval, Interval z_interval);
+    BoundingBox(ThetaInterval theta_interval, Interval z_interval);
 
     [[nodiscard]] ThetaInterval theta_interval() const;
     [[nodiscard]] Interval z_interval() const;
@@ -21,7 +26,7 @@ class SphericalBoundingBox {
     [[nodiscard]] double bounding_sphere_radius() const;
     [[nodiscard]] bool contains(const VectorS2& point) const;
 
-    [[nodiscard]] static SphericalBoundingBox full_sphere();
+    [[nodiscard]] static BoundingBox full_sphere();
 
  private:
     ThetaInterval _theta_interval;
@@ -30,24 +35,24 @@ class SphericalBoundingBox {
     [[nodiscard]] static double theta(double x, double y);
 };
 
-inline SphericalBoundingBox::SphericalBoundingBox(ThetaInterval theta_interval, Interval z_interval) :
+inline BoundingBox::BoundingBox(ThetaInterval theta_interval, Interval z_interval) :
     _theta_interval(theta_interval),
     _z_interval(z_interval) {
 }
 
-inline ThetaInterval SphericalBoundingBox::theta_interval() const {
+inline ThetaInterval BoundingBox::theta_interval() const {
     return _theta_interval;
 }
 
-inline Interval SphericalBoundingBox::z_interval() const {
+inline Interval BoundingBox::z_interval() const {
     return _z_interval;
 }
 
-inline double SphericalBoundingBox::area() const {
+inline double BoundingBox::area() const {
     return _theta_interval.measure() * _z_interval.measure();
 }
 
-inline VectorS2 SphericalBoundingBox::center() const {
+inline VectorS2 BoundingBox::center() const {
     double theta_mid = _theta_interval.start() + _theta_interval.measure() / 2.0;
     if (theta_mid >= TWO_PI) {
         theta_mid -= TWO_PI;
@@ -63,7 +68,7 @@ inline VectorS2 SphericalBoundingBox::center() const {
     );
 }
 
-inline double SphericalBoundingBox::bounding_sphere_radius() const {
+inline double BoundingBox::bounding_sphere_radius() const {
     double z_span = _z_interval.measure();
     double theta_span = _theta_interval.measure();
 
@@ -75,21 +80,26 @@ inline double SphericalBoundingBox::bounding_sphere_radius() const {
     return std::sqrt(z_span * z_span + chord * chord);
 }
 
-inline bool SphericalBoundingBox::contains(const VectorS2& point) const {
+inline bool BoundingBox::contains(const VectorS2& point) const {
     double theta_val = theta(point.x(), point.y());
     double z_val = point.z();
     return _theta_interval.contains(theta_val) && _z_interval.contains(z_val);
 }
 
-inline SphericalBoundingBox SphericalBoundingBox::full_sphere() {
-    return SphericalBoundingBox(ThetaInterval::full(), Interval(-1, 1));
+inline BoundingBox BoundingBox::full_sphere() {
+    return BoundingBox(ThetaInterval::full(), Interval(-1, 1));
 }
 
-inline double SphericalBoundingBox::theta(double x, double y) {
+inline double BoundingBox::theta(double x, double y) {
     double t = std::atan2(y, x);
     return t < 0.0 ? t + TWO_PI : t;
 }
 
-} // namespace globe
+} // namespace globe::geometry::spherical
 
-#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_SPHERICAL_BOUNDING_BOX_HPP_
+namespace globe {
+using SphericalBoundingBox = geometry::spherical::BoundingBox;
+using ThetaInterval = geometry::spherical::ThetaInterval;
+}
+
+#endif //GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_BOUNDING_BOX_HPP_

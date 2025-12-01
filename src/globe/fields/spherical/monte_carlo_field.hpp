@@ -3,10 +3,9 @@
 
 #include "field.hpp"
 #include "../../cgal_types.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
-#include "../../geometry/spherical/spherical_bounding_box.hpp"
-#include "../../geometry/spherical/helpers.hpp"
+#include "../../geometry/spherical/arc.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
+#include "../../geometry/spherical/bounding_box.hpp"
 #include "../../generators/spherical/point_generator.hpp"
 #include "../../generators/spherical/random_point_generator.hpp"
 #include "../../math/interval_sampler/interval_sampler.hpp"
@@ -16,6 +15,8 @@
 #include <cmath>
 
 namespace globe::fields::spherical {
+
+using geometry::spherical::UNIT_SPHERE_AREA;
 
 template<
     scalar::Field ScalarFieldType,
@@ -31,10 +32,10 @@ class MonteCarloField {
     );
 
     [[nodiscard]] double value(const VectorS2& point) const;
-    [[nodiscard]] double mass(const SphericalPolygon& polygon) const;
+    [[nodiscard]] double mass(const Polygon& polygon) const;
     [[nodiscard]] double total_mass() const;
-    [[nodiscard]] double edge_integral(const SphericalArc& arc) const;
-    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const SphericalArc& arc) const;
+    [[nodiscard]] double edge_integral(const Arc& arc) const;
+    [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const Arc& arc) const;
 
  private:
     ScalarFieldType _field;
@@ -71,7 +72,7 @@ double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSample
 
 template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::mass(
-    const SphericalPolygon& polygon
+    const Polygon& polygon
 ) const {
     SphericalBoundingBox bounding_box = polygon.bounding_box();
 
@@ -170,7 +171,7 @@ double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSample
 
 template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::edge_integral(
-    const SphericalArc& arc
+    const Arc& arc
 ) const {
     double arc_length = arc.length();
     if (arc_length < 1e-10) return 0.0;
@@ -186,7 +187,7 @@ double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSample
     while (total_samples < MAX_EDGE_SAMPLES) {
         for (size_t i = 0; i < EDGE_BATCH_SIZE; ++i) {
             double t = _interval_sampler.sample(UNIT_INTERVAL);
-            VectorS2 point = interpolate(arc.source(), arc.target(), t);
+            VectorS2 point = arc.interpolate(t);
             value_sum += _field.value(point);
             total_samples++;
         }
@@ -214,7 +215,7 @@ double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSample
 
 template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 Eigen::Vector3d MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::edge_gradient_integral(
-    const SphericalArc& arc
+    const Arc& arc
 ) const {
     double arc_length = arc.length();
     if (arc_length < 1e-10) return Eigen::Vector3d::Zero();
@@ -230,7 +231,7 @@ Eigen::Vector3d MonteCarloField<ScalarFieldType, SpherePointGeneratorType, Inter
     while (total_samples < MAX_EDGE_SAMPLES) {
         for (size_t i = 0; i < EDGE_BATCH_SIZE; ++i) {
             double t = _interval_sampler.sample(UNIT_INTERVAL);
-            VectorS2 point = interpolate(arc.source(), arc.target(), t);
+            VectorS2 point = arc.interpolate(t);
             double density = _field.value(point);
             weighted_sum += density * point;
             total_samples++;

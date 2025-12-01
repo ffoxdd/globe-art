@@ -3,8 +3,8 @@
 
 #include "../../types.hpp"
 #include "../../geometry/spherical/helpers.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
+#include "../../geometry/spherical/arc.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
 #include "../../fields/spherical/field.hpp"
 #include "../../fields/spherical/constant_field.hpp"
 #include "../../generators/spherical/point_generator.hpp"
@@ -329,7 +329,7 @@ std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType, GeneratorType>:
             size_t j = edge_info.neighbor_index;
             cgal::Point3 site_j = _voronoi_sphere->site(j);
 
-            const SphericalArc& arc = edge_info.arc;
+            const Arc& arc = edge_info.arc;
             Eigen::Vector3d rho_weighted_moment = _field.edge_gradient_integral(arc);
             double edge_integral = _field.edge_integral(arc);
 

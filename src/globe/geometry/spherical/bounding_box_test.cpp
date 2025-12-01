@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "spherical_bounding_box.hpp"
+#include "bounding_box.hpp"
 #include "../../testing/geometric_assertions.hpp"
 
 using namespace globe;

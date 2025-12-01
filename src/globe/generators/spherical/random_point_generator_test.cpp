@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "random_point_generator.hpp"
-#include "../../geometry/spherical/spherical_bounding_box.hpp"
+#include "../../geometry/spherical/bounding_box.hpp"
 #include "../../testing/geometric_assertions.hpp"
 #include "../../testing/statistical_assertions.hpp"
 #include "../../math/interval.hpp"

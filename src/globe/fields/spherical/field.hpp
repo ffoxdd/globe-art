@@ -2,8 +2,8 @@
 #define GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_FIELD_HPP_
 
 #include "../../types.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
+#include "../../geometry/spherical/arc.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
 #include <Eigen/Core>
 
 namespace globe::fields::spherical {
@@ -12,8 +12,8 @@ template<typename T>
 concept Field = requires(
     const T& field,
     const VectorS2& point,
-    const SphericalPolygon& polygon,
-    const SphericalArc& arc
+    const Polygon& polygon,
+    const Arc& arc
 ) {
     { field.value(point) } -> std::convertible_to<double>;
     { field.mass(polygon) } -> std::convertible_to<double>;

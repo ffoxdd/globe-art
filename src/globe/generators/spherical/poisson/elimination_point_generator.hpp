@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_GENERATORS_SPHERICAL_POISSON_ELIMINATION_POINT_GENERATOR_HPP_
 
 #include "indexed_kd_tree.hpp"
-#include "../../../geometry/spherical/spherical_bounding_box.hpp"
+#include "../../../geometry/spherical/bounding_box.hpp"
 #include "../../../geometry/spherical/helpers.hpp"
 #include "../point_generator.hpp"
 #include "../random_point_generator.hpp"

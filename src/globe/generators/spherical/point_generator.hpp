@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_GENERATORS_SPHERICAL_POINT_GENERATOR_HPP_
 
 #include "../../types.hpp"
-#include "../../geometry/spherical/spherical_bounding_box.hpp"
+#include "../../geometry/spherical/bounding_box.hpp"
 #include <vector>
 #include <concepts>
 

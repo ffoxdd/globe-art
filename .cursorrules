@@ -134,12 +134,12 @@ math/
     └── uniform_circular_interval_sampler_test.cpp
 
 geometry/spherical/
-├── spherical_polygon/
-│   ├── spherical_polygon.hpp                           # main class
-│   ├── spherical_polygon_test.cpp
-│   ├── spherical_polygon_bounding_box_calculator.hpp   # internal helper
-│   └── spherical_polygon_bounding_box_calculator_test.cpp
-└── spherical_bounding_box.hpp
+├── polygon/
+│   ├── polygon.hpp                           # main class
+│   ├── polygon_test.cpp
+│   ├── bounding_box_calculator.hpp           # internal helper
+│   └── bounding_box_calculator_test.cpp
+└── bounding_box.hpp
 ```
 
 ### Dependency Injection via Concepts

@@ -3,6 +3,7 @@
 #include <cmath>
 
 using namespace globe;
+using geometry::spherical::distance;
 
 TEST(DistanceTest, ComputesRightAngle) {
     VectorS2 a(1, 0, 0);

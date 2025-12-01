@@ -1,16 +1,16 @@
 #include <gtest/gtest.h>
 #include "monte_carlo_field.hpp"
 #include "../scalar/constant_field.hpp"
-#include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
-#include "../../geometry/spherical/spherical_arc.hpp"
+#include "../../geometry/spherical/polygon/polygon.hpp"
+#include "../../geometry/spherical/arc.hpp"
 #include "../../testing/geometric_assertions.hpp"
 
 using namespace globe::fields::spherical;
 using globe::fields::scalar::ConstantField;
-using globe::SphericalArc;
-using globe::SphericalPolygon;
+using globe::Arc;
+using globe::Polygon;
 using globe::VectorS2;
-using globe::UNIT_SPHERE_AREA;
+using globe::geometry::spherical::UNIT_SPHERE_AREA;
 
 TEST(MonteCarloFieldTest, SatisfiesFieldConcept) {
     static_assert(Field<MonteCarloField<ConstantField>>);
@@ -41,11 +41,11 @@ TEST(MonteCarloFieldTest, EXPENSIVE_MassComputesForHemisphere) {
     ConstantField scalar_field(1.0);
     MonteCarloField field(scalar_field);
 
-    SphericalPolygon hemisphere(std::vector<SphericalArc>{
-        SphericalArc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
-        SphericalArc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
+    Polygon hemisphere(std::vector<Arc>{
+        Arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
+        Arc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
     });
 
     double expected = 2.0 * M_PI;
@@ -59,7 +59,7 @@ TEST(MonteCarloFieldTest, EXPENSIVE_EdgeIntegralConverges) {
     ConstantField scalar_field(3.0);
     MonteCarloField field(scalar_field);
 
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
     double arc_length = arc.length();
 
     double expected = 3.0 * arc_length;
@@ -73,7 +73,7 @@ TEST(MonteCarloFieldTest, EXPENSIVE_EdgeGradientIntegralConverges) {
     ConstantField scalar_field(2.0);
     MonteCarloField field(scalar_field);
 
-    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
+    Arc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1));
 
     Eigen::Vector3d gradient_integral = field.edge_gradient_integral(arc);
     EXPECT_GT(gradient_integral.norm(), 0.0);

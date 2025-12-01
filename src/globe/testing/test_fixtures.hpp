@@ -4,7 +4,7 @@
 #include "../types.hpp"
 #include "../math/interval.hpp"
 #include "../math/circular_interval.hpp"
-#include "../geometry/spherical/spherical_bounding_box.hpp"
+#include "../geometry/spherical/bounding_box.hpp"
 #include <vector>
 #include <utility>
 

@@ -4,7 +4,7 @@
 #include "types.hpp"
 #include "../../../cgal_types.hpp"
 #include "../../../types.hpp"
-#include "../../../geometry/spherical/spherical_arc.hpp"
+#include "../../../geometry/spherical/arc.hpp"
 #include <Eigen/Geometry>
 #include <map>
 
@@ -14,19 +14,19 @@ class Builder {
 public:
     Builder(int samples_per_arc = 20, double arc_thickness = 0.001);
 
-    void add_arc(const SphericalArc &arc);
+    void add_arc(const Arc &arc);
     SurfaceMesh build();
 
 private:
 
     void sample_arc_and_add_segments(
-        const SphericalArc &arc,
+        const Arc &arc,
         VertexIndex &prev_vertex,
         VertexIndex &prev_offset_vertex
     );
 
     void add_segment_at_parameter(
-        const SphericalArc &arc,
+        const Arc &arc,
         double t,
         VertexIndex &prev_vertex,
         VertexIndex &prev_offset_vertex
@@ -54,7 +54,7 @@ inline Builder::Builder(int samples_per_arc, double arc_thickness) :
     _arc_thickness(arc_thickness) {
 }
 
-inline void Builder::add_arc(const SphericalArc &arc) {
+inline void Builder::add_arc(const Arc &arc) {
     VectorS2 prev_offset = create_offset_point(arc.source(), arc.normal());
 
     VertexIndex prev_vertex = get_or_create_vertex(arc.source());
@@ -71,7 +71,7 @@ inline SurfaceMesh Builder::build() {
 }
 
 inline void Builder::sample_arc_and_add_segments(
-    const SphericalArc &arc,
+    const Arc &arc,
     VertexIndex &prev_vertex,
     VertexIndex &prev_offset_vertex
 ) {
@@ -82,7 +82,7 @@ inline void Builder::sample_arc_and_add_segments(
 }
 
 inline void Builder::add_segment_at_parameter(
-    const SphericalArc &arc,
+    const Arc &arc,
     double t,
     VertexIndex &prev_vertex,
     VertexIndex &prev_offset_vertex
