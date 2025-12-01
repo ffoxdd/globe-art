@@ -16,7 +16,7 @@ using globe::testing::uniform_distribution_variance;
 TEST(RandomPointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointInUnitCube) {
     RandomPointGenerator generator;
 
-    Point3 point = generator.generate(1)[0];
+    cgal::Point3 point = generator.generate(1)[0];
 
     EXPECT_GE(point.x(), -1.0);
     EXPECT_LE(point.x(), 1.0);
@@ -30,7 +30,7 @@ TEST(RandomPointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
     RandomPointGenerator generator;
     BoundingBox box(Interval(0.0, 1.0), Interval(0.0, 2.0), Interval(-0.5, 0.5));
 
-    Point3 point = generator.generate(1, box)[0];
+    cgal::Point3 point = generator.generate(1, box)[0];
 
     EXPECT_GE(point.x(), 0.0);
     EXPECT_LE(point.x(), 1.0);

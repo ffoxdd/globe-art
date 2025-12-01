@@ -91,7 +91,7 @@ DistributionMetrics compute_statistics(
     return compute_statistics(values);
 }
 
-inline CoordinateMetrics compute_coordinate_statistics(const std::vector<Point3>& points) {
+inline CoordinateMetrics compute_coordinate_statistics(const std::vector<cgal::Point3>& points) {
     size_t sample_count = points.size();
 
     auto compute_from_coordinate = [&points, sample_count](auto coordinate_extractor) {
@@ -103,9 +103,9 @@ inline CoordinateMetrics compute_coordinate_statistics(const std::vector<Point3>
     };
 
     return CoordinateMetrics{
-        compute_from_coordinate([](const Point3& p) { return p.x(); }),
-        compute_from_coordinate([](const Point3& p) { return p.y(); }),
-        compute_from_coordinate([](const Point3& p) { return p.z(); })
+        compute_from_coordinate([](const cgal::Point3& p) { return p.x(); }),
+        compute_from_coordinate([](const cgal::Point3& p) { return p.y(); }),
+        compute_from_coordinate([](const cgal::Point3& p) { return p.z(); })
     };
 }
 
@@ -132,7 +132,7 @@ CoordinateMetrics compute_coordinate_statistics(
     PointFunc point_func,
     size_t sample_count
 ) {
-    std::vector<Point3> points;
+    std::vector<cgal::Point3> points;
     points.reserve(sample_count);
 
     for (size_t i = 0; i < sample_count; ++i) {

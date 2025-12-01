@@ -21,7 +21,7 @@ TEST(RandomVoronoiSphereBuilderTest, UsesProvidedGenerator) {
 
     EXPECT_EQ(sphere->size(), 1);
 
-    Point3 site = sphere->site(0);
+    cgal::Point3 site = sphere->site(0);
     EXPECT_DOUBLE_EQ(site.x(), fixed_point.x());
     EXPECT_DOUBLE_EQ(site.y(), fixed_point.y());
     EXPECT_DOUBLE_EQ(site.z(), fixed_point.z());

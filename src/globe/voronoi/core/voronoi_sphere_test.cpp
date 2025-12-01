@@ -10,10 +10,10 @@ using globe::testing::points_approximately_equal;
 VoronoiSphere create_simple_voronoi_sphere() {
     VoronoiSphere sphere;
 
-    sphere.insert(Point3(1, 0, 0));
-    sphere.insert(Point3(0, 1, 0));
-    sphere.insert(Point3(0, 0, 1));
-    sphere.insert(Point3(-1, 0, 0));
+    sphere.insert(cgal::Point3(1, 0, 0));
+    sphere.insert(cgal::Point3(0, 1, 0));
+    sphere.insert(cgal::Point3(0, 0, 1));
+    sphere.insert(cgal::Point3(-1, 0, 0));
 
     return sphere;
 }
@@ -27,30 +27,30 @@ TEST(VoronoiSphereTest, InsertIncreasesSize) {
     VoronoiSphere sphere;
     EXPECT_EQ(sphere.size(), 0);
 
-    sphere.insert(Point3(1, 0, 0));
+    sphere.insert(cgal::Point3(1, 0, 0));
     EXPECT_EQ(sphere.size(), 1);
 
-    sphere.insert(Point3(0, 1, 0));
+    sphere.insert(cgal::Point3(0, 1, 0));
     EXPECT_EQ(sphere.size(), 2);
 
-    sphere.insert(Point3(0, 0, 1));
+    sphere.insert(cgal::Point3(0, 0, 1));
     EXPECT_EQ(sphere.size(), 3);
 }
 
 TEST(VoronoiSphereTest, SiteReturnsInsertedPoint) {
     VoronoiSphere sphere;
-    Point3 point(1, 0, 0);
+    cgal::Point3 point(1, 0, 0);
     sphere.insert(point);
 
-    Point3 retrieved = sphere.site(0);
+    cgal::Point3 retrieved = sphere.site(0);
     EXPECT_TRUE(points_approximately_equal(point, retrieved));
 }
 
 TEST(VoronoiSphereTest, SiteReturnsCorrectPointsForMultipleSites) {
     VoronoiSphere sphere;
-    Point3 p1(1, 0, 0);
-    Point3 p2(0, 1, 0);
-    Point3 p3(0, 0, 1);
+    cgal::Point3 p1(1, 0, 0);
+    cgal::Point3 p2(0, 1, 0);
+    cgal::Point3 p3(0, 0, 1);
 
     sphere.insert(p1);
     sphere.insert(p2);
@@ -63,8 +63,8 @@ TEST(VoronoiSphereTest, SiteReturnsCorrectPointsForMultipleSites) {
 
 TEST(VoronoiSphereTest, UpdateSiteChangesPosition) {
     VoronoiSphere sphere;
-    Point3 original(1, 0, 0);
-    Point3 updated(0, 1, 0);
+    cgal::Point3 original(1, 0, 0);
+    cgal::Point3 updated(0, 1, 0);
 
     sphere.insert(original);
     EXPECT_TRUE(points_approximately_equal(sphere.site(0), original));
@@ -97,7 +97,7 @@ TEST(VoronoiSphereTest, CellArcsIsEmptyForEmptySphere) {
 
 TEST(VoronoiSphereTest, CellArcsIsEmptyForSinglePoint) {
     VoronoiSphere sphere;
-    sphere.insert(Point3(1, 0, 0));
+    sphere.insert(cgal::Point3(1, 0, 0));
 
     size_t arc_count = 0;
     for (const auto &cell : sphere.cells()) {
@@ -132,11 +132,11 @@ TEST(VoronoiSphereTest, DualCellsIsEmptyForEmptySphere) {
 
 TEST(VoronoiSphereTest, MultipleUpdatesToSameSite) {
     VoronoiSphere sphere;
-    sphere.insert(Point3(1, 0, 0));
+    sphere.insert(cgal::Point3(1, 0, 0));
 
-    Point3 pos1 = to_cgal_point(VectorS2(0, 1, 0).normalized());
-    Point3 pos2 = to_cgal_point(VectorS2(0, 0, 1).normalized());
-    Point3 pos3 = to_cgal_point(VectorS2(1, 1, 1).normalized());
+    cgal::Point3 pos1 = cgal::to_point(VectorS2(0, 1, 0).normalized());
+    cgal::Point3 pos2 = cgal::to_point(VectorS2(0, 0, 1).normalized());
+    cgal::Point3 pos3 = cgal::to_point(VectorS2(1, 1, 1).normalized());
 
     sphere.update_site(0, pos1);
     EXPECT_TRUE(points_approximately_equal(sphere.site(0), pos1));
@@ -150,13 +150,13 @@ TEST(VoronoiSphereTest, MultipleUpdatesToSameSite) {
 
 TEST(VoronoiSphereTest, UpdateSitePreservesOtherSites) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
-    Point3 p0 = sphere.site(0);
-    Point3 p1 = sphere.site(1);
-    Point3 p2 = sphere.site(2);
-    Point3 p3 = sphere.site(3);
+    cgal::Point3 p0 = sphere.site(0);
+    cgal::Point3 p1 = sphere.site(1);
+    cgal::Point3 p2 = sphere.site(2);
+    cgal::Point3 p3 = sphere.site(3);
 
     // Update one site to a different but valid position
-    Point3 updated_p1 = to_cgal_point(VectorS2(0.707, 0.707, 0).normalized());
+    cgal::Point3 updated_p1 = cgal::to_point(VectorS2(0.707, 0.707, 0).normalized());
     sphere.update_site(1, updated_p1);
 
     // Other sites should remain unchanged

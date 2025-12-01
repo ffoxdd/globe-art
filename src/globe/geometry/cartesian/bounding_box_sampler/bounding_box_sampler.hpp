@@ -9,7 +9,7 @@ namespace globe {
 
 template<typename T>
 concept BoundingBoxSampler = requires(T sampler, const BoundingBox& bounding_box) {
-    { sampler.sample(bounding_box) } -> std::same_as<Point3>;
+    { sampler.sample(bounding_box) } -> std::same_as<cgal::Point3>;
 };
 
 }

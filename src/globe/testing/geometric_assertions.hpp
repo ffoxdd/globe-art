@@ -20,7 +20,7 @@ namespace globe::testing {
 
 constexpr double DEFAULT_TOLERANCE = 1e-9;
 
-inline bool is_on_unit_sphere(const Point3 &point, double tolerance = DEFAULT_TOLERANCE) {
+inline bool is_on_unit_sphere(const cgal::Point3 &point, double tolerance = DEFAULT_TOLERANCE) {
     double distance = std::sqrt(
         point.x() * point.x() +
         point.y() * point.y() +
@@ -35,8 +35,8 @@ inline bool is_on_unit_sphere(const VectorS2 &point, double tolerance = DEFAULT_
 }
 
 inline bool points_approximately_equal(
-    const Point3 &a,
-    const Point3 &b,
+    const cgal::Point3 &a,
+    const cgal::Point3 &b,
     double tolerance = DEFAULT_TOLERANCE
 ) {
     double dx = a.x() - b.x();
@@ -47,8 +47,8 @@ inline bool points_approximately_equal(
 }
 
 inline void expect_points_equal(
-    const Point3 &actual,
-    const Point3 &expected,
+    const cgal::Point3 &actual,
+    const cgal::Point3 &expected,
     double tolerance = DEFAULT_TOLERANCE
 ) {
     EXPECT_TRUE(points_approximately_equal(actual, expected, tolerance))
@@ -61,7 +61,7 @@ inline void expect_points_equal(
         ) << ", tolerance: " << tolerance << ")";
 }
 
-inline void expect_point_in_box(const Point3 &point, const BoundingBox &box) {
+inline void expect_point_in_box(const cgal::Point3 &point, const BoundingBox &box) {
     EXPECT_GE(point.x(), box.x_interval().low())
         << "Point x-coordinate " << point.x() << " is below box minimum " << box.x_interval().low();
 

@@ -8,7 +8,7 @@ namespace globe {
 
 class MockScalarField {
  public:
-    MOCK_METHOD(double, value, (const Point3&), (const));
+    MOCK_METHOD(double, value, (const VectorS2&), (const));
 };
 
 } // namespace globe

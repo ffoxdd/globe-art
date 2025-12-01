@@ -106,7 +106,7 @@ inline double LloydVoronoiSphereOptimizer::run_single_pass() {
         double movement = distance(site, centroid);
         max_movement = std::max(max_movement, movement);
 
-        _voronoi_sphere->update_site(index, to_cgal_point(centroid));
+        _voronoi_sphere->update_site(index, cgal::to_point(centroid));
         index++;
     }
 

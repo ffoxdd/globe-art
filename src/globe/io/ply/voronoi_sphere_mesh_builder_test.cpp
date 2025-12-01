@@ -8,10 +8,10 @@ using namespace globe;
 VoronoiSphere create_simple_voronoi_sphere() {
     VoronoiSphere sphere;
 
-    sphere.insert(Point3(1, 0, 0));
-    sphere.insert(Point3(0, 1, 0));
-    sphere.insert(Point3(0, 0, 1));
-    sphere.insert(Point3(-1, 0, 0));
+    sphere.insert(cgal::Point3(1, 0, 0));
+    sphere.insert(cgal::Point3(0, 1, 0));
+    sphere.insert(cgal::Point3(0, 0, 1));
+    sphere.insert(cgal::Point3(-1, 0, 0));
 
     return sphere;
 }
@@ -76,7 +76,7 @@ TEST(VoronoiSphereMeshBuilderTest, EmptyVoronoiSphereProducesEmptyMesh) {
 
 TEST(VoronoiSphereMeshBuilderTest, SinglePointProducesNoMesh) {
     VoronoiSphere sphere;
-    sphere.insert(Point3(1, 0, 0));
+    sphere.insert(cgal::Point3(1, 0, 0));
     VoronoiSphereMeshBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
@@ -89,8 +89,8 @@ TEST(VoronoiSphereMeshBuilderTest, MorePointsProduceMoreDualArcs) {
     VoronoiSphere small_sphere = create_simple_voronoi_sphere();
 
     VoronoiSphere large_sphere = create_simple_voronoi_sphere();
-    large_sphere.insert(Point3(0, -1, 0));
-    large_sphere.insert(Point3(0, 0, -1));
+    large_sphere.insert(cgal::Point3(0, -1, 0));
+    large_sphere.insert(cgal::Point3(0, 0, -1));
 
     VoronoiSphereMeshBuilder builder;
 

@@ -18,24 +18,24 @@ class RandomPointGenerator {
         : _sampler(std::move(sampler)) {
     }
 
-    std::vector<Point3> generate(size_t count);
-    std::vector<Point3> generate(size_t count, const BoundingBox &bounding_box);
+    std::vector<cgal::Point3> generate(size_t count);
+    std::vector<cgal::Point3> generate(size_t count, const BoundingBox &bounding_box);
 
  private:
     BoundingBoxSamplerType _sampler;
 };
 
 template<BoundingBoxSampler BoundingBoxSamplerType>
-std::vector<Point3>
+std::vector<cgal::Point3>
 RandomPointGenerator<BoundingBoxSamplerType>::generate(size_t count) {
     static const BoundingBox unit_cube = BoundingBox::unit_cube();
     return generate(count, unit_cube);
 }
 
 template<BoundingBoxSampler BoundingBoxSamplerType>
-std::vector<Point3>
+std::vector<cgal::Point3>
 RandomPointGenerator<BoundingBoxSamplerType>::generate(size_t count, const BoundingBox &bounding_box) {
-    std::vector<Point3> points;
+    std::vector<cgal::Point3> points;
     points.reserve(count);
     for (size_t i = 0; i < count; ++i) {
         points.push_back(_sampler.sample(bounding_box));

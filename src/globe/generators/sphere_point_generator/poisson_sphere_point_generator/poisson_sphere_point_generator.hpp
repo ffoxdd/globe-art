@@ -111,18 +111,18 @@ std::vector<VectorS2> PoissonSpherePointGenerator<SpherePointGeneratorType>::eli
         return candidates;
     }
 
-    // Convert to Point3 for KD-tree (CGAL boundary)
-    std::vector<Point3> cgal_points;
+    // Convert to cgal::Point3 for KD-tree (CGAL boundary)
+    std::vector<cgal::Point3> cgal_points;
     cgal_points.reserve(n);
     for (const auto& p : candidates) {
-        cgal_points.push_back(to_cgal_point(p));
+        cgal_points.push_back(cgal::to_point(p));
     }
 
     // Chord distance corresponding to geodesic r_max: 2*sin(r_max/2)
     double chord_r_max = 2.0 * std::sin(r_max / 2.0);
 
     // Build indexed KD-tree - stores indices, maps to points via property map
-    IndexedPointMap<std::vector<Point3>> point_map(cgal_points);
+    IndexedPointMap<std::vector<cgal::Point3>> point_map(cgal_points);
     IndexedSearchTraits search_traits(point_map);
 
     IndexedKDTree tree(

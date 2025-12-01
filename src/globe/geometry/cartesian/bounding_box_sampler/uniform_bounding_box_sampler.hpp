@@ -15,12 +15,12 @@ class UniformBoundingBoxSampler {
     explicit UniformBoundingBoxSampler(IntervalSamplerType interval_sampler)
         : _interval_sampler(std::move(interval_sampler)) {}
 
-    [[nodiscard]] inline Point3 sample(const BoundingBox& bounding_box) {
+    [[nodiscard]] inline cgal::Point3 sample(const BoundingBox& bounding_box) {
         double x = _interval_sampler.sample(bounding_box.x_interval());
         double y = _interval_sampler.sample(bounding_box.y_interval());
         double z = _interval_sampler.sample(bounding_box.z_interval());
 
-        return Point3(x, y, z);
+        return cgal::Point3(x, y, z);
     }
 
  private:

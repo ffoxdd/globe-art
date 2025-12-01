@@ -140,7 +140,7 @@ class SphericalFieldDensityOptimizer {
 
     struct OptimizationState {
         double best_error = std::numeric_limits<double>::max();
-        std::vector<Point3> best_checkpoint;
+        std::vector<cgal::Point3> best_checkpoint;
 
         size_t perturbation_attempts = 0;
         size_t successful_perturbations_since_best = 0;
@@ -155,7 +155,7 @@ class SphericalFieldDensityOptimizer {
         std::vector<detail::CellMass>,
         detail::MinMassComparator
     >;
-    using Checkpoint = std::vector<Point3>;
+    using Checkpoint = std::vector<cgal::Point3>;
 
     double mass(const SphericalPolygon& polygon) const;
     double average_mass() const;
@@ -384,7 +384,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
     double target_mass,
     double previous_error
 ) {
-    Point3 original_position = _voronoi_sphere->site(index);
+    cgal::Point3 original_position = _voronoi_sphere->site(index);
     VectorS2 original_vector = to_vector_s2(original_position);
     VectorS2 north = detail::antipodal(original_vector);
     detail::TangentBasis basis = detail::build_tangent_basis(north);
@@ -399,10 +399,10 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
         struct RunResult {
             double mass_error;
             double cost;
-            Point3 best_position;
+            cgal::Point3 best_position;
         };
 
-        Point3 run_best_position = original_position;
+        cgal::Point3 run_best_position = original_position;
         double run_best_mass_error = initial_error;
         double run_best_cost = initial_error;
         column_vector starting_point = initial_point;
@@ -416,7 +416,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
                 tangent_u,
                 tangent_v
             );
-            Point3 candidate = to_cgal_point(candidate_vec);
+            cgal::Point3 candidate = cgal::to_point(candidate_vec);
 
             _voronoi_sphere->update_site(index, candidate);
 
@@ -604,7 +604,7 @@ bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_vertex_to
         std::cos(PERTURBATION_RADIANS) * current_vector +
         std::sin(PERTURBATION_RADIANS) * tangent_direction;
 
-    _voronoi_sphere->update_site(index, to_cgal_point(new_vector));
+    _voronoi_sphere->update_site(index, cgal::to_point(new_vector));
 
     return true;
 }

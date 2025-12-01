@@ -46,7 +46,7 @@ class GradientDensityOptimizer {
     std::unique_ptr<VoronoiSphere> optimize();
 
  private:
-    using Checkpoint = std::vector<Point3>;
+    using Checkpoint = std::vector<cgal::Point3>;
 
     class ObjectiveFunctor {
      public:
@@ -248,7 +248,7 @@ Eigen::VectorXd GradientDensityOptimizer<FieldType, GeneratorType>::sites_to_vec
     Eigen::VectorXd x(3 * n);
 
     for (size_t i = 0; i < n; ++i) {
-        Point3 site = _voronoi_sphere->site(i);
+        cgal::Point3 site = _voronoi_sphere->site(i);
         x[3 * i + 0] = site.x();
         x[3 * i + 1] = site.y();
         x[3 * i + 2] = site.z();
@@ -264,7 +264,7 @@ void GradientDensityOptimizer<FieldType, GeneratorType>::vector_to_sites_normali
     for (size_t i = 0; i < n; ++i) {
         Eigen::Vector3d v(x[3 * i + 0], x[3 * i + 1], x[3 * i + 2]);
         v.normalize();
-        _voronoi_sphere->update_site(i, Point3(v.x(), v.y(), v.z()));
+        _voronoi_sphere->update_site(i, cgal::Point3(v.x(), v.y(), v.z()));
     }
 }
 
@@ -283,7 +283,7 @@ Eigen::VectorXd GradientDensityOptimizer<FieldType, GeneratorType>::compute_proj
     Eigen::VectorXd grad(3 * n);
 
     for (size_t i = 0; i < n; ++i) {
-        Point3 site = _voronoi_sphere->site(i);
+        cgal::Point3 site = _voronoi_sphere->site(i);
         Eigen::Vector3d s(site.x(), site.y(), site.z());
         s.normalize();
 
@@ -321,13 +321,13 @@ std::vector<Eigen::Vector3d> GradientDensityOptimizer<FieldType, GeneratorType>:
     std::vector<Eigen::Vector3d> gradients(n, Eigen::Vector3d::Zero());
 
     for (size_t k = 0; k < n; ++k) {
-        Point3 site_k = _voronoi_sphere->site(k);
+        cgal::Point3 site_k = _voronoi_sphere->site(k);
         Eigen::Vector3d s_k = to_eigen(site_k);
         auto cell_edges = _voronoi_sphere->cell_edges(k);
 
         for (const auto& edge_info : cell_edges) {
             size_t j = edge_info.neighbor_index;
-            Point3 site_j = _voronoi_sphere->site(j);
+            cgal::Point3 site_j = _voronoi_sphere->site(j);
 
             const SphericalArc& arc = edge_info.arc;
             Eigen::Vector3d rho_weighted_moment = _field.edge_gradient_integral(arc);
@@ -416,7 +416,7 @@ std::optional<size_t> GradientDensityOptimizer<FieldType, GeneratorType>::find_m
 
 template<SphericalField FieldType, SpherePointGenerator GeneratorType>
 bool GradientDensityOptimizer<FieldType, GeneratorType>::perturb_site_randomly(size_t index) {
-    Point3 site = _voronoi_sphere->site(index);
+    cgal::Point3 site = _voronoi_sphere->site(index);
     Eigen::Vector3d s(site.x(), site.y(), site.z());
     s.normalize();
 
@@ -442,7 +442,7 @@ bool GradientDensityOptimizer<FieldType, GeneratorType>::perturb_site_randomly(s
         std::sin(PERTURBATION_ANGLE) * tangent;
 
     new_pos.normalize();
-    _voronoi_sphere->update_site(index, Point3(new_pos.x(), new_pos.y(), new_pos.z()));
+    _voronoi_sphere->update_site(index, cgal::Point3(new_pos.x(), new_pos.y(), new_pos.z()));
 
     return true;
 }

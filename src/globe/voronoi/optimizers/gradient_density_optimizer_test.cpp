@@ -23,7 +23,7 @@ std::unique_ptr<VoronoiSphere> create_test_voronoi(size_t num_points) {
         double x = std::cos(theta) * radius;
         double z = std::sin(theta) * radius;
 
-        voronoi->insert(Point3(x, y, z));
+        voronoi->insert(cgal::Point3(x, y, z));
     }
 
     return voronoi;
@@ -80,12 +80,12 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
         return errors;
     };
 
-    std::vector<Point3> sites;
+    std::vector<cgal::Point3> sites;
     for (size_t i = 0; i < voronoi->size(); ++i) {
         sites.push_back(voronoi->site(i));
     }
 
-    auto rebuild_voronoi_with_perturbation = [&sites](size_t index, Point3 new_pos) {
+    auto rebuild_voronoi_with_perturbation = [&sites](size_t index, cgal::Point3 new_pos) {
         auto v = std::make_unique<VoronoiSphere>();
         for (size_t i = 0; i < sites.size(); ++i) {
             v->insert(i == index ? new_pos : sites[i]);
@@ -106,13 +106,13 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
         auto mass_errors = compute_mass_errors();
         Eigen::Vector3d gradient = Eigen::Vector3d::Zero();
 
-        Point3 site_k = voronoi->site(site_index);
+        cgal::Point3 site_k = voronoi->site(site_index);
         Eigen::Vector3d s_k = to_eigen(site_k);
         auto cell_edges = voronoi->cell_edges(site_index);
 
         for (const auto& edge_info : cell_edges) {
             size_t j = edge_info.neighbor_index;
-            Point3 site_j = voronoi->site(j);
+            cgal::Point3 site_j = voronoi->site(j);
 
             const SphericalArc& arc = edge_info.arc;
             Eigen::Vector3d rho_weighted_moment = field.edge_gradient_integral(arc);
@@ -132,7 +132,7 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
 
     double epsilon = 1e-5;
     size_t site_idx = 0;
-    Point3 site = sites[site_idx];
+    cgal::Point3 site = sites[site_idx];
     Eigen::Vector3d s(site.x(), site.y(), site.z());
 
     Eigen::Vector3d analytical = compute_analytical_gradient(site_idx);
@@ -145,13 +145,13 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
 
         Eigen::Vector3d new_pos_plus = (s + perturb).normalized();
         auto voronoi_plus = rebuild_voronoi_with_perturbation(
-            site_idx, Point3(new_pos_plus.x(), new_pos_plus.y(), new_pos_plus.z())
+            site_idx, cgal::Point3(new_pos_plus.x(), new_pos_plus.y(), new_pos_plus.z())
         );
         double error_plus = compute_error_for(*voronoi_plus);
 
         Eigen::Vector3d new_pos_minus = (s - perturb).normalized();
         auto voronoi_minus = rebuild_voronoi_with_perturbation(
-            site_idx, Point3(new_pos_minus.x(), new_pos_minus.y(), new_pos_minus.z())
+            site_idx, cgal::Point3(new_pos_minus.x(), new_pos_minus.y(), new_pos_minus.z())
         );
         double error_minus = compute_error_for(*voronoi_minus);
 

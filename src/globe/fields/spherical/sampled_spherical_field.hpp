@@ -11,9 +11,6 @@
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../scalar/scalar_field.hpp"
 #include "../scalar/noise_field.hpp"
-#include <CGAL/Search_traits_3.h>
-#include <CGAL/Kd_tree.h>
-#include <CGAL/Fuzzy_sphere.h>
 #include <Eigen/Core>
 #include <vector>
 #include <memory>
@@ -47,18 +44,14 @@ class SampledSphericalField {
     [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const SphericalArc& arc) const;
 
  private:
-    using SearchTraits = CGAL::Search_traits_3<detail::Kernel>;
-    using KDTree = CGAL::Kd_tree<SearchTraits>;
-    using FuzzySphere = CGAL::Fuzzy_sphere<SearchTraits>;
-
     struct Sample {
-        Point3 point;
+        cgal::Point3 point;
         double value;
     };
 
     ScalarFieldType _field;
     std::vector<Sample> _samples;
-    std::unique_ptr<KDTree> _kdtree;
+    std::unique_ptr<cgal::KDTree> _kdtree;
     double _weight_per_sample;
     double _total_mass;
     size_t _edge_samples;
@@ -101,7 +94,7 @@ void SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::build_sam
 
     for (const auto& vector_point : points) {
         double sample_value = _field.value(vector_point);
-        _samples.push_back({to_cgal_point(vector_point), sample_value});
+        _samples.push_back({cgal::to_point(vector_point), sample_value});
         value_sum += sample_value;
     }
 
@@ -113,9 +106,9 @@ template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorT
 void SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::build_kdtree() {
     if (_samples.empty()) return;
 
-    _kdtree = std::make_unique<KDTree>();
+    _kdtree = std::make_unique<cgal::KDTree>();
 
-    std::vector<Point3> points;
+    std::vector<cgal::Point3> points;
     points.reserve(_samples.size());
     for (const auto& sample : _samples) {
         points.push_back(sample.point);
@@ -189,18 +182,18 @@ std::vector<size_t> SampledSphericalField<ScalarFieldType, SpherePointGeneratorT
 ) const {
     if (!_kdtree) return {};
 
-    Point3 center = to_cgal_point(polygon.centroid());
+    cgal::Point3 center = cgal::to_point(polygon.centroid());
     double radius = polygon.bounding_sphere_radius();
-    FuzzySphere query(center, radius, GEOMETRIC_EPSILON);
+    cgal::FuzzySphere query(center, radius, GEOMETRIC_EPSILON);
 
-    std::vector<Point3> candidates;
+    std::vector<cgal::Point3> candidates;
     _kdtree->search(std::back_inserter(candidates), query);
 
     std::vector<size_t> result;
     for (const auto& candidate : candidates) {
         if (polygon.contains(to_vector_s2(candidate))) {
             for (size_t i = 0; i < _samples.size(); ++i) {
-                if (CGAL::squared_distance(_samples[i].point, candidate) < 1e-20) {
+                if (::CGAL::squared_distance(_samples[i].point, candidate) < 1e-20) {
                     result.push_back(i);
                     break;
                 }

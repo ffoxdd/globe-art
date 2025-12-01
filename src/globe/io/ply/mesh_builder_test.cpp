@@ -8,8 +8,8 @@ TEST(MeshBuilderTest, BuildsArcBetweenTwoPoints) {
     MeshBuilder builder(10, 0.001);
     SurfaceMesh mesh;
 
-    Point3 source(1, 0, 0);
-    Point3 target(0, 1, 0);
+    cgal::Point3 source(1, 0, 0);
+    cgal::Point3 target(0, 1, 0);
 
     builder.build_arc(mesh, source, target);
 
@@ -21,8 +21,8 @@ TEST(MeshBuilderTest, MeshIsValidAfterBuildingArc) {
     MeshBuilder builder(10, 0.001);
     SurfaceMesh mesh;
 
-    Point3 source(1, 0, 0);
-    Point3 target(0, 1, 0);
+    cgal::Point3 source(1, 0, 0);
+    cgal::Point3 target(0, 1, 0);
 
     builder.build_arc(mesh, source, target);
 
@@ -34,9 +34,9 @@ TEST(MeshBuilderTest, BuildsMultipleArcsInSameMesh) {
     MeshBuilder builder(10, 0.001);
     SurfaceMesh mesh;
 
-    Point3 p1(1, 0, 0);
-    Point3 p2(0, 1, 0);
-    Point3 p3(0, 0, 1);
+    cgal::Point3 p1(1, 0, 0);
+    cgal::Point3 p2(0, 1, 0);
+    cgal::Point3 p3(0, 0, 1);
 
     builder.build_arc(mesh, p1, p2);
     builder.build_arc(mesh, p2, p3);
@@ -54,8 +54,8 @@ TEST(MeshBuilderTest, HigherSamplesProduceMoreVertices) {
     SurfaceMesh mesh_low;
     SurfaceMesh mesh_high;
 
-    Point3 source(1, 0, 0);
-    Point3 target(0, 1, 0);
+    cgal::Point3 source(1, 0, 0);
+    cgal::Point3 target(0, 1, 0);
 
     builder_low.build_arc(mesh_low, source, target);
     builder_high.build_arc(mesh_high, source, target);
@@ -68,9 +68,9 @@ TEST(MeshBuilderTest, DeduplicatesSharedVertices) {
     MeshBuilder builder(10, 0.001);
     SurfaceMesh mesh;
 
-    Point3 p1(1, 0, 0);
-    Point3 p2(0, 1, 0);
-    Point3 p3(0, 0, 1);
+    cgal::Point3 p1(1, 0, 0);
+    cgal::Point3 p2(0, 1, 0);
+    cgal::Point3 p3(0, 0, 1);
 
     builder.build_arc(mesh, p1, p2);
     size_t vertices_after_first = mesh.number_of_vertices();

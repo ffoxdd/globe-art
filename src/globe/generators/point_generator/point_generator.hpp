@@ -10,8 +10,8 @@ namespace globe {
 
 template<typename T>
 concept PointGenerator = requires(T t, const BoundingBox &bounding_box, size_t count) {
-    { t.generate(count) } -> std::convertible_to<std::vector<Point3>>;
-    { t.generate(count, bounding_box) } -> std::convertible_to<std::vector<Point3>>;
+    { t.generate(count) } -> std::convertible_to<std::vector<cgal::Point3>>;
+    { t.generate(count, bounding_box) } -> std::convertible_to<std::vector<cgal::Point3>>;
 };
 
 }

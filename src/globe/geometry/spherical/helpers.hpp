@@ -3,23 +3,12 @@
 
 #include <cmath>
 #include <algorithm>
-#include <CGAL/Exact_spherical_kernel_3.h>
-#include <Eigen/Core>
 #include "../../types.hpp"
 #include "../../cgal_types.hpp"
 
 namespace globe {
 
 constexpr double UNIT_SPHERE_AREA = 4.0 * M_PI;
-
-template<HasXYZ PointType>
-Eigen::Vector3d to_eigen(const PointType &point) {
-    return Eigen::Vector3d(
-        CGAL::to_double(point.x()),
-        CGAL::to_double(point.y()),
-        CGAL::to_double(point.z())
-    );
-}
 
 inline double distance(const VectorS2 &a, const VectorS2 &b) {
     CGAL_precondition(std::abs(a.squaredNorm() - 1.0) < GEOMETRIC_EPSILON);

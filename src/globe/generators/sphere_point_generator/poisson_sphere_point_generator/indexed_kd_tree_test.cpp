@@ -5,13 +5,13 @@
 using namespace globe;
 
 TEST(IndexedPointMapTest, ReturnsCorrectPointForIndex) {
-    std::vector<Point3> points = {
-        Point3(1, 0, 0),
-        Point3(0, 1, 0),
-        Point3(0, 0, 1)
+    std::vector<cgal::Point3> points = {
+        cgal::Point3(1, 0, 0),
+        cgal::Point3(0, 1, 0),
+        cgal::Point3(0, 0, 1)
     };
 
-    IndexedPointMap<std::vector<Point3>> map(points);
+    IndexedPointMap<std::vector<cgal::Point3>> map(points);
 
     EXPECT_EQ(map[0], points[0]);
     EXPECT_EQ(map[1], points[1]);
@@ -19,26 +19,26 @@ TEST(IndexedPointMapTest, ReturnsCorrectPointForIndex) {
 }
 
 TEST(IndexedPointMapTest, GetFunctionReturnsCorrectPoint) {
-    std::vector<Point3> points = {
-        Point3(1, 2, 3),
-        Point3(4, 5, 6)
+    std::vector<cgal::Point3> points = {
+        cgal::Point3(1, 2, 3),
+        cgal::Point3(4, 5, 6)
     };
 
-    IndexedPointMap<std::vector<Point3>> map(points);
+    IndexedPointMap<std::vector<cgal::Point3>> map(points);
 
     EXPECT_EQ(get(map, 0), points[0]);
     EXPECT_EQ(get(map, 1), points[1]);
 }
 
 TEST(IndexedKDTreeTest, QueriesReturnIndices) {
-    std::vector<Point3> points = {
-        Point3(1, 0, 0),
-        Point3(0, 1, 0),
-        Point3(0, 0, 1),
-        Point3(-1, 0, 0)
+    std::vector<cgal::Point3> points = {
+        cgal::Point3(1, 0, 0),
+        cgal::Point3(0, 1, 0),
+        cgal::Point3(0, 0, 1),
+        cgal::Point3(-1, 0, 0)
     };
 
-    IndexedPointMap<std::vector<Point3>> point_map(points);
+    IndexedPointMap<std::vector<cgal::Point3>> point_map(points);
     IndexedSearchTraits search_traits(point_map);
 
     IndexedKDTree tree(
@@ -59,14 +59,14 @@ TEST(IndexedKDTreeTest, QueriesReturnIndices) {
 }
 
 TEST(IndexedKDTreeTest, QueryFindsMultipleNeighbors) {
-    std::vector<Point3> points = {
-        Point3(1, 0, 0),
-        Point3(0.9, 0.1, 0),
-        Point3(0.9, -0.1, 0),
-        Point3(-1, 0, 0)
+    std::vector<cgal::Point3> points = {
+        cgal::Point3(1, 0, 0),
+        cgal::Point3(0.9, 0.1, 0),
+        cgal::Point3(0.9, -0.1, 0),
+        cgal::Point3(-1, 0, 0)
     };
 
-    IndexedPointMap<std::vector<Point3>> point_map(points);
+    IndexedPointMap<std::vector<cgal::Point3>> point_map(points);
     IndexedSearchTraits search_traits(point_map);
 
     IndexedKDTree tree(

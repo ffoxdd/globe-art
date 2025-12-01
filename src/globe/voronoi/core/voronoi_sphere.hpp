@@ -29,22 +29,22 @@ class VoronoiSphere {
     VoronoiSphere(VoronoiSphere&&) = default;
     VoronoiSphere& operator=(VoronoiSphere&&) = default;
 
-    void insert(Point3 point);
+    void insert(cgal::Point3 point);
     std::size_t size() const;
 
     SphericalPolygon cell(size_t index) const;
     auto cells() const;
 
-    Point3 site(size_t index) const;
-    void update_site(size_t index, Point3 new_position);
+    cgal::Point3 site(size_t index) const;
+    void update_site(size_t index, cgal::Point3 new_position);
 
     std::vector<CellEdgeInfo> cell_edges(size_t index) const;
 
  private:
-    using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
-    using SphericalKernel = CGAL::Exact_spherical_kernel_3;
-    using Triangulation = CGAL::Delaunay_triangulation_on_sphere_2<
-        CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>
+    using Kernel = ::CGAL::Exact_predicates_inexact_constructions_kernel;
+    using SphericalKernel = ::CGAL::Exact_spherical_kernel_3;
+    using Triangulation = ::CGAL::Delaunay_triangulation_on_sphere_2<
+        ::CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>
     >;
     using Arc = Triangulation::Arc_on_sphere_2;
 
@@ -63,17 +63,17 @@ class VoronoiSphere {
     size_t vertex_index(VertexHandle handle) const;
 
     static SphericalArc to_spherical_arc(const Arc& cgal_arc);
-    static Vector3 arc_normal(const Arc& arc);
+    static VectorS2 arc_normal(const Arc& arc);
 
     template<typename P>
-    static Point3 to_point(const P& p);
+    static cgal::Point3 to_point(const P& p);
 };
 
 inline VoronoiSphere::VoronoiSphere() :
     _triangulation(std::make_unique<Triangulation>()) {
 }
 
-inline void VoronoiSphere::insert(Point3 point) {
+inline void VoronoiSphere::insert(cgal::Point3 point) {
     VertexHandle handle = _triangulation->insert(point);
     size_t index = _handles.size();
     _handles.push_back(handle);
@@ -95,11 +95,11 @@ inline std::size_t VoronoiSphere::size() const {
     return _triangulation->number_of_vertices();
 }
 
-inline Point3 VoronoiSphere::site(size_t index) const {
+inline cgal::Point3 VoronoiSphere::site(size_t index) const {
     return _triangulation->point(_handles[index]);
 }
 
-inline void VoronoiSphere::update_site(size_t index, Point3 new_position) {
+inline void VoronoiSphere::update_site(size_t index, cgal::Point3 new_position) {
     _handle_to_index.erase(_handles[index]);
     _triangulation->remove(_handles[index]);
     _handles[index] = _triangulation->insert(new_position);
@@ -169,33 +169,33 @@ inline std::vector<CellEdgeInfo> VoronoiSphere::cell_edges(size_t index) const {
 inline SphericalArc VoronoiSphere::to_spherical_arc(const Arc& cgal_arc) {
     VectorS2 source = to_vector_s2(to_point(cgal_arc.source()));
     VectorS2 target = to_vector_s2(to_point(cgal_arc.target()));
-    VectorS2 normal = to_vector_s2(arc_normal(cgal_arc));
+    VectorS2 normal = arc_normal(cgal_arc);
     return SphericalArc(source, target, normal);
 }
 
-inline Vector3 VoronoiSphere::arc_normal(const Arc& arc) {
+inline VectorS2 VoronoiSphere::arc_normal(const Arc& arc) {
     auto circle = arc.supporting_circle();
     auto plane = circle.supporting_plane();
     auto normal = plane.orthogonal_vector();
 
-    double x = CGAL::to_double(normal.x());
-    double y = CGAL::to_double(normal.y());
-    double z = CGAL::to_double(normal.z());
+    double x = ::CGAL::to_double(normal.x());
+    double y = ::CGAL::to_double(normal.y());
+    double z = ::CGAL::to_double(normal.z());
 
     double len = std::sqrt(x * x + y * y + z * z);
     if (len < 1e-15) {
-        return Vector3(0, 0, 1);
+        return VectorS2(0, 0, 1);
     }
 
-    return Vector3(x / len, y / len, z / len);
+    return VectorS2(x / len, y / len, z / len);
 }
 
 template<typename P>
-inline Point3 VoronoiSphere::to_point(const P& p) {
-    return Point3(
-        CGAL::to_double(p.x()),
-        CGAL::to_double(p.y()),
-        CGAL::to_double(p.z())
+inline cgal::Point3 VoronoiSphere::to_point(const P& p) {
+    return cgal::Point3(
+        ::CGAL::to_double(p.x()),
+        ::CGAL::to_double(p.y()),
+        ::CGAL::to_double(p.z())
     );
 }
 

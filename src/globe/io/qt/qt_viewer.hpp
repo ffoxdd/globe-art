@@ -33,11 +33,11 @@ public:
         _key_press_callback = key_press_callback;
     }
 
-    void add_point(const Point3 &point, const CGAL::IO::Color &color = BLACK);
-    void add_segment(const Point3 &source, const Point3 &target, const CGAL::IO::Color &color = BLACK);
-    void add_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color = BLACK);
-    void add_arc(const SphericalArc &arc, const CGAL::IO::Color &color = BLACK);
-    void add_text(const Point3 &point, const std::string &text);
+    void add_point(const cgal::Point3 &point, const ::CGAL::IO::Color &color = BLACK);
+    void add_segment(const cgal::Point3 &source, const cgal::Point3 &target, const ::CGAL::IO::Color &color = BLACK);
+    void add_arc(const cgal::Point3 &point1, const cgal::Point3 &point2, const ::CGAL::IO::Color &color = BLACK);
+    void add_arc(const SphericalArc &arc, const ::CGAL::IO::Color &color = BLACK);
+    void add_text(const cgal::Point3 &point, const std::string &text);
     void clear();
     void show();
     void redraw() override;
@@ -59,31 +59,31 @@ inline QtViewer::QtViewer(
     size_vertices(5.0f);
 }
 
-inline void QtViewer::add_point(const Point3 &point, const CGAL::IO::Color &color) {
+inline void QtViewer::add_point(const cgal::Point3 &point, const ::CGAL::IO::Color &color) {
     _scene.add_point(point, color);
 }
 
-inline void QtViewer::add_segment(const Point3 &source, const Point3 &target, const CGAL::IO::Color &color) {
+inline void QtViewer::add_segment(const cgal::Point3 &source, const cgal::Point3 &target, const ::CGAL::IO::Color &color) {
     _scene.add_segment(source, target, color);
 }
 
-inline void QtViewer::add_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color) {
+inline void QtViewer::add_arc(const cgal::Point3 &point1, const cgal::Point3 &point2, const ::CGAL::IO::Color &color) {
     for (int i = 0; i < CIRCULAR_ARC_RESOLUTION; i++) {
         const double t1 = static_cast<double>(i) / CIRCULAR_ARC_RESOLUTION;
         const double t2 = static_cast<double>(i + 1) / CIRCULAR_ARC_RESOLUTION;
 
-        Point3 segment_source = io::interpolate(point1, point2, t1);
-        Point3 segment_target = io::interpolate(point1, point2, t2);
+        cgal::Point3 segment_source = io::interpolate(point1, point2, t1);
+        cgal::Point3 segment_target = io::interpolate(point1, point2, t2);
 
         add_segment(segment_source, segment_target, color);
     }
 }
 
-inline void QtViewer::add_arc(const SphericalArc &arc, const CGAL::IO::Color &color) {
-    add_arc(to_cgal_point(arc.source()), to_cgal_point(arc.target()), color);
+inline void QtViewer::add_arc(const SphericalArc &arc, const ::CGAL::IO::Color &color) {
+    add_arc(cgal::to_point(arc.source()), cgal::to_point(arc.target()), color);
 }
 
-inline void QtViewer::add_text(const Point3 &point, const std::string &text) {
+inline void QtViewer::add_text(const cgal::Point3 &point, const std::string &text) {
     _scene.add_text(point, text);
 }
 

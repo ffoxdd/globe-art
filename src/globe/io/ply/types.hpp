@@ -6,7 +6,7 @@
 
 namespace globe {
 
-using SurfaceMesh = CGAL::Surface_mesh<Point3>;
+using SurfaceMesh = ::CGAL::Surface_mesh<cgal::Point3>;
 
 } // namespace globe
 
