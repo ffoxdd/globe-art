@@ -106,3 +106,42 @@ TEST(SphericalArcTest, SubarcHasShorterLength) {
     EXPECT_LT(subarc.length(), arc.length());
     EXPECT_NEAR(subarc.length(), arc.length() / 2.0, 1e-10);
 }
+
+TEST(SphericalArcTest, InterpolateAtZeroReturnsSource) {
+    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
+
+    VectorS2 result = arc.interpolate(0.0);
+
+    EXPECT_NEAR(result.x(), 1.0, 1e-10);
+    EXPECT_NEAR(result.y(), 0.0, 1e-10);
+    EXPECT_NEAR(result.z(), 0.0, 1e-10);
+}
+
+TEST(SphericalArcTest, InterpolateAtOneReturnsTarget) {
+    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
+
+    VectorS2 result = arc.interpolate(1.0);
+
+    EXPECT_NEAR(result.x(), 0.0, 1e-10);
+    EXPECT_NEAR(result.y(), 1.0, 1e-10);
+    EXPECT_NEAR(result.z(), 0.0, 1e-10);
+}
+
+TEST(SphericalArcTest, InterpolateAtHalfReturnsMidpoint) {
+    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
+
+    VectorS2 result = arc.interpolate(0.5);
+
+    double inv_sqrt2 = 1.0 / std::sqrt(2.0);
+    EXPECT_NEAR(result.x(), inv_sqrt2, 1e-10);
+    EXPECT_NEAR(result.y(), inv_sqrt2, 1e-10);
+    EXPECT_NEAR(result.z(), 0.0, 1e-10);
+}
+
+TEST(SphericalArcTest, InterpolatedPointLiesOnArc) {
+    SphericalArc arc(VectorS2(1, 0, 0), VectorS2(0, 1, 0));
+
+    EXPECT_TRUE(arc.contains(arc.interpolate(0.25)));
+    EXPECT_TRUE(arc.contains(arc.interpolate(0.5)));
+    EXPECT_TRUE(arc.contains(arc.interpolate(0.75)));
+}

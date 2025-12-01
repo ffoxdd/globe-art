@@ -19,6 +19,7 @@ class SphericalArc {
     [[nodiscard]] const VectorS2& normal() const { return _normal; }
 
     [[nodiscard]] double length() const;
+    [[nodiscard]] VectorS2 interpolate(double t) const;
     [[nodiscard]] SphericalArc subarc(const VectorS2& point) const;
     [[nodiscard]] bool contains(const VectorS2& point) const;
 
@@ -57,6 +58,20 @@ inline SphericalArc::SphericalArc(const VectorS2& source, const VectorS2& target
 inline double SphericalArc::length() const {
     double cos_theta = std::clamp(_source.dot(_target), -1.0, 1.0);
     return std::acos(cos_theta);
+}
+
+inline VectorS2 SphericalArc::interpolate(double t) const {
+    double theta = length();
+
+    if (theta < GEOMETRIC_EPSILON) {
+        return _source;
+    }
+
+    double sin_theta = std::sin(theta);
+    double a = std::sin((1.0 - t) * theta) / sin_theta;
+    double b = std::sin(t * theta) / sin_theta;
+
+    return (a * _source + b * _target).normalized();
 }
 
 inline SphericalArc SphericalArc::subarc(const VectorS2& point) const {

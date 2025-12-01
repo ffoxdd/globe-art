@@ -214,8 +214,13 @@ The rebuild approach is preferred for performance - bulk insertion is faster tha
 - Always organize functions/methods with highest abstraction first, followed by lower abstraction
 - In implementation files (.cpp), place main() or the highest-level entry point first
 - Use forward declarations when necessary to maintain this ordering (never reorganize to avoid forward declarations)
-- Public methods come before private methods in class definitions
 - Within each section, order by abstraction level (high-level orchestration methods before low-level utility methods)
+
+### Class Member Ordering
+- Always put `public:` section first in class definitions
+- Public interface is what users care about - show it first
+- Private implementation details (methods, type aliases, members) come after
+- This applies to all class members: methods, type aliases, using declarations, data members
 
 ### Formatting Multi-line Expressions
 - Continuation operators (like `<<`) go at the end of the line, not the beginning

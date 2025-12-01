@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
-#include "voronoi_sphere_mesh_builder.hpp"
-#include "../../voronoi/core/voronoi_sphere.hpp"
-#include "../../types.hpp"
+#include "voronoi_sphere_builder.hpp"
+#include "../../../voronoi/core/voronoi_sphere.hpp"
 
 using namespace globe;
+using namespace globe::io::ply::mesh;
 
 VoronoiSphere create_simple_voronoi_sphere() {
     VoronoiSphere sphere;
@@ -16,9 +16,9 @@ VoronoiSphere create_simple_voronoi_sphere() {
     return sphere;
 }
 
-TEST(VoronoiSphereMeshBuilderTest, CreatesMeshFromVoronoiSphere) {
+TEST(VoronoiSphereBuilderTest, CreatesMeshFromVoronoiSphere) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
-    VoronoiSphereMeshBuilder builder;
+    VoronoiSphereBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
 
@@ -26,9 +26,9 @@ TEST(VoronoiSphereMeshBuilderTest, CreatesMeshFromVoronoiSphere) {
     EXPECT_GT(mesh.number_of_faces(), 0);
 }
 
-TEST(VoronoiSphereMeshBuilderTest, MeshIsValid) {
+TEST(VoronoiSphereBuilderTest, MeshIsValid) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
-    VoronoiSphereMeshBuilder builder;
+    VoronoiSphereBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
 
@@ -36,9 +36,9 @@ TEST(VoronoiSphereMeshBuilderTest, MeshIsValid) {
     EXPECT_FALSE(mesh.is_empty());
 }
 
-TEST(VoronoiSphereMeshBuilderTest, MeshHasVerticesForAllArcs) {
+TEST(VoronoiSphereBuilderTest, MeshHasVerticesForAllArcs) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
-    VoronoiSphereMeshBuilder builder;
+    VoronoiSphereBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
 
@@ -51,10 +51,10 @@ TEST(VoronoiSphereMeshBuilderTest, MeshHasVerticesForAllArcs) {
     EXPECT_GE(mesh.number_of_vertices(), arc_count);
 }
 
-TEST(VoronoiSphereMeshBuilderTest, HigherSamplesProduceMoreVertices) {
+TEST(VoronoiSphereBuilderTest, HigherSamplesProduceMoreVertices) {
     VoronoiSphere sphere = create_simple_voronoi_sphere();
-    VoronoiSphereMeshBuilder builder_low(5, 0.001);
-    VoronoiSphereMeshBuilder builder_high(50, 0.001);
+    VoronoiSphereBuilder builder_low(5, 0.001);
+    VoronoiSphereBuilder builder_high(50, 0.001);
 
     SurfaceMesh mesh_low = builder_low.build(sphere);
     SurfaceMesh mesh_high = builder_high.build(sphere);
@@ -63,9 +63,9 @@ TEST(VoronoiSphereMeshBuilderTest, HigherSamplesProduceMoreVertices) {
     EXPECT_GT(mesh_high.number_of_faces(), mesh_low.number_of_faces());
 }
 
-TEST(VoronoiSphereMeshBuilderTest, EmptyVoronoiSphereProducesEmptyMesh) {
+TEST(VoronoiSphereBuilderTest, EmptyVoronoiSphereProducesEmptyMesh) {
     VoronoiSphere sphere;
-    VoronoiSphereMeshBuilder builder;
+    VoronoiSphereBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
 
@@ -74,10 +74,10 @@ TEST(VoronoiSphereMeshBuilderTest, EmptyVoronoiSphereProducesEmptyMesh) {
     EXPECT_TRUE(mesh.is_empty());
 }
 
-TEST(VoronoiSphereMeshBuilderTest, SinglePointProducesNoMesh) {
+TEST(VoronoiSphereBuilderTest, SinglePointProducesNoMesh) {
     VoronoiSphere sphere;
     sphere.insert(cgal::Point3(1, 0, 0));
-    VoronoiSphereMeshBuilder builder;
+    VoronoiSphereBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
 
@@ -85,14 +85,14 @@ TEST(VoronoiSphereMeshBuilderTest, SinglePointProducesNoMesh) {
     EXPECT_EQ(mesh.number_of_faces(), 0);
 }
 
-TEST(VoronoiSphereMeshBuilderTest, MorePointsProduceMoreDualArcs) {
+TEST(VoronoiSphereBuilderTest, MorePointsProduceMoreDualArcs) {
     VoronoiSphere small_sphere = create_simple_voronoi_sphere();
 
     VoronoiSphere large_sphere = create_simple_voronoi_sphere();
     large_sphere.insert(cgal::Point3(0, -1, 0));
     large_sphere.insert(cgal::Point3(0, 0, -1));
 
-    VoronoiSphereMeshBuilder builder;
+    VoronoiSphereBuilder builder;
 
     SurfaceMesh small_mesh = builder.build(small_sphere);
     SurfaceMesh large_mesh = builder.build(large_sphere);
@@ -100,4 +100,3 @@ TEST(VoronoiSphereMeshBuilderTest, MorePointsProduceMoreDualArcs) {
     EXPECT_GT(large_mesh.number_of_vertices(), small_mesh.number_of_vertices());
     EXPECT_GT(large_mesh.number_of_faces(), small_mesh.number_of_faces());
 }
-

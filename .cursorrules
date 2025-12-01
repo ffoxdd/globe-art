@@ -23,10 +23,15 @@
 - Prefer private helper functions with early returns for exceptional cases
 - Keep main functions flat and linear when possible
 
-### Method Organization
+### Function and Method Organization
 - Always organize methods with highest abstraction first, followed by lower abstraction methods
-- Public methods come before private methods
 - Within each section, order by abstraction level (high-level orchestration methods before low-level utility methods)
+
+### Class Member Ordering
+- Always put `public:` section first in class definitions
+- Public interface is what users care about - show it first
+- Private implementation details (methods, type aliases, members) come after
+- This applies to all class members: methods, type aliases, using declarations, data members
 
 ### Formatting Multi-line Expressions
 - Continuation operators (like `<<`) go at the end of the line, not the beginning
