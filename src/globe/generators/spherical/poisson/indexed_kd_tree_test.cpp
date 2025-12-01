@@ -2,7 +2,8 @@
 #include "indexed_kd_tree.hpp"
 #include <boost/iterator/counting_iterator.hpp>
 
-using namespace globe;
+using namespace globe::generators::spherical::poisson;
+namespace cgal = globe::cgal;
 
 TEST(IndexedPointMapTest, ReturnsCorrectPointForIndex) {
     std::vector<cgal::Point3> points = {

@@ -1,29 +1,32 @@
 #include "gtest/gtest.h"
-#include "poisson_sphere_point_generator.hpp"
+#include "elimination_point_generator.hpp"
 #include "../../../geometry/spherical/helpers.hpp"
 #include "../../../testing/geometric_assertions.hpp"
 #include "../../../testing/test_fixtures.hpp"
 
-using namespace globe;
+using namespace globe::generators::spherical::poisson;
+using globe::generators::spherical::RandomPointGenerator;
+using globe::VectorS2;
+using globe::distance;
 
-TEST(PoissonSpherePointGeneratorTest, GeneratesRequestedCount) {
-    PoissonSpherePointGenerator<> generator;
+TEST(EliminationPointGeneratorTest, GeneratesRequestedCount) {
+    EliminationPointGenerator<> generator;
 
     auto points = generator.generate(10);
 
     EXPECT_EQ(points.size(), 10);
 }
 
-TEST(PoissonSpherePointGeneratorTest, GeneratesZeroPointsWhenRequested) {
-    PoissonSpherePointGenerator<> generator;
+TEST(EliminationPointGeneratorTest, GeneratesZeroPointsWhenRequested) {
+    EliminationPointGenerator<> generator;
 
     auto points = generator.generate(0);
 
     EXPECT_TRUE(points.empty());
 }
 
-TEST(PoissonSpherePointGeneratorTest, AllPointsAreOnUnitSphere) {
-    PoissonSpherePointGenerator<> generator;
+TEST(EliminationPointGeneratorTest, AllPointsAreOnUnitSphere) {
+    EliminationPointGenerator<> generator;
 
     auto points = generator.generate(20);
 
@@ -37,9 +40,9 @@ TEST(PoissonSpherePointGeneratorTest, AllPointsAreOnUnitSphere) {
     }
 }
 
-TEST(PoissonSpherePointGeneratorTest, TracksAttemptCount) {
-    PoissonSpherePointGenerator<> generator(
-        RandomSpherePointGenerator<>(),
+TEST(EliminationPointGeneratorTest, TracksAttemptCount) {
+    EliminationPointGenerator<> generator(
+        RandomPointGenerator<>(),
         2.0  // oversample factor
     );
 
@@ -49,11 +52,11 @@ TEST(PoissonSpherePointGeneratorTest, TracksAttemptCount) {
     EXPECT_GE(generator.last_attempt_count(), 20);
 }
 
-TEST(PoissonSpherePointGeneratorTest, EXPENSIVE_PointsAreWellDistributed) {
+TEST(EliminationPointGeneratorTest, EXPENSIVE_PointsAreWellDistributed) {
     REQUIRE_EXPENSIVE();
 
-    PoissonSpherePointGenerator<> generator(
-        RandomSpherePointGenerator<>(),
+    EliminationPointGenerator<> generator(
+        RandomPointGenerator<>(),
         3.0  // higher oversample for better distribution
     );
 
@@ -74,16 +77,16 @@ TEST(PoissonSpherePointGeneratorTest, EXPENSIVE_PointsAreWellDistributed) {
     EXPECT_GT(min_distance, optimal_spacing * 0.3);
 }
 
-TEST(PoissonSpherePointGeneratorTest, EXPENSIVE_BetterThanRandomDistribution) {
+TEST(EliminationPointGeneratorTest, EXPENSIVE_BetterThanRandomDistribution) {
     REQUIRE_EXPENSIVE();
 
     // Generate random points
-    RandomSpherePointGenerator<> random_generator;
+    RandomPointGenerator<> random_generator;
     auto random_points = random_generator.generate(100);
 
     // Generate Poisson points
-    PoissonSpherePointGenerator<> poisson_generator(
-        RandomSpherePointGenerator<>(),
+    EliminationPointGenerator<> poisson_generator(
+        RandomPointGenerator<>(),
         3.0
     );
     auto poisson_points = poisson_generator.generate(100);

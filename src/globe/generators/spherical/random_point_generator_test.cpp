@@ -1,18 +1,22 @@
 #include <gtest/gtest.h>
-#include "random_sphere_point_generator.hpp"
+#include "random_point_generator.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "../../testing/geometric_assertions.hpp"
 #include "../../testing/statistical_assertions.hpp"
 #include "../../math/interval.hpp"
 
-using namespace globe;
+using namespace globe::generators::spherical;
+using globe::SphericalBoundingBox;
+using globe::ThetaInterval;
+using globe::Interval;
+using globe::VectorS2;
 using globe::testing::is_on_unit_sphere;
 using globe::testing::compute_statistics;
 using globe::testing::compute_coordinate_statistics;
 using globe::testing::expect_mean;
 
-TEST(RandomSpherePointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOnSphere) {
-    RandomSpherePointGenerator generator;
+TEST(RandomPointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOnSphere) {
+    RandomPointGenerator generator;
 
     VectorS2 point = generator.generate(1)[0];
 
@@ -21,8 +25,8 @@ TEST(RandomSpherePointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOnSph
         << ") is not on unit sphere";
 }
 
-TEST(RandomSpherePointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
-    RandomSpherePointGenerator generator;
+TEST(RandomPointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
+    RandomPointGenerator generator;
     SphericalBoundingBox box = SphericalBoundingBox::full_sphere();
 
     VectorS2 point = generator.generate(1, box)[0];
@@ -31,10 +35,10 @@ TEST(RandomSpherePointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
     EXPECT_TRUE(box.contains(point));
 }
 
-TEST(RandomSpherePointGeneratorTest, EXPENSIVE_AllPointsOnUnitSphere) {
+TEST(RandomPointGeneratorTest, EXPENSIVE_AllPointsOnUnitSphere) {
     REQUIRE_EXPENSIVE();
 
-    RandomSpherePointGenerator generator;
+    RandomPointGenerator generator;
     constexpr size_t sample_count = 10000;
 
     auto points = generator.generate(sample_count);
@@ -43,10 +47,10 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_AllPointsOnUnitSphere) {
     }
 }
 
-TEST(RandomSpherePointGeneratorTest, EXPENSIVE_UniformDistributionOnSphere) {
+TEST(RandomPointGeneratorTest, EXPENSIVE_UniformDistributionOnSphere) {
     REQUIRE_EXPENSIVE();
 
-    RandomSpherePointGenerator generator;
+    RandomPointGenerator generator;
     constexpr size_t sample_count = 10000;
 
     auto points = generator.generate(sample_count);
@@ -57,10 +61,10 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_UniformDistributionOnSphere) {
     expect_mean(stats.z, 0.0, 0.05);
 }
 
-TEST(RandomSpherePointGeneratorTest, EXPENSIVE_BoundedPointsInBox) {
+TEST(RandomPointGeneratorTest, EXPENSIVE_BoundedPointsInBox) {
     REQUIRE_EXPENSIVE();
 
-    RandomSpherePointGenerator generator;
+    RandomPointGenerator generator;
     SphericalBoundingBox box(ThetaInterval(0.0, M_PI), Interval(0.0, 1.0));
     constexpr size_t sample_count = 10000;
 

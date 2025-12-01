@@ -2,13 +2,13 @@
 #define GLOBEART_SRC_GLOBE_VORONOI_CORE_RANDOM_VORONOI_SPHERE_BUILDER_HPP_
 
 #include "voronoi_sphere.hpp"
-#include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
-#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
+#include "../../generators/spherical/point_generator.hpp"
+#include "../../generators/spherical/random_point_generator.hpp"
 #include <memory>
 
 namespace globe {
 
-template<SpherePointGenerator SpherePointGeneratorType = RandomSpherePointGenerator<>>
+template<generators::spherical::PointGenerator SpherePointGeneratorType = generators::spherical::RandomPointGenerator<>>
 class RandomVoronoiSphereBuilder {
  public:
     RandomVoronoiSphereBuilder(SpherePointGeneratorType point_generator = SpherePointGeneratorType());
@@ -18,12 +18,12 @@ class RandomVoronoiSphereBuilder {
     SpherePointGeneratorType _point_generator;
 };
 
-template<SpherePointGenerator SpherePointGeneratorType>
+template<generators::spherical::PointGenerator SpherePointGeneratorType>
 RandomVoronoiSphereBuilder<SpherePointGeneratorType>::RandomVoronoiSphereBuilder(SpherePointGeneratorType point_generator) :
     _point_generator(std::move(point_generator)) {
 }
 
-template<SpherePointGenerator SpherePointGeneratorType>
+template<generators::spherical::PointGenerator SpherePointGeneratorType>
 std::unique_ptr<VoronoiSphere> RandomVoronoiSphereBuilder<SpherePointGeneratorType>::build(int point_count) {
     auto voronoi_sphere = std::make_unique<VoronoiSphere>();
 

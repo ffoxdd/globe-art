@@ -5,7 +5,10 @@
 #include "../../testing/geometric_assertions.hpp"
 #include "../../testing/statistical_assertions.hpp"
 
-using namespace globe;
+using namespace globe::generators::cartesian;
+using globe::BoundingBox;
+using globe::Interval;
+namespace cgal = globe::cgal;
 using globe::testing::compute_statistics;
 using globe::testing::compute_coordinate_statistics;
 using globe::testing::expect_mean;

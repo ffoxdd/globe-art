@@ -2,8 +2,8 @@
 #define GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_SPHERICAL_FIELD_DENSITY_OPTIMIZER_HPP_
 
 #include "../../fields/spherical/field.hpp"
-#include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
-#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
+#include "../../generators/spherical/point_generator.hpp"
+#include "../../generators/spherical/random_point_generator.hpp"
 #include "../../geometry/spherical/helpers.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../types.hpp"
@@ -90,7 +90,7 @@ inline VectorS2 stereographic_plane_to_sphere(
 
 template<
     fields::spherical::Field FieldType,
-    SpherePointGenerator GeneratorType = RandomSpherePointGenerator<>
+    generators::spherical::PointGenerator GeneratorType = generators::spherical::RandomPointGenerator<>
 >
 class SphericalFieldDensityOptimizer {
  public:
@@ -186,7 +186,7 @@ class SphericalFieldDensityOptimizer {
     void restore_checkpoint(const Checkpoint& checkpoint);
 };
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 SphericalFieldDensityOptimizer<FieldType, GeneratorType>::SphericalFieldDensityOptimizer(
     std::unique_ptr<VoronoiSphere> voronoi_sphere,
     FieldType field,
@@ -199,13 +199,13 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::SphericalFieldDensityO
     _point_generator(std::move(point_generator)) {
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 std::unique_ptr<VoronoiSphere> SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize() {
     adjust_mass(_optimization_passes);
     return std::move(_voronoi_sphere);
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::adjust_mass(size_t max_passes) {
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
@@ -227,7 +227,7 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::adjust_mass(size_
     print_final_results(target_mass);
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 typename SphericalFieldDensityOptimizer<FieldType, GeneratorType>::PassResult
 SphericalFieldDensityOptimizer<FieldType, GeneratorType>::run_single_pass(double target_mass) {
     auto heap = build_cell_mass_heap();
@@ -246,7 +246,7 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::run_single_pass(double
     return {start_error, current_error, vertex_count};
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 typename SphericalFieldDensityOptimizer<FieldType, GeneratorType>::ProgressResult
 SphericalFieldDensityOptimizer<FieldType, GeneratorType>::check_progress_and_maybe_perturb(
     double target_mass,
@@ -309,7 +309,7 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::check_progress_and_may
     }
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_pass_result(
     size_t pass_number,
     size_t max_passes,
@@ -344,7 +344,7 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_pass_result
     std::cout << std::defaultfloat << std::endl;
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_final_results(double target_mass) {
     std::cout << std::endl;
     std::cout << "Final cell masses after optimization:" << std::endl;
@@ -368,17 +368,17 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_final_resul
     std::cout << "Max error: " << max_error << std::endl;
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::mass(const SphericalPolygon& polygon) const {
     return _field.mass(polygon);
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::average_mass() const {
     return _field.total_mass() / _voronoi_sphere->size();
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex_position(
     size_t index,
     double target_mass,
@@ -461,7 +461,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
     return initial_result.mass_error;
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 typename SphericalFieldDensityOptimizer<FieldType, GeneratorType>::CellMassHeap
 SphericalFieldDensityOptimizer<FieldType, GeneratorType>::build_cell_mass_heap() {
     CellMassHeap heap;
@@ -476,18 +476,18 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::build_cell_mass_heap()
     return heap;
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_convergence_error(double target_mass) {
     return compute_mass_error(target_mass);
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_objective_error(double target_mass) {
     return compute_mass_error(target_mass) +
         CENTROID_DEVIATION_PENALTY * target_mass * target_mass * compute_centroid_deviation_error();
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_mass_error(double target_mass) {
     std::vector<SphericalPolygon> cells;
     cells.reserve(_voronoi_sphere->size());
@@ -517,7 +517,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_mass_er
     return total_error.load();
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_centroid_deviation_error() {
     double total_error = 0.0;
 
@@ -533,7 +533,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_centroi
     return total_error;
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_most_undersized_vertex(
     double target_mass
 ) {
@@ -552,7 +552,7 @@ bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_most_unde
     return true;
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 std::optional<std::pair<size_t, double>>
 SphericalFieldDensityOptimizer<FieldType, GeneratorType>::find_most_undersized_vertex_with_deficit(
     double target_mass
@@ -580,7 +580,7 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::find_most_undersized_v
     return std::make_pair(best_index, largest_deficit);
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_vertex_toward_random_point(
     size_t index
 ) {
@@ -609,7 +609,7 @@ bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_vertex_to
     return true;
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 typename SphericalFieldDensityOptimizer<FieldType, GeneratorType>::Checkpoint
 SphericalFieldDensityOptimizer<FieldType, GeneratorType>::save_checkpoint() const {
     Checkpoint checkpoint;
@@ -622,7 +622,7 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::save_checkpoint() cons
     return checkpoint;
 }
 
-template<fields::spherical::Field FieldType, SpherePointGenerator GeneratorType>
+template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::restore_checkpoint(
     const Checkpoint& checkpoint
 ) {

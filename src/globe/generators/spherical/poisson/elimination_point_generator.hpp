@@ -1,26 +1,26 @@
-#ifndef GLOBEART_SRC_GLOBE_GENERATORS_SPHERE_POINT_GENERATOR_POISSON_SPHERE_POINT_GENERATOR_HPP_
-#define GLOBEART_SRC_GLOBE_GENERATORS_SPHERE_POINT_GENERATOR_POISSON_SPHERE_POINT_GENERATOR_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GENERATORS_SPHERICAL_POISSON_ELIMINATION_POINT_GENERATOR_HPP_
+#define GLOBEART_SRC_GLOBE_GENERATORS_SPHERICAL_POISSON_ELIMINATION_POINT_GENERATOR_HPP_
 
 #include "indexed_kd_tree.hpp"
 #include "../../../geometry/spherical/spherical_bounding_box.hpp"
 #include "../../../geometry/spherical/helpers.hpp"
-#include "../sphere_point_generator.hpp"
-#include "../random_sphere_point_generator.hpp"
+#include "../point_generator.hpp"
+#include "../random_point_generator.hpp"
 #include <boost/iterator/counting_iterator.hpp>
 #include <vector>
 #include <cmath>
 #include <queue>
 #include <algorithm>
 
-namespace globe {
+namespace globe::generators::spherical::poisson {
 
-template<SpherePointGenerator SpherePointGeneratorType = RandomSpherePointGenerator<>>
-class PoissonSpherePointGenerator {
+template<spherical::PointGenerator PointGeneratorType = RandomPointGenerator<>>
+class EliminationPointGenerator {
  public:
-    PoissonSpherePointGenerator() = default;
+    EliminationPointGenerator() = default;
 
-    explicit PoissonSpherePointGenerator(
-        SpherePointGeneratorType generator,
+    explicit EliminationPointGenerator(
+        PointGeneratorType generator,
         double oversample_factor = 2.0
     ) : _generator(std::move(generator)),
         _oversample_factor(oversample_factor) {
@@ -32,7 +32,7 @@ class PoissonSpherePointGenerator {
     [[nodiscard]] size_t last_attempt_count() const { return _last_attempt_count; }
 
  private:
-    SpherePointGeneratorType _generator;
+    PointGeneratorType _generator;
     double _oversample_factor = 2.0;
     size_t _last_attempt_count = 0;
 
@@ -48,13 +48,13 @@ class PoissonSpherePointGenerator {
     );
 };
 
-template<SpherePointGenerator SpherePointGeneratorType>
-std::vector<VectorS2> PoissonSpherePointGenerator<SpherePointGeneratorType>::generate(size_t count) {
+template<spherical::PointGenerator PointGeneratorType>
+std::vector<VectorS2> EliminationPointGenerator<PointGeneratorType>::generate(size_t count) {
     return generate(count, SphericalBoundingBox::full_sphere());
 }
 
-template<SpherePointGenerator SpherePointGeneratorType>
-std::vector<VectorS2> PoissonSpherePointGenerator<SpherePointGeneratorType>::generate(
+template<spherical::PointGenerator PointGeneratorType>
+std::vector<VectorS2> EliminationPointGenerator<PointGeneratorType>::generate(
     size_t count,
     const SphericalBoundingBox &bounding_box
 ) {
@@ -75,8 +75,8 @@ std::vector<VectorS2> PoissonSpherePointGenerator<SpherePointGeneratorType>::gen
     return eliminate_to_count(std::move(candidates), count, r_max);
 }
 
-template<SpherePointGenerator SpherePointGeneratorType>
-double PoissonSpherePointGenerator<SpherePointGeneratorType>::compute_r_max(
+template<spherical::PointGenerator PointGeneratorType>
+double EliminationPointGenerator<PointGeneratorType>::compute_r_max(
     size_t target_count,
     double area
 ) const {
@@ -88,8 +88,8 @@ double PoissonSpherePointGenerator<SpherePointGeneratorType>::compute_r_max(
     return 2.0 * r_optimal;
 }
 
-template<SpherePointGenerator SpherePointGeneratorType>
-double PoissonSpherePointGenerator<SpherePointGeneratorType>::weight_contribution(
+template<spherical::PointGenerator PointGeneratorType>
+double EliminationPointGenerator<PointGeneratorType>::weight_contribution(
     double geodesic_distance,
     double r_max
 ) const {
@@ -100,8 +100,8 @@ double PoissonSpherePointGenerator<SpherePointGeneratorType>::weight_contributio
     return std::pow(ratio, WEIGHT_ALPHA);
 }
 
-template<SpherePointGenerator SpherePointGeneratorType>
-std::vector<VectorS2> PoissonSpherePointGenerator<SpherePointGeneratorType>::eliminate_to_count(
+template<spherical::PointGenerator PointGeneratorType>
+std::vector<VectorS2> EliminationPointGenerator<PointGeneratorType>::eliminate_to_count(
     std::vector<VectorS2> candidates,
     size_t target_count,
     double r_max
@@ -222,6 +222,6 @@ std::vector<VectorS2> PoissonSpherePointGenerator<SpherePointGeneratorType>::eli
     return result;
 }
 
-}
+} // namespace globe::generators::spherical::poisson
 
-#endif //GLOBEART_SRC_GLOBE_GENERATORS_POISSON_SPHERE_POINT_GENERATOR_HPP_
+#endif //GLOBEART_SRC_GLOBE_GENERATORS_SPHERICAL_POISSON_ELIMINATION_POINT_GENERATOR_HPP_

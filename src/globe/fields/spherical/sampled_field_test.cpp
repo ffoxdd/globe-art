@@ -6,7 +6,7 @@
 
 using namespace globe::fields::spherical;
 using globe::fields::scalar::ConstantField;
-using globe::RandomSpherePointGenerator;
+using globe::generators::spherical::RandomPointGenerator;
 using globe::SphericalArc;
 using globe::SphericalPolygon;
 using globe::VectorS2;
@@ -37,7 +37,7 @@ TEST(SampledFieldTest, MassReturnsZeroForEmptySamples) {
     ConstantField scalar_field(1.0);
     SampledField field(
         scalar_field,
-        RandomSpherePointGenerator<>(),
+        RandomPointGenerator<>(),
         0
     );
 

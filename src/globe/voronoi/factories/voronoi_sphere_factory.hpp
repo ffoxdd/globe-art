@@ -174,7 +174,7 @@ inline std::unique_ptr<VoronoiSphere> VoronoiSphereFactory::optimize_noise_ccvd(
     size_t samples = sample_count(noise_field.max_frequency());
     std::cout << "Sample count: " << samples << std::endl;
 
-    SampledField field(noise_field, RandomSpherePointGenerator<>(), samples);
+    SampledField field(noise_field, generators::spherical::RandomPointGenerator<>(), samples);
 
     SphericalFieldDensityOptimizer optimizer(
         std::move(voronoi_sphere),

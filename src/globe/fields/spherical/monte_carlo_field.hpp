@@ -7,8 +7,8 @@
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "../../geometry/spherical/helpers.hpp"
-#include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
-#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
+#include "../../generators/spherical/point_generator.hpp"
+#include "../../generators/spherical/random_point_generator.hpp"
 #include "../../math/interval_sampler/interval_sampler.hpp"
 #include "../scalar/field.hpp"
 #include "../scalar/noise_field.hpp"
@@ -19,7 +19,7 @@ namespace globe::fields::spherical {
 
 template<
     scalar::Field ScalarFieldType,
-    SpherePointGenerator SpherePointGeneratorType = RandomSpherePointGenerator<>,
+    generators::spherical::PointGenerator SpherePointGeneratorType = generators::spherical::RandomPointGenerator<>,
     IntervalSampler IntervalSamplerType = UniformIntervalSampler
 >
 class MonteCarloField {
@@ -49,7 +49,7 @@ class MonteCarloField {
     static constexpr int STABLE_ITERATIONS_REQUIRED = 10;
 };
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::MonteCarloField(
     ScalarFieldType field,
     SpherePointGeneratorType point_generator,
@@ -62,14 +62,14 @@ MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>:
     _total_mass_computed(false) {
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::value(
     const VectorS2& point
 ) const {
     return _field.value(point);
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::mass(
     const SphericalPolygon& polygon
 ) const {
@@ -122,7 +122,7 @@ double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSample
     return polygon_area_estimate * average_density;
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::total_mass() const {
     if (_total_mass_computed) {
         return _cached_total_mass;
@@ -168,7 +168,7 @@ double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSample
     return _cached_total_mass;
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::edge_integral(
     const SphericalArc& arc
 ) const {
@@ -212,7 +212,7 @@ double MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSample
     return (value_sum / total_samples) * arc_length;
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 Eigen::Vector3d MonteCarloField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::edge_gradient_integral(
     const SphericalArc& arc
 ) const {

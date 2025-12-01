@@ -3,11 +3,11 @@
 #include "../../testing/geometric_assertions.hpp"
 #include "../../testing/statistical_assertions.hpp"
 #include "../../math/interval.hpp"
-#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
+#include "../../generators/spherical/random_point_generator.hpp"
 
 using namespace globe::fields::scalar;
 using globe::Interval;
-using globe::RandomSpherePointGenerator;
+using globe::generators::spherical::RandomPointGenerator;
 using globe::VectorS2;
 using globe::testing::compute_statistics;
 using globe::testing::expect_range_coverage;
@@ -48,7 +48,7 @@ TEST(NoiseFieldTest, EXPENSIVE_CanConfigureOutputRange) {
     REQUIRE_EXPENSIVE();
 
     Interval output_range(-0.01, 0.02);
-    RandomSpherePointGenerator point_generator;
+    RandomPointGenerator point_generator;
 
     for (int seed : test_seeds()) {
         NoiseField noise_field(output_range, seed);
@@ -74,7 +74,7 @@ TEST(NoiseFieldTest, EXPENSIVE_OutputDistributionUsesFullRange) {
     REQUIRE_EXPENSIVE();
 
     Interval expected_range(0, 1);
-    RandomSpherePointGenerator point_generator;
+    RandomPointGenerator point_generator;
 
     for (int seed : test_seeds()) {
         NoiseField noise_field(expected_range, seed);

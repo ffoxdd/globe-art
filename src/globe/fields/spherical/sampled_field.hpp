@@ -7,8 +7,8 @@
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
 #include "../../geometry/spherical/helpers.hpp"
-#include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
-#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
+#include "../../generators/spherical/point_generator.hpp"
+#include "../../generators/spherical/random_point_generator.hpp"
 #include "../scalar/field.hpp"
 #include "../scalar/noise_field.hpp"
 #include <Eigen/Core>
@@ -21,7 +21,7 @@ namespace globe::fields::spherical {
 
 template<
     scalar::Field ScalarFieldType,
-    SpherePointGenerator SpherePointGeneratorType = RandomSpherePointGenerator<>
+    generators::spherical::PointGenerator SpherePointGeneratorType = generators::spherical::RandomPointGenerator<>
 >
 class SampledField {
  public:
@@ -67,7 +67,7 @@ class SampledField {
     ) const;
 };
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType>
 SampledField<ScalarFieldType, SpherePointGeneratorType>::SampledField(
     ScalarFieldType field,
     SpherePointGeneratorType point_generator,
@@ -81,7 +81,7 @@ SampledField<ScalarFieldType, SpherePointGeneratorType>::SampledField(
     build_samples(point_generator, sample_count);
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType>
 void SampledField<ScalarFieldType, SpherePointGeneratorType>::build_samples(
     SpherePointGeneratorType& point_generator,
     size_t sample_count
@@ -102,7 +102,7 @@ void SampledField<ScalarFieldType, SpherePointGeneratorType>::build_samples(
     build_kdtree();
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType>
 void SampledField<ScalarFieldType, SpherePointGeneratorType>::build_kdtree() {
     if (_samples.empty()) return;
 
@@ -117,14 +117,14 @@ void SampledField<ScalarFieldType, SpherePointGeneratorType>::build_kdtree() {
     _kdtree->build();
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType>
 double SampledField<ScalarFieldType, SpherePointGeneratorType>::value(
     const VectorS2& point
 ) const {
     return _field.value(point);
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType>
 double SampledField<ScalarFieldType, SpherePointGeneratorType>::mass(
     const SphericalPolygon& polygon
 ) const {
@@ -136,12 +136,12 @@ double SampledField<ScalarFieldType, SpherePointGeneratorType>::mass(
     return value_sum * _weight_per_sample;
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType>
 double SampledField<ScalarFieldType, SpherePointGeneratorType>::total_mass() const {
     return _total_mass;
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType>
 double SampledField<ScalarFieldType, SpherePointGeneratorType>::edge_integral(
     const SphericalArc& arc
 ) const {
@@ -158,7 +158,7 @@ double SampledField<ScalarFieldType, SpherePointGeneratorType>::edge_integral(
     return sum * arc_length / _edge_samples;
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType>
 Eigen::Vector3d SampledField<ScalarFieldType, SpherePointGeneratorType>::edge_gradient_integral(
     const SphericalArc& arc
 ) const {
@@ -176,7 +176,7 @@ Eigen::Vector3d SampledField<ScalarFieldType, SpherePointGeneratorType>::edge_gr
     return sum * arc_length / _edge_samples;
 }
 
-template<scalar::Field ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
+template<scalar::Field ScalarFieldType, generators::spherical::PointGenerator SpherePointGeneratorType>
 std::vector<size_t> SampledField<ScalarFieldType, SpherePointGeneratorType>::find_samples_in_polygon(
     const SphericalPolygon& polygon
 ) const {

@@ -1,14 +1,15 @@
 #include <gtest/gtest.h>
-#include "rejection_sampling_sphere_point_generator.hpp"
+#include "rejection_sampling_point_generator.hpp"
 #include "../../fields/scalar/constant_field.hpp"
 #include "../../testing/geometric_assertions.hpp"
 
-using namespace globe;
-using fields::scalar::ConstantField;
+using namespace globe::generators::spherical;
+using globe::fields::scalar::ConstantField;
+using globe::VectorS2;
 using globe::testing::is_on_unit_sphere;
 
-TEST(RejectionSamplingSpherePointGeneratorTest, GenerateReturnsExactCount) {
-    RejectionSamplingSpherePointGenerator generator;
+TEST(RejectionSamplingPointGeneratorTest, GenerateReturnsExactCount) {
+    RejectionSamplingPointGenerator generator;
     constexpr size_t count = 100;
 
     auto points = generator.generate(count);
@@ -16,8 +17,8 @@ TEST(RejectionSamplingSpherePointGeneratorTest, GenerateReturnsExactCount) {
     EXPECT_EQ(points.size(), count);
 }
 
-TEST(RejectionSamplingSpherePointGeneratorTest, GenerateZeroReturnsEmpty) {
-    RejectionSamplingSpherePointGenerator generator;
+TEST(RejectionSamplingPointGeneratorTest, GenerateZeroReturnsEmpty) {
+    RejectionSamplingPointGenerator generator;
 
     auto points = generator.generate(0);
 
@@ -25,8 +26,8 @@ TEST(RejectionSamplingSpherePointGeneratorTest, GenerateZeroReturnsEmpty) {
     EXPECT_EQ(generator.last_attempt_count(), 0);
 }
 
-TEST(RejectionSamplingSpherePointGeneratorTest, AllPointsOnUnitSphere) {
-    RejectionSamplingSpherePointGenerator generator;
+TEST(RejectionSamplingPointGeneratorTest, AllPointsOnUnitSphere) {
+    RejectionSamplingPointGenerator generator;
     constexpr size_t count = 50;
 
     auto points = generator.generate(count);
@@ -36,9 +37,9 @@ TEST(RejectionSamplingSpherePointGeneratorTest, AllPointsOnUnitSphere) {
     }
 }
 
-TEST(RejectionSamplingSpherePointGeneratorTest, UniformDensityAcceptsAll) {
+TEST(RejectionSamplingPointGeneratorTest, UniformDensityAcceptsAll) {
     ConstantField uniform_field(1.0);
-    RejectionSamplingSpherePointGenerator generator(uniform_field, 1.0);
+    RejectionSamplingPointGenerator generator(uniform_field, 1.0);
     constexpr size_t count = 100;
 
     auto points = generator.generate(count);
@@ -47,9 +48,9 @@ TEST(RejectionSamplingSpherePointGeneratorTest, UniformDensityAcceptsAll) {
     EXPECT_EQ(generator.last_attempt_count(), count);
 }
 
-TEST(RejectionSamplingSpherePointGeneratorTest, HalfDensityRejectsApproximatelyHalf) {
+TEST(RejectionSamplingPointGeneratorTest, HalfDensityRejectsApproximatelyHalf) {
     ConstantField half_density_field(0.5);
-    RejectionSamplingSpherePointGenerator generator(half_density_field, 1.0);
+    RejectionSamplingPointGenerator generator(half_density_field, 1.0);
     constexpr size_t count = 100;
 
     auto points = generator.generate(count);
@@ -59,18 +60,18 @@ TEST(RejectionSamplingSpherePointGeneratorTest, HalfDensityRejectsApproximatelyH
     EXPECT_LT(generator.last_attempt_count(), count * 4);
 }
 
-TEST(RejectionSamplingSpherePointGeneratorTest, ZeroDensityNeverAccepts) {
+TEST(RejectionSamplingPointGeneratorTest, ZeroDensityNeverAccepts) {
     ConstantField zero_field(0.0);
-    RejectionSamplingSpherePointGenerator generator(zero_field, 1.0);
+    RejectionSamplingPointGenerator generator(zero_field, 1.0);
 
     auto points = generator.generate(0);
 
     EXPECT_TRUE(points.empty());
 }
 
-TEST(RejectionSamplingSpherePointGeneratorTest, LastAttemptCountTracksAttempts) {
+TEST(RejectionSamplingPointGeneratorTest, LastAttemptCountTracksAttempts) {
     ConstantField field(0.25);
-    RejectionSamplingSpherePointGenerator generator(field, 1.0);
+    RejectionSamplingPointGenerator generator(field, 1.0);
     constexpr size_t count = 50;
 
     generator.generate(count);

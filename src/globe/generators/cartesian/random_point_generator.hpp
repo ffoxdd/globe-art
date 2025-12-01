@@ -1,5 +1,5 @@
-#ifndef GLOBEART_SRC_GLOBE_GENERATORS_RANDOM_POINT_GENERATOR_HPP_
-#define GLOBEART_SRC_GLOBE_GENERATORS_RANDOM_POINT_GENERATOR_HPP_
+#ifndef GLOBEART_SRC_GLOBE_GENERATORS_CARTESIAN_RANDOM_POINT_GENERATOR_HPP_
+#define GLOBEART_SRC_GLOBE_GENERATORS_CARTESIAN_RANDOM_POINT_GENERATOR_HPP_
 
 #include "../../cgal_types.hpp"
 #include "../../geometry/cartesian/bounding_box.hpp"
@@ -7,7 +7,7 @@
 #include "../../geometry/cartesian/bounding_box_sampler/uniform_bounding_box_sampler.hpp"
 #include <vector>
 
-namespace globe {
+namespace globe::generators::cartesian {
 
 template<BoundingBoxSampler BoundingBoxSamplerType = UniformBoundingBoxSampler<>>
 class RandomPointGenerator {
@@ -43,6 +43,6 @@ RandomPointGenerator<BoundingBoxSamplerType>::generate(size_t count, const Bound
     return points;
 }
 
-}
+} // namespace globe::generators::cartesian
 
-#endif //GLOBEART_SRC_GLOBE_GENERATORS_RANDOM_POINT_GENERATOR_HPP_
+#endif //GLOBEART_SRC_GLOBE_GENERATORS_CARTESIAN_RANDOM_POINT_GENERATOR_HPP_
