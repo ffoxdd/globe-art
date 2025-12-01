@@ -12,7 +12,7 @@ class ConstantSphericalField {
  public:
     explicit ConstantSphericalField(double value = 1.0);
 
-    [[nodiscard]] double value(const Point3& point) const;
+    [[nodiscard]] double value(const VectorS2& point) const;
     [[nodiscard]] double mass(const SphericalPolygon& polygon) const;
     [[nodiscard]] double edge_integral(const SphericalArc& arc) const;
     [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const SphericalArc& arc) const;
@@ -27,7 +27,7 @@ inline ConstantSphericalField::ConstantSphericalField(double value) :
     _value(value) {
 }
 
-inline double ConstantSphericalField::value([[maybe_unused]] const Point3& point) const {
+inline double ConstantSphericalField::value([[maybe_unused]] const VectorS2& point) const {
     return _value;
 }
 

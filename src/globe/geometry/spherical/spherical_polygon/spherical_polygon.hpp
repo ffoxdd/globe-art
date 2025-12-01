@@ -3,11 +3,9 @@
 
 #include "../spherical_bounding_box.hpp"
 #include "../spherical_arc.hpp"
-#include "../helpers.hpp"
 #include "spherical_polygon_bounding_box_calculator.hpp"
 #include "../../../types.hpp"
 #include "../../../std_ext/ranges.hpp"
-#include <CGAL/Kernel/global_functions.h>
 #include <Eigen/Core>
 #include <utility>
 #include <vector>
@@ -25,22 +23,31 @@ class SphericalPolygon {
     [[nodiscard]] const std::vector<SphericalArc>& arcs() const { return _arcs; }
     [[nodiscard]] auto points() const;
     [[nodiscard]] SphericalBoundingBox bounding_box() const;
-    [[nodiscard]] Point3 centroid() const;
+    [[nodiscard]] VectorS2 centroid() const;
     [[nodiscard]] double bounding_sphere_radius() const;
 
     [[nodiscard]] double area() const;
-    [[nodiscard]] Eigen::Vector3d first_moment() const;
+    [[nodiscard]] VectorS2 first_moment() const;
     [[nodiscard]] Eigen::Matrix3d second_moment() const;
 
-    [[nodiscard]] bool contains(const Point3& point) const;
+    [[nodiscard]] bool contains(const VectorS2& point) const;
 
  private:
+    static constexpr double EPSILON = 1e-10;
+
     std::vector<SphericalArc> _arcs;
 
     [[nodiscard]] bool empty() const;
     [[nodiscard]] bool arcs_form_closed_loop() const;
     [[nodiscard]] bool is_convex() const;
-    [[nodiscard]] auto position_vectors() const;
+
+    [[nodiscard]] static double spherical_angle(
+        const VectorS2& a, const VectorS2& b, const VectorS2& c
+    );
+    [[nodiscard]] static double spherical_triangle_area(
+        const VectorS2& a, const VectorS2& b, const VectorS2& c
+    );
+    [[nodiscard]] static double angular_distance(const VectorS2& a, const VectorS2& b);
 };
 
 inline SphericalPolygon::SphericalPolygon(std::vector<SphericalArc> arcs) :
@@ -63,9 +70,9 @@ inline bool SphericalPolygon::empty() const {
 inline bool SphericalPolygon::arcs_form_closed_loop() const {
     return all_circular_adjacent_pairs(_arcs, [](const auto& pair) {
         const auto& [prev, next] = pair;
-        const Point3& prev_target = prev.target();
-        const Point3& next_source = next.source();
-        double dist_sq = CGAL::squared_distance(prev_target, next_source);
+        const VectorS2& prev_target = prev.target();
+        const VectorS2& next_source = next.source();
+        double dist_sq = (prev_target - next_source).squaredNorm();
         return dist_sq < 1e-10;
     });
 }
@@ -74,26 +81,20 @@ inline bool SphericalPolygon::is_convex() const {
     return true;
 }
 
-inline auto SphericalPolygon::position_vectors() const {
-    return points() | std::views::transform(
-        [](const Point3& point) { return globe::to_position_vector(point); }
-    );
-}
-
 inline SphericalBoundingBox SphericalPolygon::bounding_box() const {
     return SphericalPolygonBoundingBoxCalculator(_arcs).calculate();
 }
 
-inline Point3 SphericalPolygon::centroid() const {
+inline VectorS2 SphericalPolygon::centroid() const {
     if (empty()) {
         return bounding_box().center();
     }
 
-    Vector3 sum(0, 0, 0);
+    VectorS2 sum = VectorS2::Zero();
     size_t count = 0;
 
-    for (const auto& v : position_vectors()) {
-        sum = sum + v;
+    for (const VectorS2& v : points()) {
+        sum += v;
         count++;
     }
 
@@ -101,15 +102,14 @@ inline Point3 SphericalPolygon::centroid() const {
         return bounding_box().center();
     }
 
-    Vector3 average = sum / static_cast<double>(count);
-    double len = std::sqrt(average.squared_length());
+    VectorS2 average = sum / static_cast<double>(count);
+    double len = average.norm();
 
     if (len < 1e-15) {
         return bounding_box().center();
     }
 
-    Vector3 normalized = average / len;
-    return Point3(normalized.x(), normalized.y(), normalized.z());
+    return average / len;
 }
 
 inline double SphericalPolygon::bounding_sphere_radius() const {
@@ -117,11 +117,11 @@ inline double SphericalPolygon::bounding_sphere_radius() const {
         return 0.0;
     }
 
-    Point3 center = centroid();
+    VectorS2 center = centroid();
 
     double max_squared_distance = 0.0;
-    for (const Point3& point : points()) {
-        double dist_sq = CGAL::squared_distance(point, center);
+    for (const VectorS2& point : points()) {
+        double dist_sq = (point - center).squaredNorm();
         max_squared_distance = std::max(max_squared_distance, dist_sq);
     }
 
@@ -138,7 +138,7 @@ inline double SphericalPolygon::area() const {
 
     for (const auto& pair : pairs) {
         const auto& [prev_arc, curr_arc] = pair;
-        angle_sum += globe::spherical_angle(
+        angle_sum += spherical_angle(
             prev_arc.source(),
             curr_arc.source(),
             curr_arc.target()
@@ -148,21 +148,19 @@ inline double SphericalPolygon::area() const {
     return angle_sum - static_cast<double>(_arcs.size() - 2) * M_PI;
 }
 
-inline Eigen::Vector3d SphericalPolygon::first_moment() const {
+inline VectorS2 SphericalPolygon::first_moment() const {
     if (_arcs.size() < 3) {
-        return Eigen::Vector3d::Zero();
+        return VectorS2::Zero();
     }
 
-    Eigen::Vector3d total = Eigen::Vector3d::Zero();
-    Eigen::Vector3d v0 = globe::to_eigen(_arcs[0].source());
+    VectorS2 total = VectorS2::Zero();
+    const VectorS2& v0 = _arcs[0].source();
 
     for (size_t i = 1; i + 1 < _arcs.size(); ++i) {
-        Eigen::Vector3d v1 = globe::to_eigen(_arcs[i].source());
-        Eigen::Vector3d v2 = globe::to_eigen(_arcs[i + 1].source());
+        const VectorS2& v1 = _arcs[i].source();
+        const VectorS2& v2 = _arcs[i + 1].source();
 
-        double tri_area = globe::spherical_triangle_area(
-            _arcs[0].source(), _arcs[i].source(), _arcs[i + 1].source()
-        );
+        double tri_area = spherical_triangle_area(v0, v1, v2);
 
         total += (tri_area / 3.0) * (v0 + v1 + v2);
     }
@@ -176,15 +174,13 @@ inline Eigen::Matrix3d SphericalPolygon::second_moment() const {
     }
 
     Eigen::Matrix3d total = Eigen::Matrix3d::Zero();
-    Eigen::Vector3d v0 = globe::to_eigen(_arcs[0].source());
+    const VectorS2& v0 = _arcs[0].source();
 
     for (size_t i = 1; i + 1 < _arcs.size(); ++i) {
-        Eigen::Vector3d v1 = globe::to_eigen(_arcs[i].source());
-        Eigen::Vector3d v2 = globe::to_eigen(_arcs[i + 1].source());
+        const VectorS2& v1 = _arcs[i].source();
+        const VectorS2& v2 = _arcs[i + 1].source();
 
-        double tri_area = globe::spherical_triangle_area(
-            _arcs[0].source(), _arcs[i].source(), _arcs[i + 1].source()
-        );
+        double tri_area = spherical_triangle_area(v0, v1, v2);
 
         total += (tri_area / 3.0) * (
             v0 * v0.transpose() + v1 * v1.transpose() + v2 * v2.transpose()
@@ -194,21 +190,52 @@ inline Eigen::Matrix3d SphericalPolygon::second_moment() const {
     return total;
 }
 
-inline bool SphericalPolygon::contains(const Point3& point) const {
+inline bool SphericalPolygon::contains(const VectorS2& point) const {
     assert(is_convex());
 
-    Vector3 p = globe::to_position_vector(point);
-
     for (const auto& arc : _arcs) {
-        Vector3 arc_normal = arc.normal();
-        double sign = CGAL::scalar_product(arc_normal, p);
+        const VectorS2& arc_normal = arc.normal();
+        double sign = arc_normal.dot(point);
 
-        if (sign < -1e-10) {
+        if (sign < -EPSILON) {
             return false;
         }
     }
 
     return true;
+}
+
+inline double SphericalPolygon::spherical_angle(
+    const VectorS2& a, const VectorS2& b, const VectorS2& c
+) {
+    VectorS2 ba = b.cross(a);
+    VectorS2 bc = b.cross(c);
+    return angular_distance(ba, bc);
+}
+
+inline double SphericalPolygon::spherical_triangle_area(
+    const VectorS2& a, const VectorS2& b, const VectorS2& c
+) {
+    VectorS2 va = a.normalized();
+    VectorS2 vb = b.normalized();
+    VectorS2 vc = c.normalized();
+
+    double numerator = va.dot(vb.cross(vc));
+    double denominator = 1.0 + va.dot(vb) + vb.dot(vc) + vc.dot(va);
+
+    if (std::abs(denominator) < 1e-15) {
+        return 0.0;
+    }
+
+    double tan_half_omega = std::abs(numerator) / denominator;
+    return 2.0 * std::atan(tan_half_omega);
+}
+
+inline double SphericalPolygon::angular_distance(const VectorS2& a, const VectorS2& b) {
+    VectorS2 a_norm = a.normalized();
+    VectorS2 b_norm = b.normalized();
+    double cos_theta = std::clamp(a_norm.dot(b_norm), -1.0, 1.0);
+    return std::acos(cos_theta);
 }
 
 }

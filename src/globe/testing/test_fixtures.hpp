@@ -12,11 +12,11 @@ namespace globe::testing {
 
 class SequencePointGenerator {
  public:
-    explicit SequencePointGenerator(std::vector<Point3> sequence)
+    explicit SequencePointGenerator(std::vector<VectorS2> sequence)
         : _sequence(std::move(sequence)), _index(0), _last_attempt_count(0) {}
 
-    std::vector<Point3> generate(size_t count) {
-        std::vector<Point3> result;
+    std::vector<VectorS2> generate(size_t count) {
+        std::vector<VectorS2> result;
         result.reserve(count);
         for (size_t i = 0; i < count; ++i) {
             result.push_back(_sequence[_index % _sequence.size()]);
@@ -26,14 +26,14 @@ class SequencePointGenerator {
         return result;
     }
 
-    std::vector<Point3> generate(size_t count, const SphericalBoundingBox&) {
+    std::vector<VectorS2> generate(size_t count, const SphericalBoundingBox&) {
         return generate(count);
     }
 
     [[nodiscard]] size_t last_attempt_count() const { return _last_attempt_count; }
 
  private:
-    std::vector<Point3> _sequence;
+    std::vector<VectorS2> _sequence;
     size_t _index;
     size_t _last_attempt_count;
 };

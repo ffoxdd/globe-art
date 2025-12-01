@@ -4,7 +4,7 @@
 #include <limits>
 #include <vector>
 #include <gtest/gtest.h>
-#include "../types.hpp"
+#include "../cgal_types.hpp"
 #include "../math/interval.hpp"
 
 namespace globe::testing {
@@ -106,6 +106,24 @@ inline CoordinateMetrics compute_coordinate_statistics(const std::vector<Point3>
         compute_from_coordinate([](const Point3& p) { return p.x(); }),
         compute_from_coordinate([](const Point3& p) { return p.y(); }),
         compute_from_coordinate([](const Point3& p) { return p.z(); })
+    };
+}
+
+inline CoordinateMetrics compute_coordinate_statistics(const std::vector<VectorS2>& points) {
+    size_t sample_count = points.size();
+
+    auto compute_from_coordinate = [&points, sample_count](auto coordinate_extractor) {
+        size_t index = 0;
+        return compute_statistics(
+            [&]() { return coordinate_extractor(points[index++]); },
+            sample_count
+        );
+    };
+
+    return CoordinateMetrics{
+        compute_from_coordinate([](const VectorS2& p) { return p.x(); }),
+        compute_from_coordinate([](const VectorS2& p) { return p.y(); }),
+        compute_from_coordinate([](const VectorS2& p) { return p.z(); })
     };
 }
 

@@ -2,10 +2,11 @@
 #define GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_MONTE_CARLO_SPHERICAL_FIELD_HPP_
 
 #include "spherical_field.hpp"
-#include "../../types.hpp"
+#include "../../cgal_types.hpp"
 #include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
+#include "../../geometry/spherical/helpers.hpp"
 #include "../../generators/sphere_point_generator/sphere_point_generator.hpp"
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../../math/interval_sampler/interval_sampler.hpp"
@@ -29,7 +30,7 @@ class MonteCarloSphericalField {
         IntervalSamplerType interval_sampler = IntervalSamplerType()
     );
 
-    [[nodiscard]] double value(const Point3& point) const;
+    [[nodiscard]] double value(const VectorS2& point) const;
     [[nodiscard]] double mass(const SphericalPolygon& polygon) const;
     [[nodiscard]] double total_mass() const;
     [[nodiscard]] double edge_integral(const SphericalArc& arc) const;
@@ -46,11 +47,6 @@ class MonteCarloSphericalField {
     static constexpr size_t MAX_MASS_SAMPLES = 1'000'000;
     static constexpr double RELATIVE_TOLERANCE = 0.005;
     static constexpr int STABLE_ITERATIONS_REQUIRED = 10;
-
-    [[nodiscard]] Point3 interpolate_on_arc(
-        const SphericalArc& arc,
-        double t
-    ) const;
 };
 
 template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
@@ -68,7 +64,7 @@ MonteCarloSphericalField<ScalarFieldType, SpherePointGeneratorType, IntervalSamp
 
 template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
 double MonteCarloSphericalField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::value(
-    const Point3& point
+    const VectorS2& point
 ) const {
     return _field.value(point);
 }
@@ -190,7 +186,7 @@ double MonteCarloSphericalField<ScalarFieldType, SpherePointGeneratorType, Inter
     while (total_samples < MAX_EDGE_SAMPLES) {
         for (size_t i = 0; i < EDGE_BATCH_SIZE; ++i) {
             double t = _interval_sampler.sample(UNIT_INTERVAL);
-            Point3 point = interpolate_on_arc(arc, t);
+            VectorS2 point = interpolate(arc.source(), arc.target(), t);
             value_sum += _field.value(point);
             total_samples++;
         }
@@ -234,9 +230,9 @@ Eigen::Vector3d MonteCarloSphericalField<ScalarFieldType, SpherePointGeneratorTy
     while (total_samples < MAX_EDGE_SAMPLES) {
         for (size_t i = 0; i < EDGE_BATCH_SIZE; ++i) {
             double t = _interval_sampler.sample(UNIT_INTERVAL);
-            Point3 point = interpolate_on_arc(arc, t);
+            VectorS2 point = interpolate(arc.source(), arc.target(), t);
             double density = _field.value(point);
-            weighted_sum += density * Eigen::Vector3d(point.x(), point.y(), point.z());
+            weighted_sum += density * point;
             total_samples++;
         }
 
@@ -259,29 +255,6 @@ Eigen::Vector3d MonteCarloSphericalField<ScalarFieldType, SpherePointGeneratorTy
     }
 
     return (weighted_sum / total_samples) * arc_length;
-}
-
-template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType, IntervalSampler IntervalSamplerType>
-Point3 MonteCarloSphericalField<ScalarFieldType, SpherePointGeneratorType, IntervalSamplerType>::interpolate_on_arc(
-    const SphericalArc& arc,
-    double t
-) const {
-    Eigen::Vector3d source(arc.source().x(), arc.source().y(), arc.source().z());
-    Eigen::Vector3d target(arc.target().x(), arc.target().y(), arc.target().z());
-
-    double theta = arc.length();
-    if (theta < 1e-10) {
-        return arc.source();
-    }
-
-    double sin_theta = std::sin(theta);
-    double a = std::sin((1.0 - t) * theta) / sin_theta;
-    double b = std::sin(t * theta) / sin_theta;
-
-    Eigen::Vector3d result = a * source + b * target;
-    result.normalize();
-
-    return Point3(result.x(), result.y(), result.z());
 }
 
 static_assert(SphericalField<MonteCarloSphericalField<NoiseField>>);

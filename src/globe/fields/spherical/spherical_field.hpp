@@ -11,7 +11,7 @@ namespace globe {
 template<typename T>
 concept SphericalField = requires(
     const T& field,
-    const Point3& point,
+    const VectorS2& point,
     const SphericalPolygon& polygon,
     const SphericalArc& arc
 ) {

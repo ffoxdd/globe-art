@@ -1,36 +1,17 @@
 #ifndef GLOBEART_SRC_GLOBE_TYPES_H_
 #define GLOBEART_SRC_GLOBE_TYPES_H_
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Exact_spherical_kernel_3.h>
-#include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>
-#include <CGAL/Delaunay_triangulation_on_sphere_2.h>
-#include <CGAL/Search_traits_3.h>
-#include <CGAL/Kd_tree.h>
-#include <CGAL/Fuzzy_sphere.h>
+#include <Eigen/Core>
 
 namespace globe {
 
-namespace detail {
-    using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
-    using SphericalKernel = CGAL::Exact_spherical_kernel_3;
-    using DelaunayTraits = CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>;
-    using DelaunayTriangulation = CGAL::Delaunay_triangulation_on_sphere_2<DelaunayTraits>;
+// Canonical type for points on the unit sphere.
+// Represents a normalized 3D vector (direction from origin to point on S2).
+using VectorS2 = Eigen::Vector3d;
+
+constexpr double TWO_PI = 2.0 * M_PI;
+constexpr double GEOMETRIC_EPSILON = 1e-10;
+
 }
 
-using Vector3 = detail::Kernel::Vector_3;
-using Point3 = detail::Kernel::Point_3;
-using Arc = detail::DelaunayTriangulation::Arc_on_sphere_2;
-using SphericalPoint3 = detail::SphericalKernel::Point_3;
-using SphericalVector3 = detail::SphericalKernel::Vector_3;
-using SearchTraits = CGAL::Search_traits_3<detail::Kernel>;
-using KDTree = CGAL::Kd_tree<SearchTraits>;
-using FuzzySphere = CGAL::Fuzzy_sphere<SearchTraits>;
-
-constexpr double UNIT_SPHERE_AREA = 4.0 * M_PI;
-
-} // namespace globe
-
 #endif //GLOBEART_SRC_GLOBE_TYPES_H_
-
-

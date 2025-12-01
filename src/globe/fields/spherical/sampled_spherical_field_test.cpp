@@ -3,10 +3,8 @@
 #include "../scalar/constant_scalar_field.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../geometry/spherical/spherical_arc.hpp"
-#include "../../testing/arc_factory.hpp"
 
 using namespace globe;
-using globe::testing::make_arc;
 
 TEST(SampledSphericalFieldTest, SatisfiesSphericalFieldConcept) {
     static_assert(SphericalField<SampledSphericalField<ConstantScalarField>>);
@@ -16,8 +14,8 @@ TEST(SampledSphericalFieldTest, ValueDelegatesToUnderlyingField) {
     ConstantScalarField scalar_field(2.5);
     SampledSphericalField field(scalar_field);
 
-    EXPECT_DOUBLE_EQ(field.value(Point3(1, 0, 0)), 2.5);
-    EXPECT_DOUBLE_EQ(field.value(Point3(0, 0, 1)), 2.5);
+    EXPECT_DOUBLE_EQ(field.value(VectorS2(1, 0, 0)), 2.5);
+    EXPECT_DOUBLE_EQ(field.value(VectorS2(0, 0, 1)), 2.5);
 }
 
 TEST(SampledSphericalFieldTest, TotalMassApproximatesExpected) {
@@ -38,10 +36,10 @@ TEST(SampledSphericalFieldTest, MassReturnsZeroForEmptySamples) {
     );
 
     SphericalPolygon polygon(std::vector<SphericalArc>{
-        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
-        make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
-        make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
-        make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0)),
+        SphericalArc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
+        SphericalArc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
+        SphericalArc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
+        SphericalArc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
     });
 
     EXPECT_DOUBLE_EQ(field.mass(polygon), 0.0);

@@ -14,9 +14,9 @@ using globe::testing::expect_mean;
 TEST(RandomSpherePointGeneratorTest, GenerateWithoutBoundingBoxReturnsPointOnSphere) {
     RandomSpherePointGenerator generator;
 
-    Point3 point = generator.generate(1)[0];
+    VectorS2 point = generator.generate(1)[0];
 
-    EXPECT_TRUE(is_on_unit_sphere(point))
+    EXPECT_NEAR(point.norm(), 1.0, 1e-9)
         << "Point (" << point.x() << ", " << point.y() << ", " << point.z()
         << ") is not on unit sphere";
 }
@@ -25,9 +25,9 @@ TEST(RandomSpherePointGeneratorTest, GenerateWithBoundingBoxReturnsPointInBox) {
     RandomSpherePointGenerator generator;
     SphericalBoundingBox box = SphericalBoundingBox::full_sphere();
 
-    Point3 point = generator.generate(1, box)[0];
+    VectorS2 point = generator.generate(1, box)[0];
 
-    EXPECT_TRUE(is_on_unit_sphere(point));
+    EXPECT_NEAR(point.norm(), 1.0, 1e-9);
     EXPECT_TRUE(box.contains(point));
 }
 
@@ -39,7 +39,7 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_AllPointsOnUnitSphere) {
 
     auto points = generator.generate(sample_count);
     for (const auto& point : points) {
-        EXPECT_TRUE(is_on_unit_sphere(point));
+        EXPECT_NEAR(point.norm(), 1.0, 1e-9);
     }
 }
 
@@ -68,7 +68,7 @@ TEST(RandomSpherePointGeneratorTest, EXPENSIVE_BoundedPointsInBox) {
     size_t in_box_count = 0;
 
     for (const auto& point : points) {
-        EXPECT_TRUE(is_on_unit_sphere(point));
+        EXPECT_NEAR(point.norm(), 1.0, 1e-9);
         EXPECT_TRUE(box.contains(point));
 
         if (box.contains(point)) {

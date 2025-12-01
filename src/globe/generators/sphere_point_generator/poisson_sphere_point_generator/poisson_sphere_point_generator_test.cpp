@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "poisson_sphere_point_generator.hpp"
+#include "../../../geometry/spherical/helpers.hpp"
 #include "../../../testing/geometric_assertions.hpp"
 #include "../../../testing/test_fixtures.hpp"
 
@@ -61,10 +62,8 @@ TEST(PoissonSpherePointGeneratorTest, EXPENSIVE_PointsAreWellDistributed) {
     // Calculate minimum distance between any two points
     double min_distance = std::numeric_limits<double>::max();
     for (size_t i = 0; i < points.size(); ++i) {
-        Vector3 vi = to_position_vector(points[i]);
         for (size_t j = i + 1; j < points.size(); ++j) {
-            Vector3 vj = to_position_vector(points[j]);
-            double dist = angular_distance(vi, vj);
+            double dist = distance(points[i], points[j]);
             min_distance = std::min(min_distance, dist);
         }
     }
@@ -90,13 +89,11 @@ TEST(PoissonSpherePointGeneratorTest, EXPENSIVE_BetterThanRandomDistribution) {
     auto poisson_points = poisson_generator.generate(100);
 
     // Calculate minimum distances
-    auto min_distance = [](const std::vector<Point3> &points) {
+    auto min_distance = [](const std::vector<VectorS2> &points) {
         double min_dist = std::numeric_limits<double>::max();
         for (size_t i = 0; i < points.size(); ++i) {
-            Vector3 vi = to_position_vector(points[i]);
             for (size_t j = i + 1; j < points.size(); ++j) {
-                Vector3 vj = to_position_vector(points[j]);
-                min_dist = std::min(min_dist, angular_distance(vi, vj));
+                min_dist = std::min(min_dist, distance(points[i], points[j]));
             }
         }
         return min_dist;

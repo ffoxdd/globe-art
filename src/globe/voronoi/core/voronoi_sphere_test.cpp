@@ -134,9 +134,9 @@ TEST(VoronoiSphereTest, MultipleUpdatesToSameSite) {
     VoronoiSphere sphere;
     sphere.insert(Point3(1, 0, 0));
 
-    Point3 pos1 = project_to_sphere(Point3(0, 1, 0));
-    Point3 pos2 = project_to_sphere(Point3(0, 0, 1));
-    Point3 pos3 = project_to_sphere(Point3(1, 1, 1));
+    Point3 pos1 = to_cgal_point(VectorS2(0, 1, 0).normalized());
+    Point3 pos2 = to_cgal_point(VectorS2(0, 0, 1).normalized());
+    Point3 pos3 = to_cgal_point(VectorS2(1, 1, 1).normalized());
 
     sphere.update_site(0, pos1);
     EXPECT_TRUE(points_approximately_equal(sphere.site(0), pos1));
@@ -156,7 +156,7 @@ TEST(VoronoiSphereTest, UpdateSitePreservesOtherSites) {
     Point3 p3 = sphere.site(3);
 
     // Update one site to a different but valid position
-    Point3 updated_p1 = project_to_sphere(Point3(0.707, 0.707, 0));
+    Point3 updated_p1 = to_cgal_point(VectorS2(0.707, 0.707, 0).normalized());
     sphere.update_site(1, updated_p1);
 
     // Other sites should remain unchanged

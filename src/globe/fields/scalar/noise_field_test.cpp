@@ -3,14 +3,14 @@
 #include "../../testing/geometric_assertions.hpp"
 #include "../../testing/statistical_assertions.hpp"
 #include "../../math/interval.hpp"
-#include "../../generators/point_generator/random_point_generator.hpp"
+#include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 
 using namespace globe;
 using globe::testing::compute_statistics;
 using globe::testing::expect_range_coverage;
 
 TEST(NoiseFieldTest, ValueMethodReturnsConsistentResult) {
-    Point3 location = {0.1, 0.2, 0.3};
+    VectorS2 location = {0.1, 0.2, 0.3};
     NoiseField noise_field;
 
     double value1 = noise_field.value(location);
@@ -20,8 +20,8 @@ TEST(NoiseFieldTest, ValueMethodReturnsConsistentResult) {
 }
 
 TEST(NoiseFieldTest, ValueMethodDifferentLocations) {
-    Point3 location1 = {0.1, 0.2, 0.3};
-    Point3 location2 = {0.4, 0.5, 0.6};
+    VectorS2 location1 = {0.1, 0.2, 0.3};
+    VectorS2 location2 = {0.4, 0.5, 0.6};
     NoiseField noise_field;
 
     double value1 = noise_field.value(location1);
@@ -45,7 +45,7 @@ TEST(NoiseFieldTest, EXPENSIVE_CanConfigureOutputRange) {
     REQUIRE_EXPENSIVE();
 
     Interval output_range(-0.01, 0.02);
-    RandomPointGenerator point_generator;
+    RandomSpherePointGenerator point_generator;
 
     for (int seed : test_seeds()) {
         NoiseField noise_field(output_range, seed);
@@ -71,7 +71,7 @@ TEST(NoiseFieldTest, EXPENSIVE_OutputDistributionUsesFullRange) {
     REQUIRE_EXPENSIVE();
 
     Interval expected_range(0, 1);
-    RandomPointGenerator point_generator;
+    RandomSpherePointGenerator point_generator;
 
     for (int seed : test_seeds()) {
         NoiseField noise_field(expected_range, seed);

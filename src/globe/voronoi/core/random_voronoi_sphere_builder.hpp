@@ -28,7 +28,7 @@ std::unique_ptr<VoronoiSphere> RandomVoronoiSphereBuilder<SpherePointGeneratorTy
     auto voronoi_sphere = std::make_unique<VoronoiSphere>();
 
     for (const auto& point : _point_generator.generate(point_count)) {
-        voronoi_sphere->insert(point);
+        voronoi_sphere->insert(to_cgal_point(point));
     }
 
     return voronoi_sphere;

@@ -7,9 +7,9 @@
 #include <QtWidgets/QWidget>
 #include <QtGui/QKeyEvent>
 #include <functional>
-#include "../../types.hpp"
-#include "../../geometry/spherical/helpers.hpp"
+#include "../../cgal_types.hpp"
 #include "../../geometry/spherical/spherical_arc.hpp"
+#include "../cgal_helpers.hpp"
 
 namespace globe {
 
@@ -36,7 +36,6 @@ public:
     void add_point(const Point3 &point, const CGAL::IO::Color &color = BLACK);
     void add_segment(const Point3 &source, const Point3 &target, const CGAL::IO::Color &color = BLACK);
     void add_arc(const Point3 &point1, const Point3 &point2, const CGAL::IO::Color &color = BLACK);
-    void add_arc(const Arc &arc, const CGAL::IO::Color &color = BLACK);
     void add_arc(const SphericalArc &arc, const CGAL::IO::Color &color = BLACK);
     void add_text(const Point3 &point, const std::string &text);
     void clear();
@@ -73,19 +72,15 @@ inline void QtViewer::add_arc(const Point3 &point1, const Point3 &point2, const 
         const double t1 = static_cast<double>(i) / CIRCULAR_ARC_RESOLUTION;
         const double t2 = static_cast<double>(i + 1) / CIRCULAR_ARC_RESOLUTION;
 
-        Point3 segment_source = spherical_interpolate(point1, point2, t1);
-        Point3 segment_target = spherical_interpolate(point1, point2, t2);
+        Point3 segment_source = io::interpolate(point1, point2, t1);
+        Point3 segment_target = io::interpolate(point1, point2, t2);
 
         add_segment(segment_source, segment_target, color);
     }
 }
 
-inline void QtViewer::add_arc(const Arc &arc, const CGAL::IO::Color &color) {
-    add_arc(to_point(arc.source()), to_point(arc.target()), color);
-}
-
 inline void QtViewer::add_arc(const SphericalArc &arc, const CGAL::IO::Color &color) {
-    add_arc(arc.source(), arc.target(), color);
+    add_arc(to_cgal_point(arc.source()), to_cgal_point(arc.target()), color);
 }
 
 inline void QtViewer::add_text(const Point3 &point, const std::string &text) {

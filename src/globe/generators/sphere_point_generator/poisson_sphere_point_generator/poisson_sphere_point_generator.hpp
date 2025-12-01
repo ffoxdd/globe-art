@@ -26,8 +26,8 @@ class PoissonSpherePointGenerator {
         _oversample_factor(oversample_factor) {
     }
 
-    std::vector<Point3> generate(size_t count);
-    std::vector<Point3> generate(size_t count, const SphericalBoundingBox &bounding_box);
+    std::vector<VectorS2> generate(size_t count);
+    std::vector<VectorS2> generate(size_t count, const SphericalBoundingBox &bounding_box);
 
     [[nodiscard]] size_t last_attempt_count() const { return _last_attempt_count; }
 
@@ -41,20 +41,20 @@ class PoissonSpherePointGenerator {
     double compute_r_max(size_t target_count, double area) const;
     double weight_contribution(double geodesic_distance, double r_max) const;
 
-    std::vector<Point3> eliminate_to_count(
-        std::vector<Point3> &candidates,
+    std::vector<VectorS2> eliminate_to_count(
+        std::vector<VectorS2> candidates,
         size_t target_count,
         double r_max
     );
 };
 
 template<SpherePointGenerator SpherePointGeneratorType>
-std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::generate(size_t count) {
+std::vector<VectorS2> PoissonSpherePointGenerator<SpherePointGeneratorType>::generate(size_t count) {
     return generate(count, SphericalBoundingBox::full_sphere());
 }
 
 template<SpherePointGenerator SpherePointGeneratorType>
-std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::generate(
+std::vector<VectorS2> PoissonSpherePointGenerator<SpherePointGeneratorType>::generate(
     size_t count,
     const SphericalBoundingBox &bounding_box
 ) {
@@ -72,7 +72,7 @@ std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::gener
     double area = bounding_box.area();
     double r_max = compute_r_max(count, area);
 
-    return eliminate_to_count(candidates, count, r_max);
+    return eliminate_to_count(std::move(candidates), count, r_max);
 }
 
 template<SpherePointGenerator SpherePointGeneratorType>
@@ -101,8 +101,8 @@ double PoissonSpherePointGenerator<SpherePointGeneratorType>::weight_contributio
 }
 
 template<SpherePointGenerator SpherePointGeneratorType>
-std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::eliminate_to_count(
-    std::vector<Point3> &candidates,
+std::vector<VectorS2> PoissonSpherePointGenerator<SpherePointGeneratorType>::eliminate_to_count(
+    std::vector<VectorS2> candidates,
     size_t target_count,
     double r_max
 ) {
@@ -111,11 +111,18 @@ std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::elimi
         return candidates;
     }
 
+    // Convert to Point3 for KD-tree (CGAL boundary)
+    std::vector<Point3> cgal_points;
+    cgal_points.reserve(n);
+    for (const auto& p : candidates) {
+        cgal_points.push_back(to_cgal_point(p));
+    }
+
     // Chord distance corresponding to geodesic r_max: 2*sin(r_max/2)
     double chord_r_max = 2.0 * std::sin(r_max / 2.0);
 
     // Build indexed KD-tree - stores indices, maps to points via property map
-    IndexedPointMap<std::vector<Point3>> point_map(candidates);
+    IndexedPointMap<std::vector<Point3>> point_map(cgal_points);
     IndexedSearchTraits search_traits(point_map);
 
     IndexedKDTree tree(
@@ -134,7 +141,7 @@ std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::elimi
     std::vector<std::vector<size_t>> neighbor_indices(n);
 
     for (size_t i = 0; i < n; ++i) {
-        IndexedFuzzySphere query(candidates[i], chord_r_max, 0.0, search_traits);
+        IndexedFuzzySphere query(cgal_points[i], chord_r_max, 0.0, search_traits);
         std::vector<size_t> neighbors;
         tree.search(std::back_inserter(neighbors), query);
 
@@ -149,10 +156,11 @@ std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::elimi
     std::vector<double> weights(n, 0.0);
 
     for (size_t i = 0; i < n; ++i) {
-        Vector3 vi = to_position_vector(candidates[i]);
+        const VectorS2& vi = candidates[i];
         for (size_t j : neighbor_indices[i]) {
-            Vector3 vj = to_position_vector(candidates[j]);
-            double geodesic = angular_distance(vi, vj);
+            const VectorS2& vj = candidates[j];
+            double cos_theta = std::clamp(vi.dot(vj), -1.0, 1.0);
+            double geodesic = std::acos(cos_theta);
             weights[i] += weight_contribution(geodesic, r_max);
         }
     }
@@ -186,13 +194,14 @@ std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::elimi
         active_count--;
 
         // Update weights of neighbors
-        Vector3 vi = to_position_vector(candidates[idx]);
+        const VectorS2& vi = candidates[idx];
 
         for (size_t j : neighbor_indices[idx]) {
             if (!active[j]) continue;
 
-            Vector3 vj = to_position_vector(candidates[j]);
-            double geodesic = angular_distance(vi, vj);
+            const VectorS2& vj = candidates[j];
+            double cos_theta = std::clamp(vi.dot(vj), -1.0, 1.0);
+            double geodesic = std::acos(cos_theta);
             double contribution = weight_contribution(geodesic, r_max);
             weights[j] -= contribution;
             // Push updated weight (lazy update - old entry will be ignored)
@@ -201,7 +210,7 @@ std::vector<Point3> PoissonSpherePointGenerator<SpherePointGeneratorType>::elimi
     }
 
     // Collect remaining points
-    std::vector<Point3> result;
+    std::vector<VectorS2> result;
     result.reserve(target_count);
 
     for (size_t i = 0; i < n && result.size() < target_count; ++i) {

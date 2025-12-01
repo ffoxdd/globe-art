@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_SAMPLED_SPHERICAL_FIELD_HPP_
 
 #include "spherical_field.hpp"
-#include "../../types.hpp"
+#include "../../cgal_types.hpp"
 #include "../../geometry/spherical/spherical_arc.hpp"
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "../../geometry/spherical/spherical_bounding_box.hpp"
@@ -11,6 +11,9 @@
 #include "../../generators/sphere_point_generator/random_sphere_point_generator.hpp"
 #include "../scalar/scalar_field.hpp"
 #include "../scalar/noise_field.hpp"
+#include <CGAL/Search_traits_3.h>
+#include <CGAL/Kd_tree.h>
+#include <CGAL/Fuzzy_sphere.h>
 #include <Eigen/Core>
 #include <vector>
 #include <memory>
@@ -37,13 +40,17 @@ class SampledSphericalField {
     SampledSphericalField(SampledSphericalField&&) = default;
     SampledSphericalField& operator=(SampledSphericalField&&) = default;
 
-    [[nodiscard]] double value(const Point3& point) const;
+    [[nodiscard]] double value(const VectorS2& point) const;
     [[nodiscard]] double mass(const SphericalPolygon& polygon) const;
     [[nodiscard]] double total_mass() const;
     [[nodiscard]] double edge_integral(const SphericalArc& arc) const;
     [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const SphericalArc& arc) const;
 
  private:
+    using SearchTraits = CGAL::Search_traits_3<detail::Kernel>;
+    using KDTree = CGAL::Kd_tree<SearchTraits>;
+    using FuzzySphere = CGAL::Fuzzy_sphere<SearchTraits>;
+
     struct Sample {
         Point3 point;
         double value;
@@ -64,11 +71,6 @@ class SampledSphericalField {
 
     [[nodiscard]] std::vector<size_t> find_samples_in_polygon(
         const SphericalPolygon& polygon
-    ) const;
-
-    [[nodiscard]] Point3 interpolate_on_arc(
-        const SphericalArc& arc,
-        double t
     ) const;
 };
 
@@ -97,9 +99,9 @@ void SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::build_sam
     _samples.reserve(points.size());
     double value_sum = 0.0;
 
-    for (const auto& point : points) {
-        double sample_value = _field.value(point);
-        _samples.push_back({point, sample_value});
+    for (const auto& vector_point : points) {
+        double sample_value = _field.value(vector_point);
+        _samples.push_back({to_cgal_point(vector_point), sample_value});
         value_sum += sample_value;
     }
 
@@ -124,7 +126,7 @@ void SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::build_kdt
 
 template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
 double SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::value(
-    const Point3& point
+    const VectorS2& point
 ) const {
     return _field.value(point);
 }
@@ -156,7 +158,7 @@ double SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::edge_in
     double sum = 0.0;
     for (size_t i = 0; i < _edge_samples; ++i) {
         double t = (i + 0.5) / _edge_samples;
-        Point3 point = interpolate_on_arc(arc, t);
+        VectorS2 point = interpolate(arc.source(), arc.target(), t);
         sum += _field.value(point);
     }
 
@@ -173,9 +175,9 @@ Eigen::Vector3d SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>
     Eigen::Vector3d sum = Eigen::Vector3d::Zero();
     for (size_t i = 0; i < _edge_samples; ++i) {
         double t = (i + 0.5) / _edge_samples;
-        Point3 point = interpolate_on_arc(arc, t);
-        double density = _field.value(point);
-        sum += density * globe::to_eigen(point);
+        VectorS2 interpolated = interpolate(arc.source(), arc.target(), t);
+        double density = _field.value(interpolated);
+        sum += density * interpolated;
     }
 
     return sum * arc_length / _edge_samples;
@@ -187,7 +189,7 @@ std::vector<size_t> SampledSphericalField<ScalarFieldType, SpherePointGeneratorT
 ) const {
     if (!_kdtree) return {};
 
-    Point3 center = polygon.centroid();
+    Point3 center = to_cgal_point(polygon.centroid());
     double radius = polygon.bounding_sphere_radius();
     FuzzySphere query(center, radius, GEOMETRIC_EPSILON);
 
@@ -196,7 +198,7 @@ std::vector<size_t> SampledSphericalField<ScalarFieldType, SpherePointGeneratorT
 
     std::vector<size_t> result;
     for (const auto& candidate : candidates) {
-        if (polygon.contains(candidate)) {
+        if (polygon.contains(to_vector_s2(candidate))) {
             for (size_t i = 0; i < _samples.size(); ++i) {
                 if (CGAL::squared_distance(_samples[i].point, candidate) < 1e-20) {
                     result.push_back(i);
@@ -206,29 +208,6 @@ std::vector<size_t> SampledSphericalField<ScalarFieldType, SpherePointGeneratorT
         }
     }
     return result;
-}
-
-template<ScalarField ScalarFieldType, SpherePointGenerator SpherePointGeneratorType>
-Point3 SampledSphericalField<ScalarFieldType, SpherePointGeneratorType>::interpolate_on_arc(
-    const SphericalArc& arc,
-    double t
-) const {
-    Eigen::Vector3d source = globe::to_eigen(arc.source());
-    Eigen::Vector3d target = globe::to_eigen(arc.target());
-
-    double theta = arc.length();
-    if (theta < 1e-10) {
-        return arc.source();
-    }
-
-    double sin_theta = std::sin(theta);
-    double a = std::sin((1.0 - t) * theta) / sin_theta;
-    double b = std::sin(t * theta) / sin_theta;
-
-    Eigen::Vector3d result = a * source + b * target;
-    result.normalize();
-
-    return Point3(result.x(), result.y(), result.z());
 }
 
 static_assert(SphericalField<SampledSphericalField<NoiseField>>);

@@ -8,9 +8,9 @@ namespace globe {
 template<typename T>
 concept ScalarField = requires(
     T scalar_field,
-    const Point3 &location
+    const VectorS2 &point
 ) {
-    { scalar_field.value(location) } -> std::convertible_to<double>;
+    { scalar_field.value(point) } -> std::convertible_to<double>;
 };
 
 template<typename T>

@@ -12,7 +12,7 @@ class LinearSphericalField {
  public:
     explicit LinearSphericalField(double slope = 1.0, double offset = 0.0);
 
-    [[nodiscard]] double value(const Point3& point) const;
+    [[nodiscard]] double value(const VectorS2& point) const;
     [[nodiscard]] double mass(const SphericalPolygon& polygon) const;
     [[nodiscard]] double edge_integral(const SphericalArc& arc) const;
     [[nodiscard]] Eigen::Vector3d edge_gradient_integral(const SphericalArc& arc) const;
@@ -29,7 +29,7 @@ inline LinearSphericalField::LinearSphericalField(double slope, double offset) :
     _offset(offset) {
 }
 
-inline double LinearSphericalField::value(const Point3& point) const {
+inline double LinearSphericalField::value(const VectorS2& point) const {
     return _slope * point.z() + _offset;
 }
 

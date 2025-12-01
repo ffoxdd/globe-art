@@ -31,14 +31,9 @@ TEST(SphericalBoundingBoxTest, CenterReturnsPointOnUnitSphere) {
     Interval z_interval(0.0, 0.5);
     SphericalBoundingBox box(theta_interval, z_interval);
 
-    Point3 center = box.center();
+    VectorS2 center = box.center();
 
-    double distance = std::sqrt(
-        center.x() * center.x() +
-        center.y() * center.y() +
-        center.z() * center.z()
-    );
-    EXPECT_NEAR(distance, 1.0, 1e-9);
+    EXPECT_NEAR(center.norm(), 1.0, 1e-9);
 }
 
 TEST(SphericalBoundingBoxTest, CenterUsesIntervalMidpoints) {
@@ -46,7 +41,7 @@ TEST(SphericalBoundingBoxTest, CenterUsesIntervalMidpoints) {
     Interval z_interval(-0.5, 0.5);
     SphericalBoundingBox box(theta_interval, z_interval);
 
-    Point3 center = box.center();
+    VectorS2 center = box.center();
     double expected_theta = M_PI / 4;
     double expected_z = 0.0;
     double expected_r = 1.0;
@@ -65,7 +60,7 @@ TEST(SphericalBoundingBoxTest, HandlesWraparoundThetaInterval) {
 
     EXPECT_NEAR(box.theta_interval().measure(), theta_measure, 1e-9);
 
-    Point3 center = box.center();
+    VectorS2 center = box.center();
     double expected_theta_center = theta_start + theta_measure / 2.0;
     if (expected_theta_center >= 2.0 * M_PI) {
         expected_theta_center -= 2.0 * M_PI;

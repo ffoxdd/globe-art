@@ -3,8 +3,8 @@
 
 #include "../spherical_bounding_box.hpp"
 #include "../spherical_arc.hpp"
-#include "../../../types.hpp"
 #include "../helpers.hpp"
+#include "../../../types.hpp"
 #include "../../../math/interval.hpp"
 #include <vector>
 #include <cmath>
@@ -20,20 +20,25 @@ class SphericalPolygonBoundingBoxCalculator {
     [[nodiscard]] SphericalBoundingBox calculate() const;
 
  private:
+    static constexpr double EPSILON = 1e-10;
+
     const std::vector<SphericalArc>& _arcs;
 
     [[nodiscard]] ThetaInterval theta_interval() const;
     [[nodiscard]] Interval z_interval() const;
     [[nodiscard]] auto arc_z_intervals() const;
     [[nodiscard]] auto arc_theta_intervals() const;
-    [[nodiscard]] bool contains_point(const Point3& point) const;
+    [[nodiscard]] bool contains_point(const VectorS2& point) const;
 
     [[nodiscard]] static ThetaInterval arc_theta_interval(const SphericalArc& arc);
     [[nodiscard]] static Interval arc_z_interval(const SphericalArc& arc);
     [[nodiscard]] static Interval z_interval_from_endpoints(const SphericalArc& arc);
-    [[nodiscard]] static bool is_on_arc(const SphericalArc& arc, const Vector3& position_vector);
-    [[nodiscard]] static Vector3 project_to_xy_plane(const Vector3& vector);
-    [[nodiscard]] static Vector3 perpendicular_in_xy_plane(const Vector3& vector);
+    [[nodiscard]] static double theta(const VectorS2& point);
+    [[nodiscard]] static bool is_zero(const VectorS2& v);
+    [[nodiscard]] static bool is_zero(double v);
+    [[nodiscard]] static VectorS2 project_to_xy_plane(const VectorS2& v);
+    [[nodiscard]] static VectorS2 perpendicular_in_xy_plane(const VectorS2& v);
+    [[nodiscard]] static bool parallel(const VectorS2& v1, const VectorS2& v2);
 };
 
 inline SphericalPolygonBoundingBoxCalculator::SphericalPolygonBoundingBoxCalculator(
@@ -59,12 +64,15 @@ inline ThetaInterval SphericalPolygonBoundingBoxCalculator::theta_interval() con
 inline Interval SphericalPolygonBoundingBoxCalculator::z_interval() const {
     Interval interval = Interval::hull(arc_z_intervals());
 
-    if (contains_point(NORTH_POLE)) {
-        interval = hull_interval(interval, NORTH_POLE.z());
+    VectorS2 north_pole(0, 0, 1);
+    VectorS2 south_pole(0, 0, -1);
+
+    if (contains_point(north_pole)) {
+        interval = Interval::hull(interval, north_pole.z());
     }
 
-    if (contains_point(SOUTH_POLE)) {
-        interval = hull_interval(interval, SOUTH_POLE.z());
+    if (contains_point(south_pole)) {
+        interval = Interval::hull(interval, south_pole.z());
     }
 
     return interval;
@@ -78,68 +86,67 @@ inline SphericalBoundingBox SphericalPolygonBoundingBoxCalculator::calculate() c
     return {theta_interval(), z_interval()};
 }
 
-inline bool SphericalPolygonBoundingBoxCalculator::contains_point(const Point3& point) const {
-    Vector3 p = to_position_vector(point);
+inline bool SphericalPolygonBoundingBoxCalculator::contains_point(const VectorS2& point) const {
     double angle_sum = 0;
 
     for (const auto& arc : _arcs) {
-        Vector3 a = to_position_vector(arc.source());
-        Vector3 b = to_position_vector(arc.target());
+        const VectorS2& a = arc.source();
+        const VectorS2& b = arc.target();
 
-        Vector3 ap = CGAL::cross_product(a, p);
-        Vector3 bp = CGAL::cross_product(b, p);
+        VectorS2 ap = a.cross(point).normalized();
+        VectorS2 bp = b.cross(point).normalized();
 
-        double angle = angular_distance(ap, bp);
-        Vector3 normal = arc.normal();
+        double angle = globe::distance(ap, bp);
+        const VectorS2& normal = arc.normal();
 
-        double sign = CGAL::scalar_product(normal, p);
+        double sign = normal.dot(point);
 
         if (is_zero(sign)) {
-            return is_on_arc(arc, p);
+            return arc.contains(point);
         }
 
         angle_sum += (sign > 0) ? angle : -angle;
     }
 
-    return std::fabs(angle_sum - (2 * CGAL_PI)) < CGAL_PI;
+    return std::fabs(angle_sum - (2 * M_PI)) < M_PI;
 }
 
 inline Interval SphericalPolygonBoundingBoxCalculator::arc_z_interval(const SphericalArc& arc) {
-    Vector3 n = arc.normal();
-    Interval z_interval = z_interval_from_endpoints(arc);
-    Vector3 n_cross_z = CGAL::cross_product(n, Z_AXIS);
+    const VectorS2& n = arc.normal();
+    Interval z_int = z_interval_from_endpoints(arc);
+    VectorS2 n_cross_z = n.cross(VectorS2(0, 0, 1));
 
     if (is_zero(n_cross_z)) {
-        return z_interval;
+        return z_int;
     }
 
-    Vector3 critical_dir = CGAL::cross_product(n_cross_z, n);
+    VectorS2 critical_dir = n_cross_z.cross(n);
 
     if (is_zero(critical_dir)) {
-        return z_interval;
+        return z_int;
     }
 
-    Vector3 critical_point_up = normalize(critical_dir);
-    Vector3 critical_point_down = -critical_point_up;
+    VectorS2 critical_point_up = critical_dir.normalized();
+    VectorS2 critical_point_down = -critical_point_up;
 
-    if (is_on_arc(arc, critical_point_up)) {
-        z_interval = hull_interval(z_interval, critical_point_up.z());
+    if (arc.contains(critical_point_up)) {
+        z_int = Interval::hull(z_int, critical_point_up.z());
     }
 
-    if (is_on_arc(arc, critical_point_down)) {
-        z_interval = hull_interval(z_interval, critical_point_down.z());
+    if (arc.contains(critical_point_down)) {
+        z_int = Interval::hull(z_int, critical_point_down.z());
     }
 
-    return z_interval;
+    return z_int;
 }
 
 inline ThetaInterval SphericalPolygonBoundingBoxCalculator::arc_theta_interval(const SphericalArc& arc) {
-    Vector3 n = arc.normal();
-    Vector3 source_v = to_position_vector(arc.source());
-    Vector3 target_v = to_position_vector(arc.target());
-    double theta_source = theta(arc.source());
-    double theta_target = theta(arc.target());
-    bool is_horizontal = parallel(n, Z_AXIS);
+    const VectorS2& n = arc.normal();
+    const VectorS2& source_v = arc.source();
+    const VectorS2& target_v = arc.target();
+    double theta_source = theta(source_v);
+    double theta_target = theta(target_v);
+    bool is_horizontal = parallel(n, VectorS2(0, 0, 1));
 
     if (is_horizontal) {
         bool ccw = n.z() > 0;
@@ -150,19 +157,19 @@ inline ThetaInterval SphericalPolygonBoundingBoxCalculator::arc_theta_interval(c
         }
     }
 
-    Vector3 n_xy = project_to_xy_plane(n);
+    VectorS2 n_xy = project_to_xy_plane(n);
 
     if (is_zero(n_xy)) {
         return ThetaInterval::full();
     }
 
-    Vector3 midpoint_dir = source_v + target_v;
+    VectorS2 midpoint_dir = source_v + target_v;
     if (is_zero(midpoint_dir)) {
         return ThetaInterval::full();
     }
-    Vector3 midpoint = normalize(midpoint_dir);
+    VectorS2 midpoint = midpoint_dir.normalized();
 
-    bool short_arc = is_on_arc(arc, midpoint);
+    bool short_arc = arc.contains(midpoint);
 
     double min_theta = std::min(theta_source, theta_target);
     double max_theta = std::max(theta_source, theta_target);
@@ -184,25 +191,25 @@ inline ThetaInterval SphericalPolygonBoundingBoxCalculator::arc_theta_interval(c
         }
     }();
 
-    Vector3 n_xy_normalized = normalize(n_xy);
-    Vector3 radial_dir1 = perpendicular_in_xy_plane(n_xy_normalized);
-    Vector3 radial_dir2 = -radial_dir1;
+    VectorS2 n_xy_normalized = n_xy.normalized();
+    VectorS2 radial_dir1 = perpendicular_in_xy_plane(n_xy_normalized);
+    VectorS2 radial_dir2 = -radial_dir1;
 
-    Vector3 critical_dir1 = CGAL::cross_product(n, radial_dir1);
-    Vector3 critical_dir2 = CGAL::cross_product(n, radial_dir2);
+    VectorS2 critical_dir1 = n.cross(radial_dir1);
+    VectorS2 critical_dir2 = n.cross(radial_dir2);
 
     if (is_zero(critical_dir1)) {
         return result;
     }
 
-    Vector3 critical_point1 = normalize(critical_dir1);
-    Vector3 critical_point2 = normalize(critical_dir2);
+    VectorS2 critical_point1 = critical_dir1.normalized();
+    VectorS2 critical_point2 = critical_dir2.normalized();
 
-    if (is_on_arc(arc, critical_point1)) {
+    if (arc.contains(critical_point1)) {
         result = ThetaInterval::hull(result, ThetaInterval(theta(critical_point1), 0));
     }
 
-    if (is_on_arc(arc, critical_point2)) {
+    if (arc.contains(critical_point2)) {
         result = ThetaInterval::hull(result, ThetaInterval(theta(critical_point2), 0));
     }
 
@@ -210,25 +217,40 @@ inline ThetaInterval SphericalPolygonBoundingBoxCalculator::arc_theta_interval(c
 }
 
 inline Interval SphericalPolygonBoundingBoxCalculator::z_interval_from_endpoints(const SphericalArc& arc) {
-    return hull_interval(arc.source().z(), arc.target().z());
+    return Interval::hull(arc.source().z(), arc.target().z());
 }
 
-inline bool SphericalPolygonBoundingBoxCalculator::is_on_arc(
-    const SphericalArc& arc,
-    const Vector3& position_vector
-) {
-    Point3 point(position_vector.x(), position_vector.y(), position_vector.z());
-    return arc.contains(point);
+inline double SphericalPolygonBoundingBoxCalculator::theta(const VectorS2& point) {
+    double t = std::atan2(point.y(), point.x());
+    return t < 0.0 ? t + 2.0 * M_PI : t;
 }
 
-inline Vector3 SphericalPolygonBoundingBoxCalculator::project_to_xy_plane(const Vector3& vector) {
-    return Vector3(vector.x(), vector.y(), 0.0);
+inline bool SphericalPolygonBoundingBoxCalculator::is_zero(const VectorS2& v) {
+    return v.squaredNorm() < EPSILON;
 }
 
-inline Vector3 SphericalPolygonBoundingBoxCalculator::perpendicular_in_xy_plane(
-    const Vector3& vector
-) {
-    return Vector3(vector.y(), -vector.x(), 0.0);
+inline bool SphericalPolygonBoundingBoxCalculator::is_zero(double v) {
+    return std::abs(v) < EPSILON;
+}
+
+inline VectorS2 SphericalPolygonBoundingBoxCalculator::project_to_xy_plane(const VectorS2& v) {
+    return VectorS2(v.x(), v.y(), 0.0);
+}
+
+inline VectorS2 SphericalPolygonBoundingBoxCalculator::perpendicular_in_xy_plane(const VectorS2& v) {
+    return VectorS2(v.y(), -v.x(), 0.0);
+}
+
+inline bool SphericalPolygonBoundingBoxCalculator::parallel(const VectorS2& v1, const VectorS2& v2) {
+    double v1_squared_length = v1.squaredNorm();
+    double v2_squared_length = v2.squaredNorm();
+
+    if (v1_squared_length < EPSILON || v2_squared_length < EPSILON) {
+        return true;
+    }
+
+    VectorS2 cross = v1.cross(v2);
+    return cross.squaredNorm() / (v1_squared_length * v2_squared_length) < EPSILON;
 }
 
 }

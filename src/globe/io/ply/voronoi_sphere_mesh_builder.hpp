@@ -29,7 +29,11 @@ inline SurfaceMesh VoronoiSphereMeshBuilder::build(const VoronoiSphere &voronoi_
 
     for (const auto &cell : voronoi_sphere.cells()) {
         for (const auto &arc : cell.arcs()) {
-            _mesh_builder.build_arc(mesh, arc.source(), arc.target());
+            _mesh_builder.build_arc(
+                mesh,
+                to_cgal_point(arc.source()),
+                to_cgal_point(arc.target())
+            );
         }
     }
 

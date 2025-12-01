@@ -10,12 +10,9 @@ TEST(LloydVoronoiSphereOptimizerTest, ReducesDeviation) {
     double initial_deviation = 0.0;
     size_t index = 0;
     for (const auto &cell : voronoi->cells()) {
-        Point3 site = voronoi->site(index);
-        Point3 centroid = cell.centroid();
-        double deviation = angular_distance(
-            to_position_vector(site),
-            to_position_vector(centroid)
-        );
+        VectorS2 site = to_vector_s2(voronoi->site(index));
+        VectorS2 centroid = cell.centroid();
+        double deviation = distance(site, centroid);
         initial_deviation += deviation * deviation;
         index++;
     }
@@ -27,12 +24,9 @@ TEST(LloydVoronoiSphereOptimizerTest, ReducesDeviation) {
     double final_deviation = 0.0;
     index = 0;
     for (const auto &cell : optimized->cells()) {
-        Point3 site = optimized->site(index);
-        Point3 centroid = cell.centroid();
-        double deviation = angular_distance(
-            to_position_vector(site),
-            to_position_vector(centroid)
-        );
+        VectorS2 site = to_vector_s2(optimized->site(index));
+        VectorS2 centroid = cell.centroid();
+        double deviation = distance(site, centroid);
         final_deviation += deviation * deviation;
         index++;
     }

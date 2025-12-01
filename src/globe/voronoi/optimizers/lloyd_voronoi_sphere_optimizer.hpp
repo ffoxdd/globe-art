@@ -100,16 +100,13 @@ inline double LloydVoronoiSphereOptimizer::run_single_pass() {
 
     size_t index = 0;
     for (const auto &cell : _voronoi_sphere->cells()) {
-        Point3 site = _voronoi_sphere->site(index);
-        Point3 centroid = cell.centroid();
+        VectorS2 site = to_vector_s2(_voronoi_sphere->site(index));
+        VectorS2 centroid = cell.centroid();
 
-        double movement = angular_distance(
-            to_position_vector(site),
-            to_position_vector(centroid)
-        );
+        double movement = distance(site, centroid);
         max_movement = std::max(max_movement, movement);
 
-        _voronoi_sphere->update_site(index, centroid);
+        _voronoi_sphere->update_site(index, to_cgal_point(centroid));
         index++;
     }
 
@@ -121,13 +118,10 @@ inline double LloydVoronoiSphereOptimizer::compute_total_deviation() const {
 
     size_t index = 0;
     for (const auto &cell : _voronoi_sphere->cells()) {
-        Point3 site = _voronoi_sphere->site(index);
-        Point3 centroid = cell.centroid();
+        VectorS2 site = to_vector_s2(_voronoi_sphere->site(index));
+        VectorS2 centroid = cell.centroid();
 
-        double deviation = angular_distance(
-            to_position_vector(site),
-            to_position_vector(centroid)
-        );
+        double deviation = distance(site, centroid);
         total += deviation * deviation;
         index++;
     }

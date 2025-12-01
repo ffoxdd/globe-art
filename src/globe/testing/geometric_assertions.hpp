@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_TESTING_GEOMETRIC_ASSERTIONS_HPP_
 #define GLOBEART_SRC_GLOBE_TESTING_GEOMETRIC_ASSERTIONS_HPP_
 
-#include "../types.hpp"
+#include "../cgal_types.hpp"
 #include "../geometry/cartesian/bounding_box.hpp"
 #include "../math/interval.hpp"
 #include <cmath>
@@ -28,6 +28,10 @@ inline bool is_on_unit_sphere(const Point3 &point, double tolerance = DEFAULT_TO
     );
 
     return std::abs(distance - 1.0) < tolerance;
+}
+
+inline bool is_on_unit_sphere(const VectorS2 &point, double tolerance = DEFAULT_TOLERANCE) {
+    return std::abs(point.norm() - 1.0) < tolerance;
 }
 
 inline bool points_approximately_equal(

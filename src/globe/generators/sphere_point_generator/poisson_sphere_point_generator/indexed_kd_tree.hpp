@@ -1,12 +1,17 @@
 #ifndef GLOBEART_SRC_GLOBE_GENERATORS_SPHERE_POINT_GENERATOR_POISSON_SPHERE_POINT_GENERATOR_INDEXED_KD_TREE_HPP_
 #define GLOBEART_SRC_GLOBE_GENERATORS_SPHERE_POINT_GENERATOR_POISSON_SPHERE_POINT_GENERATOR_INDEXED_KD_TREE_HPP_
 
-#include "../../../types.hpp"
+#include "../../../cgal_types.hpp"
+#include <CGAL/Search_traits_3.h>
 #include <CGAL/Search_traits_adapter.h>
+#include <CGAL/Kd_tree.h>
+#include <CGAL/Fuzzy_sphere.h>
 #include <boost/property_map/property_map.hpp>
 #include <vector>
 
 namespace globe {
+
+using SearchTraits = CGAL::Search_traits_3<detail::Kernel>;
 
 template<typename Container>
 concept IndexablePointContainer = requires(const Container &container, std::size_t index) {

@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GENERATORS_POINT_GENERATOR_HPP_
 #define GLOBEART_SRC_GLOBE_GENERATORS_POINT_GENERATOR_HPP_
 
-#include "../../types.hpp"
+#include "../../cgal_types.hpp"
 #include "../../geometry/cartesian/bounding_box.hpp"
 #include <vector>
 #include <concepts>

@@ -24,12 +24,12 @@ class UniformSphericalBoundingBoxSampler {
     ) : _interval_sampler(std::move(interval_sampler)),
         _circular_interval_sampler(std::move(circular_interval_sampler)) {}
 
-    [[nodiscard]] inline Point3 sample(const SphericalBoundingBox &bounding_box) {
+    [[nodiscard]] inline VectorS2 sample(const SphericalBoundingBox &bounding_box) {
         double theta_val = _circular_interval_sampler.sample(bounding_box.theta_interval());
         double z = _interval_sampler.sample(bounding_box.z_interval());
 
         double r = std::sqrt(1.0 - z * z);
-        return Point3(
+        return VectorS2(
             r * std::cos(theta_val),
             r * std::sin(theta_val),
             z

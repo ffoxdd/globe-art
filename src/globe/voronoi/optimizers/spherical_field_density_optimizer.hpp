@@ -41,6 +41,51 @@ struct MinMassComparator {
     }
 };
 
+inline VectorS2 antipodal(const VectorS2& point) {
+    return VectorS2(-point.x(), -point.y(), -point.z());
+}
+
+struct TangentBasis {
+    VectorS2 tangent_u;
+    VectorS2 tangent_v;
+};
+
+inline bool is_pole(const VectorS2& v) {
+    return std::abs(std::abs(v.z()) - 1.0) < GEOMETRIC_EPSILON;
+}
+
+inline TangentBasis build_tangent_basis(const VectorS2& normal) {
+    VectorS2 tangent_u;
+
+    if (is_pole(normal)) {
+        tangent_u = VectorS2(0.0, normal.z(), -normal.y());
+    } else {
+        tangent_u = VectorS2(normal.y(), -normal.x(), 0.0);
+    }
+
+    tangent_u = tangent_u.normalized();
+    VectorS2 tangent_v = normal.cross(tangent_u);
+
+    return {tangent_u, tangent_v};
+}
+
+inline VectorS2 stereographic_plane_to_sphere(
+    double u,
+    double v,
+    const VectorS2& south_pole,
+    const VectorS2& tangent_u,
+    const VectorS2& tangent_v
+) {
+    double r_squared = u * u + v * v;
+    double scale = 4.0 / (4.0 + r_squared);
+
+    VectorS2 result = south_pole + scale * (
+        u * tangent_u + v * tangent_v - south_pole * (r_squared / 4.0)
+    );
+
+    return result.normalized();
+}
+
 }
 
 template<
@@ -340,15 +385,15 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
     double previous_error
 ) {
     Point3 original_position = _voronoi_sphere->site(index);
-    Point3 north = antipodal(original_position);
-    TangentBasis basis = build_tangent_basis(to_position_vector(north));
-    Vector3 tangent_u = basis.tangent_u;
-    Vector3 tangent_v = basis.tangent_v;
+    VectorS2 original_vector = to_vector_s2(original_position);
+    VectorS2 north = detail::antipodal(original_vector);
+    detail::TangentBasis basis = detail::build_tangent_basis(north);
+    VectorS2 tangent_u = basis.tangent_u;
+    VectorS2 tangent_v = basis.tangent_v;
 
     using column_vector = dlib::matrix<double, 2, 1>;
 
     double initial_error = previous_error;
-    Vector3 original_vector = to_position_vector(original_position);
 
     auto run_bobyqa = [&](const column_vector& initial_point, int max_function_calls) {
         struct RunResult {
@@ -364,18 +409,19 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
         _voronoi_sphere->update_site(index, original_position);
 
         auto objective = [&](const column_vector& params) -> double {
-            Point3 candidate = stereographic_plane_to_sphere(
+            VectorS2 candidate_vec = detail::stereographic_plane_to_sphere(
                 params(0),
                 params(1),
                 original_vector,
                 tangent_u,
                 tangent_v
             );
+            Point3 candidate = to_cgal_point(candidate_vec);
 
             _voronoi_sphere->update_site(index, candidate);
 
             double optimization_error = compute_objective_error(target_mass);
-            double displacement_angle = angular_distance(original_vector, to_position_vector(candidate));
+            double displacement_angle = distance(original_vector, candidate_vec);
             double penalty = DISPLACEMENT_PENALTY_SCALE * target_mass * target_mass * displacement_angle * displacement_angle;
             double cost = optimization_error + penalty;
 
@@ -477,12 +523,9 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_centroi
 
     size_t i = 0;
     for (const auto& cell : _voronoi_sphere->cells()) {
-        Point3 site = _voronoi_sphere->site(i);
-        Point3 centroid = cell.centroid();
-        double deviation = angular_distance(
-            to_position_vector(site),
-            to_position_vector(centroid)
-        );
+        VectorS2 site = to_vector_s2(_voronoi_sphere->site(i));
+        VectorS2 centroid = cell.centroid();
+        double deviation = distance(site, centroid);
         total_error += deviation * deviation;
         i++;
     }
@@ -545,27 +588,23 @@ bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_vertex_to
         return false;
     }
 
-    Point3 current_site = _voronoi_sphere->site(index);
-    Vector3 current_vector = to_position_vector(current_site);
+    VectorS2 current_vector = to_vector_s2(_voronoi_sphere->site(index));
+    VectorS2 random_vector = _point_generator.generate(1)[0];
 
-    Point3 random_point = _point_generator.generate(1)[0];
-    Vector3 random_vector = to_position_vector(random_point);
-
-    double dot = current_vector * random_vector;
-    Vector3 tangent_component = random_vector - dot * current_vector;
-    double tangent_length = std::sqrt(tangent_component.squared_length());
+    double dot = current_vector.dot(random_vector);
+    VectorS2 tangent_component = random_vector - dot * current_vector;
+    double tangent_length = tangent_component.norm();
 
     if (tangent_length < 1e-10) {
         return false;
     }
 
-    Vector3 tangent_direction = tangent_component / tangent_length;
-    Vector3 new_vector =
+    VectorS2 tangent_direction = tangent_component / tangent_length;
+    VectorS2 new_vector =
         std::cos(PERTURBATION_RADIANS) * current_vector +
         std::sin(PERTURBATION_RADIANS) * tangent_direction;
 
-    Point3 new_site(new_vector.x(), new_vector.y(), new_vector.z());
-    _voronoi_sphere->update_site(index, new_site);
+    _voronoi_sphere->update_site(index, to_cgal_point(new_vector));
 
     return true;
 }

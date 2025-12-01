@@ -2,7 +2,8 @@
 #define GLOBEART_SRC_GLOBE_IO_PLY_MESH_BUILDER_HPP_
 
 #include "./types.hpp"
-#include "../../geometry/spherical/helpers.hpp"
+#include "../cgal_helpers.hpp"
+#include "../../cgal_types.hpp"
 #include <map>
 
 namespace globe {
@@ -72,11 +73,11 @@ inline void MeshBuilder::build_arc(
     }
 
     SurfaceMesh::Vertex_index prev_vertex = get_or_create_vertex(mesh, source);
-    Vector3 normal = arc_normal(source, target);
-    Point3 prev_offset = create_offset_point(source, normal);
+    Vector3 arc_normal = io::normal(source, target);
+    Point3 prev_offset = create_offset_point(source, arc_normal);
     SurfaceMesh::Vertex_index prev_offset_vertex = get_or_create_vertex(mesh, prev_offset);
 
-    sample_arc_and_add_segments(mesh, source, target, normal, prev_vertex, prev_offset_vertex);
+    sample_arc_and_add_segments(mesh, source, target, arc_normal, prev_vertex, prev_offset_vertex);
 }
 
 inline void MeshBuilder::sample_arc_and_add_segments(
@@ -102,7 +103,7 @@ inline void MeshBuilder::add_segment_at_parameter(
     SurfaceMesh::Vertex_index &prev_vertex,
     SurfaceMesh::Vertex_index &prev_offset_vertex
 ) {
-    Point3 sampled_point = spherical_interpolate(source, target, t);
+    Point3 sampled_point = io::interpolate(source, target, t);
     SurfaceMesh::Vertex_index curr_vertex = get_or_create_vertex(mesh, sampled_point);
     Point3 offset_point = create_offset_point(sampled_point, arc_normal);
     SurfaceMesh::Vertex_index curr_offset_vertex = get_or_create_vertex(mesh, offset_point);
@@ -141,11 +142,12 @@ inline SurfaceMesh::Vertex_index MeshBuilder::get_or_create_vertex(
 }
 
 inline Point3 MeshBuilder::create_offset_point(const Point3 &point, const Vector3 &arc_normal) const {
-    Vector3 radius_vec = to_position_vector(point);
-    Vector3 perpendicular = normalize(CGAL::cross_product(arc_normal, radius_vec));
-    Point3 offset_point = point + (perpendicular * _arc_thickness);
+    Vector3 radius_vec = to_cgal_vector(point);
+    Vector3 perpendicular = io::normalize(CGAL::cross_product(arc_normal, radius_vec));
+    Vector3 offset_vec = radius_vec + (perpendicular * _arc_thickness);
+    Vector3 normalized = io::normalize(offset_vec);
 
-    return project_to_sphere(offset_point);
+    return Point3(normalized.x(), normalized.y(), normalized.z());
 }
 
 } // namespace globe

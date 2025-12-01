@@ -1,19 +1,16 @@
 #include "gtest/gtest.h"
 #include "spherical_polygon_bounding_box_calculator.hpp"
 #include "../spherical_arc.hpp"
-#include "../../../testing/arc_factory.hpp"
 #include "../../../testing/geometric_assertions.hpp"
 #include <cmath>
 
 using namespace globe;
-using globe::testing::make_arc;
-
 
 TEST(SphericalPolygonBoundingBoxCalculatorTest, ArcCrossingEquator) {
     std::vector<SphericalArc> arcs{
-        make_arc(Vector3(0, 1, 0), Point3(0.5, 0, std::sqrt(0.75)), Point3(0, -1, 0)),
-        make_arc(Vector3(0, 1, 0), Point3(0, -1, 0), Point3(-0.5, 0, std::sqrt(0.75))),
-        make_arc(Vector3(0, 1, 0), Point3(-0.5, 0, std::sqrt(0.75)), Point3(0.5, 0, std::sqrt(0.75))),
+        SphericalArc(VectorS2(0.5, 0, std::sqrt(0.75)), VectorS2(0, -1, 0), VectorS2(0, 1, 0)),
+        SphericalArc(VectorS2(0, -1, 0), VectorS2(-0.5, 0, std::sqrt(0.75)), VectorS2(0, 1, 0)),
+        SphericalArc(VectorS2(-0.5, 0, std::sqrt(0.75)), VectorS2(0.5, 0, std::sqrt(0.75)), VectorS2(0, 1, 0)),
     };
 
     auto bounding_box = SphericalPolygonBoundingBoxCalculator(arcs).calculate();
@@ -24,8 +21,8 @@ TEST(SphericalPolygonBoundingBoxCalculatorTest, ArcCrossingEquator) {
 
 TEST(SphericalPolygonBoundingBoxCalculatorTest, HorizontalArc) {
     std::vector<SphericalArc> arcs{
-        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
-        make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(1, 0, 0)),
+        SphericalArc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
+        SphericalArc(VectorS2(0, 1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
     };
 
     auto bounding_box = SphericalPolygonBoundingBoxCalculator(arcs).calculate();
@@ -40,8 +37,8 @@ TEST(SphericalPolygonBoundingBoxCalculatorTest, SmallArcNearEquator) {
     const double z_low = std::sqrt(1 - eps * eps);
 
     std::vector<SphericalArc> arcs{
-        make_arc(Vector3(0, 0, 1), Point3(eps, 0, z_low), Point3(0, eps, z_low)),
-        make_arc(Vector3(0, 0, 1), Point3(0, eps, z_low), Point3(eps, 0, z_low)),
+        SphericalArc(VectorS2(eps, 0, z_low), VectorS2(0, eps, z_low), VectorS2(0, 0, 1)),
+        SphericalArc(VectorS2(0, eps, z_low), VectorS2(eps, 0, z_low), VectorS2(0, 0, 1)),
     };
 
     auto bounding_box = SphericalPolygonBoundingBoxCalculator(arcs).calculate();
@@ -55,8 +52,8 @@ TEST(SphericalPolygonBoundingBoxCalculatorTest, LargeArcAlmostFullCircle) {
     const double eps = 0.01;
 
     std::vector<SphericalArc> arcs{
-        make_arc(Vector3(0, 0, 1), Point3(sqrt2/2, sqrt2/2, 0), Point3(-sqrt2/2 + eps, sqrt2/2, 0)),
-        make_arc(Vector3(0, 0, 1), Point3(-sqrt2/2 + eps, sqrt2/2, 0), Point3(sqrt2/2, sqrt2/2, 0)),
+        SphericalArc(VectorS2(sqrt2/2, sqrt2/2, 0), VectorS2(-sqrt2/2 + eps, sqrt2/2, 0), VectorS2(0, 0, 1)),
+        SphericalArc(VectorS2(-sqrt2/2 + eps, sqrt2/2, 0), VectorS2(sqrt2/2, sqrt2/2, 0), VectorS2(0, 0, 1)),
     };
 
     auto bounding_box = SphericalPolygonBoundingBoxCalculator(arcs).calculate();
@@ -67,10 +64,10 @@ TEST(SphericalPolygonBoundingBoxCalculatorTest, LargeArcAlmostFullCircle) {
 
 TEST(SphericalPolygonBoundingBoxCalculatorTest, PolygonWithNorthPoleContained) {
     std::vector<SphericalArc> arcs{
-        make_arc(Vector3(0, 0, 1), Point3(1, 0, 0), Point3(0, 1, 0)),
-        make_arc(Vector3(0, 0, 1), Point3(0, 1, 0), Point3(-1, 0, 0)),
-        make_arc(Vector3(0, 0, 1), Point3(-1, 0, 0), Point3(0, -1, 0)),
-        make_arc(Vector3(0, 0, 1), Point3(0, -1, 0), Point3(1, 0, 0)),
+        SphericalArc(VectorS2(1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, 1)),
+        SphericalArc(VectorS2(0, 1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, 1)),
+        SphericalArc(VectorS2(-1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, 1)),
+        SphericalArc(VectorS2(0, -1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, 1)),
     };
 
     auto bounding_box = SphericalPolygonBoundingBoxCalculator(arcs).calculate();
@@ -82,10 +79,10 @@ TEST(SphericalPolygonBoundingBoxCalculatorTest, PolygonWithNorthPoleContained) {
 
 TEST(SphericalPolygonBoundingBoxCalculatorTest, PolygonWithSouthPoleContained) {
     std::vector<SphericalArc> arcs{
-        make_arc(Vector3(0, 0, -1), Point3(1, 0, 0), Point3(0, -1, 0)),
-        make_arc(Vector3(0, 0, -1), Point3(0, -1, 0), Point3(-1, 0, 0)),
-        make_arc(Vector3(0, 0, -1), Point3(-1, 0, 0), Point3(0, 1, 0)),
-        make_arc(Vector3(0, 0, -1), Point3(0, 1, 0), Point3(1, 0, 0)),
+        SphericalArc(VectorS2(1, 0, 0), VectorS2(0, -1, 0), VectorS2(0, 0, -1)),
+        SphericalArc(VectorS2(0, -1, 0), VectorS2(-1, 0, 0), VectorS2(0, 0, -1)),
+        SphericalArc(VectorS2(-1, 0, 0), VectorS2(0, 1, 0), VectorS2(0, 0, -1)),
+        SphericalArc(VectorS2(0, 1, 0), VectorS2(1, 0, 0), VectorS2(0, 0, -1)),
     };
 
     auto bounding_box = SphericalPolygonBoundingBoxCalculator(arcs).calculate();
@@ -104,21 +101,21 @@ TEST(SphericalPolygonBoundingBoxCalculatorTest, ThetaWrappingAroundZero) {
     double r_low = std::sqrt(1.0 - z_low * z_low);
     double r_high = std::sqrt(1.0 - z_high * z_high);
 
-    Point3 p1(r_low * std::cos(theta1), r_low * std::sin(theta1), z_low);
-    Point3 p2(r_low * std::cos(theta2), r_low * std::sin(theta2), z_low);
-    Point3 p3(r_high * std::cos(theta2), r_high * std::sin(theta2), z_high);
-    Point3 p4(r_high * std::cos(theta1), r_high * std::sin(theta1), z_high);
+    VectorS2 p1(r_low * std::cos(theta1), r_low * std::sin(theta1), z_low);
+    VectorS2 p2(r_low * std::cos(theta2), r_low * std::sin(theta2), z_low);
+    VectorS2 p3(r_high * std::cos(theta2), r_high * std::sin(theta2), z_high);
+    VectorS2 p4(r_high * std::cos(theta1), r_high * std::sin(theta1), z_high);
 
-    Vector3 v1 = CGAL::cross_product(to_position_vector(p1), to_position_vector(p2));
-    Vector3 v2 = CGAL::cross_product(to_position_vector(p2), to_position_vector(p3));
-    Vector3 v3 = CGAL::cross_product(to_position_vector(p3), to_position_vector(p4));
-    Vector3 v4 = CGAL::cross_product(to_position_vector(p4), to_position_vector(p1));
+    VectorS2 n1 = p1.cross(p2).normalized();
+    VectorS2 n2 = p2.cross(p3).normalized();
+    VectorS2 n3 = p3.cross(p4).normalized();
+    VectorS2 n4 = p4.cross(p1).normalized();
 
     std::vector<SphericalArc> arcs{
-        make_arc(v1, p1, p2),
-        make_arc(v2, p2, p3),
-        make_arc(v3, p3, p4),
-        make_arc(v4, p4, p1)
+        SphericalArc(p1, p2, n1),
+        SphericalArc(p2, p3, n2),
+        SphericalArc(p3, p4, n3),
+        SphericalArc(p4, p1, n4)
     };
 
     auto bounding_box = SphericalPolygonBoundingBoxCalculator(arcs).calculate();

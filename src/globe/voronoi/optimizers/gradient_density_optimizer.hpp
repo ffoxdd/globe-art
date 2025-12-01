@@ -425,8 +425,8 @@ bool GradientDensityOptimizer<FieldType, GeneratorType>::perturb_site_randomly(s
         return false;
     }
 
-    Point3 random_point = random_points[0];
-    Eigen::Vector3d random_dir(random_point.x(), random_point.y(), random_point.z());
+    VectorS2 random_point = random_points[0];
+    Eigen::Vector3d random_dir = random_point;
 
     Eigen::Vector3d tangent = random_dir - random_dir.dot(s) * s;
     double tangent_norm = tangent.norm();

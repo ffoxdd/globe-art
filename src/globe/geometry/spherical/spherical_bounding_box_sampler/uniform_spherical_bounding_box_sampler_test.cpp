@@ -24,15 +24,9 @@ TEST(UniformSphericalBoundingBoxSamplerTest, ProducesPointOnUnitSphere) {
     UniformSphericalBoundingBoxSampler sampler(z_sampler, theta_sampler);
     SphericalBoundingBox box{ThetaInterval::full(), Interval(-1.0, 1.0)};
 
-    Point3 sample = sampler.sample(box);
+    VectorS2 sample = sampler.sample(box);
 
-    double radius = std::sqrt(
-        sample.x() * sample.x() +
-        sample.y() * sample.y() +
-        sample.z() * sample.z()
-    );
-
-    EXPECT_NEAR(radius, 1.0, 1e-9);
+    EXPECT_NEAR(sample.norm(), 1.0, 1e-9);
 }
 
 TEST(UniformSphericalBoundingBoxSamplerTest, UsesZFromIntervalSampler) {
@@ -41,7 +35,7 @@ TEST(UniformSphericalBoundingBoxSamplerTest, UsesZFromIntervalSampler) {
     UniformSphericalBoundingBoxSampler sampler(z_sampler, theta_sampler);
     SphericalBoundingBox box{ThetaInterval::full(), Interval(0.0, 1.0)};
 
-    Point3 sample = sampler.sample(box);
+    VectorS2 sample = sampler.sample(box);
 
     EXPECT_NEAR(sample.z(), 0.75, 1e-9);
 }
@@ -52,7 +46,7 @@ TEST(UniformSphericalBoundingBoxSamplerTest, UsesThetaFromCircularIntervalSample
     UniformSphericalBoundingBoxSampler sampler(z_sampler, theta_sampler);
     SphericalBoundingBox box{ThetaInterval(0.0, M_PI), Interval(-1.0, 1.0)};
 
-    Point3 sample = sampler.sample(box);
+    VectorS2 sample = sampler.sample(box);
     double theta = std::atan2(sample.y(), sample.x());
 
     EXPECT_NEAR(theta, M_PI / 2.0, 1e-9);
@@ -64,7 +58,7 @@ TEST(UniformSphericalBoundingBoxSamplerTest, HandlesWrappedThetaInterval) {
     UniformSphericalBoundingBoxSampler sampler(z_sampler, theta_sampler);
     SphericalBoundingBox box{ThetaInterval(5.5, 1.5), Interval(-1.0, 1.0)};
 
-    Point3 sample = sampler.sample(box);
+    VectorS2 sample = sampler.sample(box);
 
     EXPECT_TRUE(box.contains(sample));
 }
@@ -77,14 +71,9 @@ TEST(UniformSphericalBoundingBoxSamplerTest, EXPENSIVE_AllPointsOnUnitSphere) {
     constexpr size_t sample_count = 10000;
 
     for (size_t i = 0; i < sample_count; ++i) {
-        Point3 sample = sampler.sample(box);
-        double radius = std::sqrt(
-            sample.x() * sample.x() +
-            sample.y() * sample.y() +
-            sample.z() * sample.z()
-        );
+        VectorS2 sample = sampler.sample(box);
 
-        EXPECT_NEAR(radius, 1.0, 1e-9);
+        EXPECT_NEAR(sample.norm(), 1.0, 1e-9);
         EXPECT_TRUE(box.contains(sample));
     }
 }
@@ -115,15 +104,9 @@ TEST(UniformSphericalBoundingBoxSamplerTest, EXPENSIVE_WrappedIntervalContainmen
     constexpr size_t sample_count = 10000;
 
     for (size_t i = 0; i < sample_count; ++i) {
-        Point3 sample = sampler.sample(box);
+        VectorS2 sample = sampler.sample(box);
 
-        double radius = std::sqrt(
-            sample.x() * sample.x() +
-            sample.y() * sample.y() +
-            sample.z() * sample.z()
-        );
-
-        EXPECT_NEAR(radius, 1.0, 1e-9);
+        EXPECT_NEAR(sample.norm(), 1.0, 1e-9);
         EXPECT_TRUE(box.contains(sample));
     }
 }
@@ -136,7 +119,7 @@ TEST(UniformSphericalBoundingBoxSamplerTest, EXPENSIVE_CrossingZeroContainment) 
     constexpr size_t sample_count = 10000;
 
     for (size_t i = 0; i < sample_count; ++i) {
-        Point3 sample = sampler.sample(box);
+        VectorS2 sample = sampler.sample(box);
 
         EXPECT_TRUE(box.contains(sample));
     }

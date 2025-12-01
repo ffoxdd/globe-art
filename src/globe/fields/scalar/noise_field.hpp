@@ -11,7 +11,7 @@ namespace globe {
 class NoiseField {
  public:
     NoiseField(Interval output_range = Interval(0, 1), int seed = 1546);
-    double value(const Point3 &location);
+    double value(const VectorS2 &point);
     double max_frequency() const;
 
  private:
@@ -34,9 +34,9 @@ inline NoiseField::NoiseField(Interval output_range, int seed) :
     _instruction_index(initialize_kernel(_kernel, output_range, seed)) {
 }
 
-inline double NoiseField::value(const Point3 &location) {
+inline double NoiseField::value(const VectorS2 &point) {
     return anl::CNoiseExecutor(_kernel).evaluateScalar(
-        location.x(), location.y(), location.z(), _instruction_index
+        point.x(), point.y(), point.z(), _instruction_index
     );
 }
 

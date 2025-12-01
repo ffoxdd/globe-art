@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_SAMPLER_UNIFORM_BOUNDING_BOX_SAMPLER_HPP_
 #define GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_SAMPLER_UNIFORM_BOUNDING_BOX_SAMPLER_HPP_
 
-#include "../../../types.hpp"
+#include "../../../cgal_types.hpp"
 #include "../bounding_box.hpp"
 #include "../../../math/interval_sampler/interval_sampler.hpp"
 

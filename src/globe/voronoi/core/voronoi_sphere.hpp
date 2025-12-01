@@ -1,8 +1,11 @@
 #ifndef GLOBEART_SRC_GLOBE_VORONOI_CORE_VORONOI_SPHERE_HPP_
 #define GLOBEART_SRC_GLOBE_VORONOI_CORE_VORONOI_SPHERE_HPP_
 
-#include "../../types.hpp"
+#include "../../cgal_types.hpp"
 #include "../../geometry/spherical/spherical_arc.hpp"
+#include <CGAL/Exact_spherical_kernel_3.h>
+#include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>
+#include <CGAL/Delaunay_triangulation_on_sphere_2.h>
 #include "../../geometry/spherical/spherical_polygon/spherical_polygon.hpp"
 #include "circulator_iterator.hpp"
 #include <cstddef>
@@ -43,6 +46,7 @@ class VoronoiSphere {
     using Triangulation = CGAL::Delaunay_triangulation_on_sphere_2<
         CGAL::Delaunay_triangulation_on_sphere_traits_2<Kernel, SphericalKernel>
     >;
+    using Arc = Triangulation::Arc_on_sphere_2;
 
     using VertexHandle = Triangulation::Vertex_handle;
     using EdgeCirculator = Triangulation::Edge_circulator;
@@ -163,9 +167,9 @@ inline std::vector<CellEdgeInfo> VoronoiSphere::cell_edges(size_t index) const {
 }
 
 inline SphericalArc VoronoiSphere::to_spherical_arc(const Arc& cgal_arc) {
-    Point3 source = to_point(cgal_arc.source());
-    Point3 target = to_point(cgal_arc.target());
-    Vector3 normal = arc_normal(cgal_arc);
+    VectorS2 source = to_vector_s2(to_point(cgal_arc.source()));
+    VectorS2 target = to_vector_s2(to_point(cgal_arc.target()));
+    VectorS2 normal = to_vector_s2(arc_normal(cgal_arc));
     return SphericalArc(source, target, normal);
 }
 

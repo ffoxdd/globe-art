@@ -13,7 +13,7 @@ TEST(RandomVoronoiSphereBuilderTest, CreatesSphereWithCorrectSize) {
 }
 
 TEST(RandomVoronoiSphereBuilderTest, UsesProvidedGenerator) {
-    Point3 fixed_point(1, 0, 0);
+    VectorS2 fixed_point(1, 0, 0);
     SequencePointGenerator generator({fixed_point});
     RandomVoronoiSphereBuilder<SequencePointGenerator> builder(generator);
 

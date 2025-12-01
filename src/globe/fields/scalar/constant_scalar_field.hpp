@@ -10,7 +10,7 @@ public:
     explicit ConstantScalarField(double value = 1.0) :
         _value(value) {}
 
-    inline double value(const Point3 &) const {
+    inline double value(const VectorS2 &) const {
         return _value;
     }
 
