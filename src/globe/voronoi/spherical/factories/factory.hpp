@@ -18,6 +18,7 @@
 #include <variant>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 
 namespace globe::voronoi::spherical {
 
@@ -101,11 +102,16 @@ inline std::unique_ptr<Sphere> Factory::build() {
     sphere = optimize_density(std::move(sphere));
 
     for (size_t i = 0; i < _lloyd_passes; i++) {
-        std::cout << "Lloyd pass " << (i + 1) << "/" << _lloyd_passes << "..." << std::endl;
         LloydOptimizer lloyd_optimizer(std::move(sphere), 1, _progress_callback);
         sphere = lloyd_optimizer.optimize();
+        double deviation = lloyd_optimizer.final_deviation();
 
-        std::cout << "Density optimization " << (i + 1) << "/" << _lloyd_passes << "..." << std::endl;
+        std::cout << "  " << std::setw(8) << std::left << "Lloyd" << std::right <<
+            std::setw(4) << (i + 1) << "/" <<
+            std::setw(4) << std::left << _lloyd_passes << std::right <<
+            ": dev " << std::fixed << std::setprecision(8) << deviation <<
+            std::defaultfloat << std::endl;
+
         sphere = optimize_density(std::move(sphere));
     }
 

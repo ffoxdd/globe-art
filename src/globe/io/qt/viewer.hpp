@@ -39,6 +39,7 @@ public:
     void add_point(const VectorS2 &point, const Color &color = BLACK);
     void add_segment(const VectorS2 &source, const VectorS2 &target, const Color &color = BLACK);
     void add_arc(const Arc &arc, const Color &color = BLACK);
+    void add_triangle(const VectorS2 &p1, const VectorS2 &p2, const VectorS2 &p3, const Color &color = BLACK);
     void add_text(const VectorS2 &point, const std::string &text);
     void clear();
     void show();
@@ -81,6 +82,22 @@ inline void Viewer::add_arc(const Arc &arc, const Color &color) {
 
         add_segment(arc.interpolate(t1), arc.interpolate(t2), color);
     }
+}
+
+inline void Viewer::add_triangle(
+    const VectorS2 &p1,
+    const VectorS2 &p2,
+    const VectorS2 &p3,
+    const Color &color
+) {
+    VectorS2 normal = (p2 - p1).cross(p3 - p1).normalized();
+    cgal::Vector3 n(normal.x(), normal.y(), normal.z());
+
+    _scene.face_begin(color);
+    _scene.add_point_in_face(cgal::to_point(p1), n);
+    _scene.add_point_in_face(cgal::to_point(p2), n);
+    _scene.add_point_in_face(cgal::to_point(p3), n);
+    _scene.face_end();
 }
 
 inline void Viewer::add_text(const VectorS2 &point, const std::string &text) {

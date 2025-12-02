@@ -132,13 +132,6 @@ double GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::ope
     _last_rms_error = std::sqrt(2.0 * error / _optimizer._sphere->size());
     ++_iteration_count;
 
-    if (_iteration_count % LOG_INTERVAL == 0) {
-        size_t global_iteration = _start_iteration + _iteration_count;
-        std::cout << "      [" << std::setw(4) << global_iteration <<
-            "] RMS " << std::fixed << std::setprecision(8) << _last_rms_error <<
-            std::defaultfloat << std::endl;
-    }
-
     return error;
 } // namespace globe::voronoi::spherical
 
@@ -173,8 +166,6 @@ int GradientDensityOptimizer<FieldType, GeneratorType>::run_lbfgs_phase(
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 std::unique_ptr<Sphere> GradientDensityOptimizer<FieldType, GeneratorType>::optimize() {
     _target_mass = _field.total_mass() / _sphere->size();
-    std::cout << "Target mass per cell: " << _target_mass << std::endl;
-    std::cout << "Running L-BFGS optimization..." << std::endl;
 
     double best_error = std::numeric_limits<double>::max();
     Checkpoint best_checkpoint = save_checkpoint();
@@ -198,7 +189,8 @@ std::unique_ptr<Sphere> GradientDensityOptimizer<FieldType, GeneratorType>::opti
         double error = compute_error();
         double rms_error = std::sqrt(2.0 * error / _sphere->size());
 
-        std::cout << "  L-BFGS " << std::setw(4) << start_iteration << "-" <<
+        std::cout << "  " << std::setw(8) << std::left << "L-BFGS" << std::right <<
+            std::setw(4) << start_iteration << "-" <<
             std::setw(4) << std::left << total_iterations << std::right <<
             ": RMS " << std::fixed << std::setprecision(8) << rms_error << std::defaultfloat;
 
@@ -272,7 +264,9 @@ std::unique_ptr<Sphere> GradientDensityOptimizer<FieldType, GeneratorType>::opti
 
     double final_error = compute_error();
     double final_rms = std::sqrt(2.0 * final_error / _sphere->size());
-    std::cout << "Final RMS error: " << std::fixed << std::setprecision(8) << final_rms << std::defaultfloat << std::endl;
+    std::cout << "  " << std::setw(8) << std::left << "Final" << std::right <<
+        std::setw(9) << "" <<
+        ": RMS " << std::fixed << std::setprecision(8) << final_rms << std::defaultfloat << std::endl;
 
     return std::move(_sphere);
 } // namespace globe::voronoi::spherical

@@ -29,11 +29,13 @@ class LloydOptimizer {
     );
 
     std::unique_ptr<Sphere> optimize();
+    double final_deviation() const;
 
  private:
     std::unique_ptr<Sphere> _sphere;
     size_t _max_passes;
     ProgressCallback _progress_callback;
+    double _final_deviation = 0.0;
 
     double run_single_pass();
     double compute_total_deviation() const;
@@ -50,58 +52,36 @@ inline LloydOptimizer::LloydOptimizer(
 }
 
 inline std::unique_ptr<Sphere> LloydOptimizer::optimize() {
-    std::cout << std::endl;
-    std::cout << "=== Lloyd Relaxation ===" << std::endl;
-    std::cout << "Max passes: " << _max_passes << std::endl;
-
-    double initial_deviation = compute_total_deviation();
-    std::cout << std::fixed << std::setprecision(6) <<
-        "Initial deviation: " << initial_deviation << std::endl;
-    std::cout << std::endl;
-
-    double final_deviation = initial_deviation;
-    double best_deviation = initial_deviation;
-    size_t passes_completed = 0;
+    _final_deviation = compute_total_deviation();
+    double best_deviation = _final_deviation;
     size_t passes_without_improvement = 0;
 
     for (size_t pass = 0; pass < _max_passes; pass++) {
         double max_movement = run_single_pass();
-        final_deviation = compute_total_deviation();
-        passes_completed = pass + 1;
-
-        std::cout << std::fixed << std::setprecision(6) <<
-            "  Pass " << std::setw(3) << passes_completed <<
-            ": deviation = " << std::setw(10) << final_deviation <<
-            ", max_movement = " << std::setw(10) << max_movement <<
-            std::defaultfloat << std::endl;
+        _final_deviation = compute_total_deviation();
 
         _progress_callback(*_sphere);
 
         if (max_movement < CONVERGENCE_THRESHOLD) {
-            std::cout << "Converged." << std::endl;
             break;
         }
 
-        if (final_deviation < best_deviation) {
-            best_deviation = final_deviation;
+        if (_final_deviation < best_deviation) {
+            best_deviation = _final_deviation;
             passes_without_improvement = 0;
         } else {
             passes_without_improvement++;
             if (passes_without_improvement >= MAX_PASSES_WITHOUT_IMPROVEMENT) {
-                std::cout << "No improvement for " << MAX_PASSES_WITHOUT_IMPROVEMENT <<
-                    " passes, stopping." << std::endl;
                 break;
             }
         }
     }
 
-    std::cout << std::endl;
-    std::cout << std::fixed << std::setprecision(6) <<
-        "Lloyd relaxation complete: " << passes_completed << " passes, " <<
-        "deviation " << initial_deviation << " -> " << final_deviation <<
-        std::defaultfloat << std::endl;
-
     return std::move(_sphere);
+}
+
+inline double LloydOptimizer::final_deviation() const {
+    return _final_deviation;
 }
 
 inline double LloydOptimizer::run_single_pass() {

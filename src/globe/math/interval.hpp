@@ -22,9 +22,11 @@ class Interval {
     [[nodiscard]] constexpr double measure() const;
     [[nodiscard]] constexpr double midpoint() const;
     [[nodiscard]] constexpr double clamp(double value) const;
+    [[nodiscard]] constexpr double normalize(double value) const;
     [[nodiscard]] constexpr bool contains(double value) const;
 
     [[nodiscard]] static constexpr Interval hull(const Interval &a, const Interval &b);
+    [[nodiscard]] static constexpr double remap(double value, const Interval& source, const Interval& target);
     [[nodiscard]] static constexpr Interval hull(const Interval &interval, double value);
     [[nodiscard]] static constexpr Interval hull(double a, double b);
 
@@ -74,6 +76,16 @@ constexpr double Interval::midpoint() const {
 
 constexpr double Interval::clamp(double value) const {
     return std::clamp(value, _low, _high);
+}
+
+constexpr double Interval::normalize(double value) const {
+    return remap(value, *this, UNIT_INTERVAL);
+}
+
+constexpr double Interval::remap(double value, const Interval& source, const Interval& target) {
+    double t = (value - source.low()) / source.measure();
+    t = std::clamp(t, 0.0, 1.0);
+    return target.low() + t * target.measure();
 }
 
 constexpr bool Interval::contains(double value) const {

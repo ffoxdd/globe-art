@@ -35,6 +35,11 @@ target_include_directories(generate_globe PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DI
 target_link_libraries(generate_globe PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib CLI11::CLI11 Eigen3::Eigen)
 target_compile_definitions(generate_globe PRIVATE CGAL_USE_BASIC_VIEWER CGAL_USE_BASIC_VIEWER_QT QT_NO_KEYWORDS)
 
+add_executable(visualize_field src/visualize_field.cpp ${GLOBE_HEADERS} ${GLOBE_SOURCES})
+target_include_directories(visualize_field PRIVATE Qt6::Widgets ${CGAL_INCLUDE_DIRS})
+target_link_libraries(visualize_field PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib Eigen3::Eigen)
+target_compile_definitions(visualize_field PRIVATE CGAL_USE_BASIC_VIEWER CGAL_USE_BASIC_VIEWER_QT QT_NO_KEYWORDS)
+
 # Tests
 
 pkg_search_module(GTEST REQUIRED gtest_main)

@@ -51,8 +51,21 @@ inline void SphereDrawer::show(const Sphere &sphere) {
 }
 
 inline void SphereDrawer::draw(const Sphere &sphere) {
+    Color face_color(200, 200, 200);
+    Color edge_color(60, 60, 60);
+
+    for (const auto &cell : sphere.cells()) {
+        VectorS2 centroid = cell.centroid();
+        std::vector<VectorS2> points(cell.points().begin(), cell.points().end());
+
+        for (size_t i = 0; i < points.size(); ++i) {
+            size_t next = (i + 1) % points.size();
+            _viewer->add_triangle(centroid, points[i], points[next], face_color);
+        }
+    }
+
     for (const auto &arc : sphere.arcs()) {
-        _viewer->add_arc(arc, Color(140, 140, 140));
+        _viewer->add_arc(arc, edge_color);
     }
 }
 
