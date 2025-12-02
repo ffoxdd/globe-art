@@ -1,21 +1,23 @@
 #include "gradient_density_optimizer.hpp"
-#include "../../fields/spherical/constant_field.hpp"
-#include "../../fields/spherical/linear_field.hpp"
-#include "../../geometry/spherical/arc.hpp"
-#include "../../geometry/spherical/helpers.hpp"
-#include "../../testing/assertions/geometric.hpp"
-#include "../../testing/macros.hpp"
+#include "../../../fields/spherical/constant_field.hpp"
+#include "../../../fields/spherical/linear_field.hpp"
+#include "../../../geometry/spherical/arc.hpp"
+#include "../../../geometry/spherical/helpers.hpp"
+#include "../../../testing/assertions/geometric.hpp"
+#include "../../../testing/macros.hpp"
 #include <gtest/gtest.h>
 #include <cmath>
 
 using namespace globe;
+using namespace globe::voronoi::spherical;
+using geometry::spherical::Arc;
 using fields::spherical::ConstantField;
 using fields::spherical::LinearField;
 
 namespace {
 
-std::unique_ptr<VoronoiSphere> create_test_voronoi(size_t num_points) {
-    auto voronoi = std::make_unique<VoronoiSphere>();
+std::unique_ptr<Sphere> create_test_voronoi(size_t num_points) {
+    auto voronoi = std::make_unique<Sphere>();
 
     double phi = M_PI * (std::sqrt(5.0) - 1.0);
     for (size_t i = 0; i < num_points; ++i) {
@@ -89,14 +91,14 @@ TEST(GradientDensityOptimizerTest, EXPENSIVE_GradientMatchesNumericalForLinearFi
     }
 
     auto rebuild_voronoi_with_perturbation = [&sites](size_t index, cgal::Point3 new_pos) {
-        auto v = std::make_unique<VoronoiSphere>();
+        auto v = std::make_unique<Sphere>();
         for (size_t i = 0; i < sites.size(); ++i) {
             v->insert(i == index ? new_pos : sites[i]);
         }
         return v;
     };
 
-    auto compute_error_for = [&](VoronoiSphere& v) {
+    auto compute_error_for = [&](Sphere& v) {
         double total = 0.0;
         for (const auto& cell : v.cells()) {
             double mass_error = field.mass(cell) - target_mass;

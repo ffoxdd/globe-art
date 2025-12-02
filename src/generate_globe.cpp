@@ -1,4 +1,4 @@
-#include "globe/voronoi/factories/voronoi_sphere_factory.hpp"
+#include "globe/voronoi/spherical/factories/factory.hpp"
 #include "globe/io/qt/application.hpp"
 #include "globe/io/qt/voronoi_sphere_drawer.hpp"
 #include <CLI/CLI.hpp>
@@ -7,7 +7,9 @@
 
 using namespace globe;
 using io::qt::Application;
-using io::qt::VoronoiSphereDrawer;
+using io::qt::SphereDrawer;
+using voronoi::spherical::Factory;
+using voronoi::spherical::Sphere;
 
 struct Config {
     int points_count;
@@ -19,7 +21,7 @@ struct Config {
 };
 
 Config parse_arguments(int argc, char *argv[]);
-int render(const VoronoiSphere &voronoi_sphere, bool perform_render, int argc, char *argv[]);
+int render(const Sphere &sphere, bool perform_render, int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
     Config config = parse_arguments(argc, argv);
@@ -34,7 +36,7 @@ int main(int argc, char *argv[]) {
         "  Lloyd passes: " << config.lloyd_passes << std::endl <<
         std::endl;
 
-    VoronoiSphereFactory factory(
+    Factory factory(
         config.points_count,
         config.density_field,
         config.optimization_strategy,
@@ -42,10 +44,10 @@ int main(int argc, char *argv[]) {
         config.lloyd_passes
     );
 
-    auto voronoi_sphere = factory.build();
+    auto sphere = factory.build();
 
     return render(
-        *voronoi_sphere,
+        *sphere,
         config.perform_render,
         argc, argv
     );
@@ -94,7 +96,7 @@ Config parse_arguments(int argc, char *argv[]) {
 }
 
 int render(
-    const VoronoiSphere &voronoi_sphere,
+    const Sphere &sphere,
     bool perform_render,
     int argc,
     char *argv[]
@@ -104,7 +106,7 @@ int render(
     }
 
     Application application(argc, argv);
-    VoronoiSphereDrawer drawer("Globe");
-    drawer.show(voronoi_sphere);
+    SphereDrawer drawer("Globe");
+    drawer.show(sphere);
     return application.run();
 }

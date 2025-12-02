@@ -1,21 +1,22 @@
 #include <gtest/gtest.h>
-#include "random_voronoi_sphere_builder.hpp"
-#include "../../testing/mocks/point_generator.hpp"
+#include "random_builder.hpp"
+#include "../../../testing/mocks/point_generator.hpp"
 
 using namespace globe;
+using namespace globe::voronoi::spherical;
 using globe::testing::mocks::MockPointGenerator;
 
-TEST(RandomVoronoiSphereBuilderTest, CreatesSphereWithCorrectSize) {
-    RandomVoronoiSphereBuilder builder;
+TEST(RandomBuilderTest, CreatesSphereWithCorrectSize) {
+    RandomBuilder builder;
 
     auto sphere = builder.build(10);
     EXPECT_EQ(sphere->size(), 10);
 }
 
-TEST(RandomVoronoiSphereBuilderTest, UsesProvidedGenerator) {
+TEST(RandomBuilderTest, UsesProvidedGenerator) {
     VectorS2 fixed_point(1, 0, 0);
     MockPointGenerator generator({fixed_point});
-    RandomVoronoiSphereBuilder<MockPointGenerator> builder(generator);
+    RandomBuilder<MockPointGenerator> builder(generator);
 
     auto sphere = builder.build(1);
 

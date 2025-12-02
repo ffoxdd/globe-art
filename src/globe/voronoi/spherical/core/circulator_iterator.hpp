@@ -1,10 +1,10 @@
-#ifndef GLOBEART_SRC_GLOBE_VORONOI_CORE_CIRCULATOR_ITERATOR_HPP_
-#define GLOBEART_SRC_GLOBE_VORONOI_CORE_CIRCULATOR_ITERATOR_HPP_
+#ifndef GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_CORE_CIRCULATOR_ITERATOR_HPP_
+#define GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_CORE_CIRCULATOR_ITERATOR_HPP_
 
 #include <iterator>
 #include <cstddef>
 
-namespace globe {
+namespace globe::voronoi::spherical {
 
 template<typename CirculatorType, typename HandleType>
 class CirculatorIterator {
@@ -62,7 +62,7 @@ class CirculatorIterator {
     bool _start;
 };
 
-} // namespace globe
+} // namespace globe::voronoi::spherical
 
-#endif //GLOBEART_SRC_GLOBE_VORONOI_CORE_CIRCULATOR_ITERATOR_HPP_
+#endif //GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_CORE_CIRCULATOR_ITERATOR_HPP_
 

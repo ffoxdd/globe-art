@@ -1,14 +1,15 @@
 #include <gtest/gtest.h>
-#include "voronoi_sphere.hpp"
-#include "../../types.hpp"
-#include "../../geometry/spherical/helpers.hpp"
-#include "../../testing/assertions/geometric.hpp"
+#include "sphere.hpp"
+#include "../../../types.hpp"
+#include "../../../geometry/spherical/helpers.hpp"
+#include "../../../testing/assertions/geometric.hpp"
 
 using namespace globe;
+using namespace globe::voronoi::spherical;
 using globe::testing::points_approximately_equal;
 
-VoronoiSphere create_simple_voronoi_sphere() {
-    VoronoiSphere sphere;
+Sphere create_simple_voronoi_sphere() {
+    Sphere sphere;
 
     sphere.insert(cgal::Point3(1, 0, 0));
     sphere.insert(cgal::Point3(0, 1, 0));
@@ -18,13 +19,13 @@ VoronoiSphere create_simple_voronoi_sphere() {
     return sphere;
 }
 
-TEST(VoronoiSphereTest, DefaultConstructorCreatesEmptySphere) {
-    VoronoiSphere sphere;
+TEST(SphereTest, DefaultConstructorCreatesEmptySphere) {
+    Sphere sphere;
     EXPECT_EQ(sphere.size(), 0);
 }
 
-TEST(VoronoiSphereTest, InsertIncreasesSize) {
-    VoronoiSphere sphere;
+TEST(SphereTest, InsertIncreasesSize) {
+    Sphere sphere;
     EXPECT_EQ(sphere.size(), 0);
 
     sphere.insert(cgal::Point3(1, 0, 0));
@@ -37,8 +38,8 @@ TEST(VoronoiSphereTest, InsertIncreasesSize) {
     EXPECT_EQ(sphere.size(), 3);
 }
 
-TEST(VoronoiSphereTest, SiteReturnsInsertedPoint) {
-    VoronoiSphere sphere;
+TEST(SphereTest, SiteReturnsInsertedPoint) {
+    Sphere sphere;
     cgal::Point3 point(1, 0, 0);
     sphere.insert(point);
 
@@ -46,8 +47,8 @@ TEST(VoronoiSphereTest, SiteReturnsInsertedPoint) {
     EXPECT_TRUE(points_approximately_equal(point, retrieved));
 }
 
-TEST(VoronoiSphereTest, SiteReturnsCorrectPointsForMultipleSites) {
-    VoronoiSphere sphere;
+TEST(SphereTest, SiteReturnsCorrectPointsForMultipleSites) {
+    Sphere sphere;
     cgal::Point3 p1(1, 0, 0);
     cgal::Point3 p2(0, 1, 0);
     cgal::Point3 p3(0, 0, 1);
@@ -61,8 +62,8 @@ TEST(VoronoiSphereTest, SiteReturnsCorrectPointsForMultipleSites) {
     EXPECT_TRUE(points_approximately_equal(sphere.site(2), p3));
 }
 
-TEST(VoronoiSphereTest, UpdateSiteChangesPosition) {
-    VoronoiSphere sphere;
+TEST(SphereTest, UpdateSiteChangesPosition) {
+    Sphere sphere;
     cgal::Point3 original(1, 0, 0);
     cgal::Point3 updated(0, 1, 0);
 
@@ -73,8 +74,8 @@ TEST(VoronoiSphereTest, UpdateSiteChangesPosition) {
     EXPECT_TRUE(points_approximately_equal(sphere.site(0), updated));
 }
 
-TEST(VoronoiSphereTest, CellArcsReturnsNonEmptyRange) {
-    VoronoiSphere sphere = create_simple_voronoi_sphere();
+TEST(SphereTest, CellArcsReturnsNonEmptyRange) {
+    Sphere sphere = create_simple_voronoi_sphere();
 
     size_t arc_count = 0;
     for (const auto &cell : sphere.cells()) {
@@ -84,8 +85,8 @@ TEST(VoronoiSphereTest, CellArcsReturnsNonEmptyRange) {
     EXPECT_GT(arc_count, 0);
 }
 
-TEST(VoronoiSphereTest, CellArcsIsEmptyForEmptySphere) {
-    VoronoiSphere sphere;
+TEST(SphereTest, CellArcsIsEmptyForEmptySphere) {
+    Sphere sphere;
 
     size_t arc_count = 0;
     for (const auto &cell : sphere.cells()) {
@@ -95,8 +96,8 @@ TEST(VoronoiSphereTest, CellArcsIsEmptyForEmptySphere) {
     EXPECT_EQ(arc_count, 0);
 }
 
-TEST(VoronoiSphereTest, CellArcsIsEmptyForSinglePoint) {
-    VoronoiSphere sphere;
+TEST(SphereTest, CellArcsIsEmptyForSinglePoint) {
+    Sphere sphere;
     sphere.insert(cgal::Point3(1, 0, 0));
 
     size_t arc_count = 0;
@@ -107,8 +108,8 @@ TEST(VoronoiSphereTest, CellArcsIsEmptyForSinglePoint) {
     EXPECT_EQ(arc_count, 0);
 }
 
-TEST(VoronoiSphereTest, DualCellsReturnsPolygons) {
-    VoronoiSphere sphere = create_simple_voronoi_sphere();
+TEST(SphereTest, DualCellsReturnsPolygons) {
+    Sphere sphere = create_simple_voronoi_sphere();
 
     size_t cell_count = 0;
     for (const auto &cell : sphere.cells()) {
@@ -119,8 +120,8 @@ TEST(VoronoiSphereTest, DualCellsReturnsPolygons) {
     EXPECT_EQ(cell_count, sphere.size());
 }
 
-TEST(VoronoiSphereTest, DualCellsIsEmptyForEmptySphere) {
-    VoronoiSphere sphere;
+TEST(SphereTest, DualCellsIsEmptyForEmptySphere) {
+    Sphere sphere;
 
     size_t cell_count = 0;
     for (const auto &cell : sphere.cells()) {
@@ -130,8 +131,8 @@ TEST(VoronoiSphereTest, DualCellsIsEmptyForEmptySphere) {
     EXPECT_EQ(cell_count, 0);
 }
 
-TEST(VoronoiSphereTest, MultipleUpdatesToSameSite) {
-    VoronoiSphere sphere;
+TEST(SphereTest, MultipleUpdatesToSameSite) {
+    Sphere sphere;
     sphere.insert(cgal::Point3(1, 0, 0));
 
     cgal::Point3 pos1 = cgal::to_point(VectorS2(0, 1, 0).normalized());
@@ -148,8 +149,8 @@ TEST(VoronoiSphereTest, MultipleUpdatesToSameSite) {
     EXPECT_TRUE(points_approximately_equal(sphere.site(0), pos3));
 }
 
-TEST(VoronoiSphereTest, UpdateSitePreservesOtherSites) {
-    VoronoiSphere sphere = create_simple_voronoi_sphere();
+TEST(SphereTest, UpdateSitePreservesOtherSites) {
+    Sphere sphere = create_simple_voronoi_sphere();
     cgal::Point3 p0 = sphere.site(0);
     cgal::Point3 p1 = sphere.site(1);
     cgal::Point3 p2 = sphere.site(2);
@@ -166,8 +167,8 @@ TEST(VoronoiSphereTest, UpdateSitePreservesOtherSites) {
     EXPECT_TRUE(points_approximately_equal(sphere.site(3), p3));
 }
 
-TEST(VoronoiSphereTest, ArcsReturnsAllCellArcs) {
-    VoronoiSphere sphere = create_simple_voronoi_sphere();
+TEST(SphereTest, ArcsReturnsAllCellArcs) {
+    Sphere sphere = create_simple_voronoi_sphere();
 
     size_t arcs_via_cells = 0;
     for (const auto &cell : sphere.cells()) {
@@ -184,8 +185,8 @@ TEST(VoronoiSphereTest, ArcsReturnsAllCellArcs) {
     EXPECT_GT(arcs_via_arcs, 0);
 }
 
-TEST(VoronoiSphereTest, ArcsIsEmptyForEmptySphere) {
-    VoronoiSphere sphere;
+TEST(SphereTest, ArcsIsEmptyForEmptySphere) {
+    Sphere sphere;
 
     size_t arc_count = 0;
     for (const auto &arc : sphere.arcs()) {
@@ -196,8 +197,8 @@ TEST(VoronoiSphereTest, ArcsIsEmptyForEmptySphere) {
     EXPECT_EQ(arc_count, 0);
 }
 
-TEST(VoronoiSphereTest, ArcsIsEmptyForSinglePoint) {
-    VoronoiSphere sphere;
+TEST(SphereTest, ArcsIsEmptyForSinglePoint) {
+    Sphere sphere;
     sphere.insert(cgal::Point3(1, 0, 0));
 
     size_t arc_count = 0;

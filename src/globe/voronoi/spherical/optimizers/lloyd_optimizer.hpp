@@ -1,50 +1,50 @@
-#ifndef GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_LLOYD_VORONOI_SPHERE_OPTIMIZER_HPP_
-#define GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_LLOYD_VORONOI_SPHERE_OPTIMIZER_HPP_
+#ifndef GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_OPTIMIZERS_LLOYD_OPTIMIZER_HPP_
+#define GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_OPTIMIZERS_LLOYD_OPTIMIZER_HPP_
 
-#include "../../types.hpp"
-#include "../../geometry/spherical/helpers.hpp"
-#include "../core/voronoi_sphere.hpp"
-#include "../../geometry/spherical/polygon/polygon.hpp"
+#include "../../../types.hpp"
+#include "../../../geometry/spherical/helpers.hpp"
+#include "../core/sphere.hpp"
+#include "../../../geometry/spherical/polygon/polygon.hpp"
 #include <memory>
 #include <cstddef>
 #include <iostream>
 #include <iomanip>
 #include <cmath>
 
-namespace globe {
+namespace globe::voronoi::spherical {
 
 using geometry::spherical::distance;
 
-class LloydVoronoiSphereOptimizer {
+class LloydOptimizer {
  public:
     static constexpr size_t DEFAULT_PASSES = 4;
     static constexpr double CONVERGENCE_THRESHOLD = 1e-20;
     static constexpr size_t MAX_PASSES_WITHOUT_IMPROVEMENT = 5;
 
-    LloydVoronoiSphereOptimizer(
-        std::unique_ptr<VoronoiSphere> voronoi_sphere,
+    LloydOptimizer(
+        std::unique_ptr<Sphere> sphere,
         size_t max_passes = DEFAULT_PASSES
     );
 
-    std::unique_ptr<VoronoiSphere> optimize();
+    std::unique_ptr<Sphere> optimize();
 
  private:
-    std::unique_ptr<VoronoiSphere> _voronoi_sphere;
+    std::unique_ptr<Sphere> _sphere;
     size_t _max_passes;
 
     double run_single_pass();
     double compute_total_deviation() const;
 };
 
-inline LloydVoronoiSphereOptimizer::LloydVoronoiSphereOptimizer(
-    std::unique_ptr<VoronoiSphere> voronoi_sphere,
+inline LloydOptimizer::LloydOptimizer(
+    std::unique_ptr<Sphere> sphere,
     size_t max_passes
 ) :
-    _voronoi_sphere(std::move(voronoi_sphere)),
+    _sphere(std::move(sphere)),
     _max_passes(max_passes) {
 }
 
-inline std::unique_ptr<VoronoiSphere> LloydVoronoiSphereOptimizer::optimize() {
+inline std::unique_ptr<Sphere> LloydOptimizer::optimize() {
     std::cout << std::endl;
     std::cout << "=== Lloyd Relaxation ===" << std::endl;
     std::cout << "Max passes: " << _max_passes << std::endl;
@@ -94,33 +94,33 @@ inline std::unique_ptr<VoronoiSphere> LloydVoronoiSphereOptimizer::optimize() {
         "deviation " << initial_deviation << " -> " << final_deviation <<
         std::defaultfloat << std::endl;
 
-    return std::move(_voronoi_sphere);
+    return std::move(_sphere);
 }
 
-inline double LloydVoronoiSphereOptimizer::run_single_pass() {
+inline double LloydOptimizer::run_single_pass() {
     double max_movement = 0.0;
 
     size_t index = 0;
-    for (const auto &cell : _voronoi_sphere->cells()) {
-        VectorS2 site = to_vector_s2(_voronoi_sphere->site(index));
+    for (const auto &cell : _sphere->cells()) {
+        VectorS2 site = to_vector_s2(_sphere->site(index));
         VectorS2 centroid = cell.centroid();
 
         double movement = distance(site, centroid);
         max_movement = std::max(max_movement, movement);
 
-        _voronoi_sphere->update_site(index, cgal::to_point(centroid));
+        _sphere->update_site(index, cgal::to_point(centroid));
         index++;
     }
 
     return max_movement;
 }
 
-inline double LloydVoronoiSphereOptimizer::compute_total_deviation() const {
+inline double LloydOptimizer::compute_total_deviation() const {
     double total = 0.0;
 
     size_t index = 0;
-    for (const auto &cell : _voronoi_sphere->cells()) {
-        VectorS2 site = to_vector_s2(_voronoi_sphere->site(index));
+    for (const auto &cell : _sphere->cells()) {
+        VectorS2 site = to_vector_s2(_sphere->site(index));
         VectorS2 centroid = cell.centroid();
 
         double deviation = distance(site, centroid);
@@ -128,9 +128,9 @@ inline double LloydVoronoiSphereOptimizer::compute_total_deviation() const {
         index++;
     }
 
-    return std::sqrt(total / _voronoi_sphere->size());
+    return std::sqrt(total / _sphere->size());
 }
 
-} // namespace globe
+} // namespace globe::voronoi::spherical
 
-#endif //GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_LLOYD_VORONOI_SPHERE_OPTIMIZER_HPP_
+#endif //GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_OPTIMIZERS_LLOYD_OPTIMIZER_HPP_

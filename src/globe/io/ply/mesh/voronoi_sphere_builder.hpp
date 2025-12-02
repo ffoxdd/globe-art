@@ -3,14 +3,16 @@
 
 #include "types.hpp"
 #include "builder.hpp"
-#include "../../../voronoi/core/voronoi_sphere.hpp"
+#include "../../../voronoi/spherical/core/sphere.hpp"
 
 namespace globe::io::ply::mesh {
+
+using voronoi::spherical::Sphere;
 
 class VoronoiSphereBuilder {
 public:
     VoronoiSphereBuilder(int samples_per_arc = 20, double arc_thickness = 0.001);
-    SurfaceMesh build(const VoronoiSphere &voronoi_sphere);
+    SurfaceMesh build(const Sphere &sphere);
 
 private:
     int _samples_per_arc;
@@ -25,10 +27,10 @@ inline VoronoiSphereBuilder::VoronoiSphereBuilder(
     _arc_thickness(arc_thickness) {
 }
 
-inline SurfaceMesh VoronoiSphereBuilder::build(const VoronoiSphere &voronoi_sphere) {
+inline SurfaceMesh VoronoiSphereBuilder::build(const Sphere &sphere) {
     Builder builder(_samples_per_arc, _arc_thickness);
 
-    for (const auto &arc : voronoi_sphere.arcs()) {
+    for (const auto &arc : sphere.arcs()) {
         builder.add_arc(arc);
     }
 

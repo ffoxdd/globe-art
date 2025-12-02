@@ -1,13 +1,13 @@
-#ifndef GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_SPHERICAL_FIELD_DENSITY_OPTIMIZER_HPP_
-#define GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_SPHERICAL_FIELD_DENSITY_OPTIMIZER_HPP_
+#ifndef GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_OPTIMIZERS_FIELD_DENSITY_OPTIMIZER_HPP_
+#define GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_OPTIMIZERS_FIELD_DENSITY_OPTIMIZER_HPP_
 
-#include "../../fields/spherical/field.hpp"
-#include "../../generators/spherical/point_generator.hpp"
-#include "../../generators/spherical/random_point_generator.hpp"
-#include "../../geometry/spherical/helpers.hpp"
-#include "../../geometry/spherical/polygon/polygon.hpp"
-#include "../../types.hpp"
-#include "../core/voronoi_sphere.hpp"
+#include "../../../fields/spherical/field.hpp"
+#include "../../../generators/spherical/point_generator.hpp"
+#include "../../../generators/spherical/random_point_generator.hpp"
+#include "../../../geometry/spherical/helpers.hpp"
+#include "../../../geometry/spherical/polygon/polygon.hpp"
+#include "../../../types.hpp"
+#include "../core/sphere.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -26,7 +26,7 @@
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 
-namespace globe {
+namespace globe::voronoi::spherical {
 
 using geometry::spherical::distance;
 
@@ -45,7 +45,7 @@ struct MinMassComparator {
 
 inline VectorS2 antipodal(const VectorS2& point) {
     return VectorS2(-point.x(), -point.y(), -point.z());
-}
+} // namespace globe::voronoi::spherical
 
 struct TangentBasis {
     VectorS2 tangent_u;
@@ -54,7 +54,7 @@ struct TangentBasis {
 
 inline bool is_pole(const VectorS2& v) {
     return std::abs(std::abs(v.z()) - 1.0) < GEOMETRIC_EPSILON;
-}
+} // namespace globe::voronoi::spherical
 
 inline TangentBasis build_tangent_basis(const VectorS2& normal) {
     VectorS2 tangent_u;
@@ -69,7 +69,7 @@ inline TangentBasis build_tangent_basis(const VectorS2& normal) {
     VectorS2 tangent_v = normal.cross(tangent_u);
 
     return {tangent_u, tangent_v};
-}
+} // namespace globe::voronoi::spherical
 
 inline VectorS2 stereographic_plane_to_sphere(
     double u,
@@ -86,15 +86,15 @@ inline VectorS2 stereographic_plane_to_sphere(
     );
 
     return result.normalized();
-}
+} // namespace globe::voronoi::spherical
 
-}
+} // namespace globe::voronoi::spherical
 
 template<
     fields::spherical::Field FieldType,
     generators::spherical::PointGenerator GeneratorType = generators::spherical::RandomPointGenerator<>
 >
-class SphericalFieldDensityOptimizer {
+class FieldDensityOptimizer {
  public:
     static constexpr size_t DEFAULT_PASSES = 10;
     static constexpr double DISPLACEMENT_PENALTY_SCALE = 0.0;
@@ -105,17 +105,17 @@ class SphericalFieldDensityOptimizer {
     static constexpr size_t MAX_RESTORATIONS_PER_CHECKPOINT = 5;
     static constexpr double CENTROID_DEVIATION_PENALTY = 0.0;
 
-    SphericalFieldDensityOptimizer(
-        std::unique_ptr<VoronoiSphere> voronoi_sphere,
+    FieldDensityOptimizer(
+        std::unique_ptr<Sphere> voronoi_sphere,
         FieldType field,
         size_t optimization_passes = DEFAULT_PASSES,
         GeneratorType point_generator = GeneratorType()
     );
 
-    std::unique_ptr<VoronoiSphere> optimize();
+    std::unique_ptr<Sphere> optimize();
 
  private:
-    std::unique_ptr<VoronoiSphere> _voronoi_sphere;
+    std::unique_ptr<Sphere> _sphere;
     FieldType _field;
     size_t _optimization_passes;
     GeneratorType _point_generator;
@@ -189,26 +189,26 @@ class SphericalFieldDensityOptimizer {
 };
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-SphericalFieldDensityOptimizer<FieldType, GeneratorType>::SphericalFieldDensityOptimizer(
-    std::unique_ptr<VoronoiSphere> voronoi_sphere,
+FieldDensityOptimizer<FieldType, GeneratorType>::FieldDensityOptimizer(
+    std::unique_ptr<Sphere> voronoi_sphere,
     FieldType field,
     size_t optimization_passes,
     GeneratorType point_generator
 ) :
-    _voronoi_sphere(std::move(voronoi_sphere)),
+    _sphere(std::move(voronoi_sphere)),
     _field(std::move(field)),
     _optimization_passes(optimization_passes),
     _point_generator(std::move(point_generator)) {
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-std::unique_ptr<VoronoiSphere> SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize() {
+std::unique_ptr<Sphere> FieldDensityOptimizer<FieldType, GeneratorType>::optimize() {
     adjust_mass(_optimization_passes);
-    return std::move(_voronoi_sphere);
-}
+    return std::move(_sphere);
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::adjust_mass(size_t max_passes) {
+void FieldDensityOptimizer<FieldType, GeneratorType>::adjust_mass(size_t max_passes) {
     double target_mass = average_mass();
     std::cout << "Target mass per cell: " << target_mass << std::endl;
 
@@ -227,11 +227,11 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::adjust_mass(size_
     }
 
     print_final_results(target_mass);
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-typename SphericalFieldDensityOptimizer<FieldType, GeneratorType>::PassResult
-SphericalFieldDensityOptimizer<FieldType, GeneratorType>::run_single_pass(double target_mass) {
+typename FieldDensityOptimizer<FieldType, GeneratorType>::PassResult
+FieldDensityOptimizer<FieldType, GeneratorType>::run_single_pass(double target_mass) {
     auto heap = build_cell_mass_heap();
     double start_error = compute_convergence_error(target_mass);
     double current_error = start_error;
@@ -246,11 +246,11 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::run_single_pass(double
     }
 
     return {start_error, current_error, vertex_count};
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-typename SphericalFieldDensityOptimizer<FieldType, GeneratorType>::ProgressResult
-SphericalFieldDensityOptimizer<FieldType, GeneratorType>::check_progress_and_maybe_perturb(
+typename FieldDensityOptimizer<FieldType, GeneratorType>::ProgressResult
+FieldDensityOptimizer<FieldType, GeneratorType>::check_progress_and_maybe_perturb(
     double target_mass,
     const PassResult& pass_result,
     OptimizationState& state
@@ -281,7 +281,7 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::check_progress_and_may
         return {true, PassAction::CONTINUE, 0};
     }
 
-    double rms_error = std::sqrt(pass_result.end_error / _voronoi_sphere->size());
+    double rms_error = std::sqrt(pass_result.end_error / _sphere->size());
     if (rms_error <= ZERO_ERROR_TOLERANCE * target_mass) {
         return {false, PassAction::CONVERGED, 0};
     }
@@ -309,17 +309,17 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::check_progress_and_may
         state.perturbation_attempts++;
         return {true, PassAction::CONTINUE, 0};
     }
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_pass_result(
+void FieldDensityOptimizer<FieldType, GeneratorType>::print_pass_result(
     size_t pass_number,
     size_t max_passes,
     const PassResult& result,
     const ProgressResult& progress
 ) {
-    double start_rms = std::sqrt(result.start_error / _voronoi_sphere->size());
-    double end_rms = std::sqrt(result.end_error / _voronoi_sphere->size());
+    double start_rms = std::sqrt(result.start_error / _sphere->size());
+    double end_rms = std::sqrt(result.end_error / _sphere->size());
 
     std::cout << std::fixed << std::setprecision(6) <<
         "  Pass " << std::setw(3) << pass_number << "/" << max_passes <<
@@ -344,10 +344,10 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_pass_result
     }
 
     std::cout << std::defaultfloat << std::endl;
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_final_results(double target_mass) {
+void FieldDensityOptimizer<FieldType, GeneratorType>::print_final_results(double target_mass) {
     std::cout << std::endl;
     std::cout << "Final cell masses after optimization:" << std::endl;
 
@@ -355,7 +355,7 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_final_resul
     double max_error = 0.0;
 
     size_t i = 0;
-    for (const auto& cell : _voronoi_sphere->cells()) {
+    for (const auto& cell : _sphere->cells()) {
         double cell_mass = mass(cell);
         double error = std::abs(cell_mass - target_mass);
 
@@ -366,27 +366,27 @@ void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::print_final_resul
         i++;
     }
 
-    std::cout << "Average error: " << (total_error / _voronoi_sphere->size()) << std::endl;
+    std::cout << "Average error: " << (total_error / _sphere->size()) << std::endl;
     std::cout << "Max error: " << max_error << std::endl;
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::mass(const Polygon& polygon) const {
+double FieldDensityOptimizer<FieldType, GeneratorType>::mass(const Polygon& polygon) const {
     return _field.mass(polygon);
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::average_mass() const {
-    return _field.total_mass() / _voronoi_sphere->size();
-}
+double FieldDensityOptimizer<FieldType, GeneratorType>::average_mass() const {
+    return _field.total_mass() / _sphere->size();
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex_position(
+double FieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex_position(
     size_t index,
     double target_mass,
     double previous_error
 ) {
-    cgal::Point3 original_position = _voronoi_sphere->site(index);
+    cgal::Point3 original_position = _sphere->site(index);
     VectorS2 original_vector = to_vector_s2(original_position);
     VectorS2 north = detail::antipodal(original_vector);
     detail::TangentBasis basis = detail::build_tangent_basis(north);
@@ -408,7 +408,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
         double run_best_mass_error = initial_error;
         double run_best_cost = initial_error;
         column_vector starting_point = initial_point;
-        _voronoi_sphere->update_site(index, original_position);
+        _sphere->update_site(index, original_position);
 
         auto objective = [&](const column_vector& params) -> double {
             VectorS2 candidate_vec = detail::stereographic_plane_to_sphere(
@@ -420,7 +420,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
             );
             cgal::Point3 candidate = cgal::to_point(candidate_vec);
 
-            _voronoi_sphere->update_site(index, candidate);
+            _sphere->update_site(index, candidate);
 
             double optimization_error = compute_objective_error(target_mass);
             double displacement_angle = distance(original_vector, candidate_vec);
@@ -450,7 +450,7 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
         } catch (...) {
         }
 
-        _voronoi_sphere->update_site(index, run_best_position);
+        _sphere->update_site(index, run_best_position);
         return RunResult{run_best_mass_error, run_best_cost, run_best_position};
     };
 
@@ -458,43 +458,43 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::optimize_vertex
     origin = 0.0, 0.0;
 
     auto initial_result = run_bobyqa(origin, 15);
-    _voronoi_sphere->update_site(index, initial_result.best_position);
+    _sphere->update_site(index, initial_result.best_position);
 
     return initial_result.mass_error;
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-typename SphericalFieldDensityOptimizer<FieldType, GeneratorType>::CellMassHeap
-SphericalFieldDensityOptimizer<FieldType, GeneratorType>::build_cell_mass_heap() {
+typename FieldDensityOptimizer<FieldType, GeneratorType>::CellMassHeap
+FieldDensityOptimizer<FieldType, GeneratorType>::build_cell_mass_heap() {
     CellMassHeap heap;
 
     size_t i = 0;
-    for (const auto& cell : _voronoi_sphere->cells()) {
+    for (const auto& cell : _sphere->cells()) {
         double cell_mass = mass(cell);
         heap.push({i, cell_mass});
         i++;
     }
 
     return heap;
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_convergence_error(double target_mass) {
+double FieldDensityOptimizer<FieldType, GeneratorType>::compute_convergence_error(double target_mass) {
     return compute_mass_error(target_mass);
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_objective_error(double target_mass) {
+double FieldDensityOptimizer<FieldType, GeneratorType>::compute_objective_error(double target_mass) {
     return compute_mass_error(target_mass) +
         CENTROID_DEVIATION_PENALTY * target_mass * target_mass * compute_centroid_deviation_error();
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_mass_error(double target_mass) {
+double FieldDensityOptimizer<FieldType, GeneratorType>::compute_mass_error(double target_mass) {
     std::vector<Polygon> cells;
-    cells.reserve(_voronoi_sphere->size());
+    cells.reserve(_sphere->size());
 
-    for (const auto& cell : _voronoi_sphere->cells()) {
+    for (const auto& cell : _sphere->cells()) {
         cells.push_back(cell);
     }
 
@@ -517,15 +517,15 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_mass_er
     );
 
     return total_error.load();
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_centroid_deviation_error() {
+double FieldDensityOptimizer<FieldType, GeneratorType>::compute_centroid_deviation_error() {
     double total_error = 0.0;
 
     size_t i = 0;
-    for (const auto& cell : _voronoi_sphere->cells()) {
-        VectorS2 site = to_vector_s2(_voronoi_sphere->site(i));
+    for (const auto& cell : _sphere->cells()) {
+        VectorS2 site = to_vector_s2(_sphere->site(i));
         VectorS2 centroid = cell.centroid();
         double deviation = distance(site, centroid);
         total_error += deviation * deviation;
@@ -533,10 +533,10 @@ double SphericalFieldDensityOptimizer<FieldType, GeneratorType>::compute_centroi
     }
 
     return total_error;
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_most_undersized_vertex(
+bool FieldDensityOptimizer<FieldType, GeneratorType>::perturb_most_undersized_vertex(
     double target_mass
 ) {
     auto candidate = find_most_undersized_vertex_with_deficit(target_mass);
@@ -552,18 +552,18 @@ bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_most_unde
     }
 
     return true;
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 std::optional<std::pair<size_t, double>>
-SphericalFieldDensityOptimizer<FieldType, GeneratorType>::find_most_undersized_vertex_with_deficit(
+FieldDensityOptimizer<FieldType, GeneratorType>::find_most_undersized_vertex_with_deficit(
     double target_mass
 ) {
-    size_t best_index = _voronoi_sphere->size();
+    size_t best_index = _sphere->size();
     double largest_deficit = 0.0;
     size_t i = 0;
 
-    for (const auto& cell : _voronoi_sphere->cells()) {
+    for (const auto& cell : _sphere->cells()) {
         double cell_mass = mass(cell);
         double deficit = target_mass - cell_mass;
 
@@ -580,17 +580,17 @@ SphericalFieldDensityOptimizer<FieldType, GeneratorType>::find_most_undersized_v
     }
 
     return std::make_pair(best_index, largest_deficit);
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_vertex_toward_random_point(
+bool FieldDensityOptimizer<FieldType, GeneratorType>::perturb_vertex_toward_random_point(
     size_t index
 ) {
-    if (index >= _voronoi_sphere->size()) {
+    if (index >= _sphere->size()) {
         return false;
     }
 
-    VectorS2 current_vector = to_vector_s2(_voronoi_sphere->site(index));
+    VectorS2 current_vector = to_vector_s2(_sphere->site(index));
     VectorS2 random_vector = _point_generator.generate(1)[0];
 
     double dot = current_vector.dot(random_vector);
@@ -606,35 +606,35 @@ bool SphericalFieldDensityOptimizer<FieldType, GeneratorType>::perturb_vertex_to
         std::cos(PERTURBATION_RADIANS) * current_vector +
         std::sin(PERTURBATION_RADIANS) * tangent_direction;
 
-    _voronoi_sphere->update_site(index, cgal::to_point(new_vector));
+    _sphere->update_site(index, cgal::to_point(new_vector));
 
     return true;
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-typename SphericalFieldDensityOptimizer<FieldType, GeneratorType>::Checkpoint
-SphericalFieldDensityOptimizer<FieldType, GeneratorType>::save_checkpoint() const {
+typename FieldDensityOptimizer<FieldType, GeneratorType>::Checkpoint
+FieldDensityOptimizer<FieldType, GeneratorType>::save_checkpoint() const {
     Checkpoint checkpoint;
-    checkpoint.reserve(_voronoi_sphere->size());
+    checkpoint.reserve(_sphere->size());
 
-    for (size_t i = 0; i < _voronoi_sphere->size(); i++) {
-        checkpoint.push_back(_voronoi_sphere->site(i));
+    for (size_t i = 0; i < _sphere->size(); i++) {
+        checkpoint.push_back(_sphere->site(i));
     }
 
     return checkpoint;
-}
+} // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-void SphericalFieldDensityOptimizer<FieldType, GeneratorType>::restore_checkpoint(
+void FieldDensityOptimizer<FieldType, GeneratorType>::restore_checkpoint(
     const Checkpoint& checkpoint
 ) {
-    auto new_voronoi = std::make_unique<VoronoiSphere>();
+    auto new_voronoi = std::make_unique<Sphere>();
     for (const auto& site : checkpoint) {
         new_voronoi->insert(site);
     }
-    _voronoi_sphere = std::move(new_voronoi);
-}
+    _sphere = std::move(new_voronoi);
+} // namespace globe::voronoi::spherical
 
-}
+} // namespace globe::voronoi::spherical
 
-#endif //GLOBEART_SRC_GLOBE_VORONOI_OPTIMIZERS_SPHERICAL_FIELD_DENSITY_OPTIMIZER_HPP_
+#endif //GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_OPTIMIZERS_FIELD_DENSITY_OPTIMIZER_HPP_

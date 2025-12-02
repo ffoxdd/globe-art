@@ -3,7 +3,7 @@
 #include <vector>
 #include <algorithm>
 
-using namespace globe;
+using namespace globe::voronoi::spherical;
 
 namespace {
 

@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_IO_PLY_EXPORTER_HPP_
 
 #include "mesh/voronoi_sphere_builder.hpp"
-#include "../../voronoi/core/voronoi_sphere.hpp"
+#include "../../voronoi/spherical/core/sphere.hpp"
 #include <CGAL/IO/PLY.h>
 #include <fstream>
 #include <stdexcept>
@@ -11,10 +11,12 @@
 
 namespace globe::io::ply {
 
+using voronoi::spherical::Sphere;
+
 class Exporter {
 public:
     static void save_ply(
-        const VoronoiSphere &voronoi_sphere,
+        const Sphere &sphere,
         const std::string &filename,
         int samples_per_arc = 20,
         double arc_thickness = 0.001
@@ -22,17 +24,17 @@ public:
 
 private:
     using SurfaceMesh = mesh::SurfaceMesh;
-    using VoronoiSphereBuilder = mesh::VoronoiSphereBuilder;
+    using SphereBuilder = mesh::VoronoiSphereBuilder;
 };
 
 inline void Exporter::save_ply(
-    const VoronoiSphere &voronoi_sphere,
+    const Sphere &sphere,
     const std::string &filename,
     int samples_per_arc,
     double arc_thickness
 ) {
-    VoronoiSphereBuilder builder(samples_per_arc, arc_thickness);
-    SurfaceMesh mesh = builder.build(voronoi_sphere);
+    SphereBuilder builder(samples_per_arc, arc_thickness);
+    SurfaceMesh mesh = builder.build(sphere);
 
     std::ofstream stream(filename);
 

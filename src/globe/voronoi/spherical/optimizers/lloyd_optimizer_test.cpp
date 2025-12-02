@@ -1,24 +1,25 @@
-#include "lloyd_voronoi_sphere_optimizer.hpp"
-#include "../core/random_voronoi_sphere_builder.hpp"
+#include "lloyd_optimizer.hpp"
+#include "../core/random_builder.hpp"
 #include <gtest/gtest.h>
 
 using namespace globe;
+using namespace globe::voronoi::spherical;
 
-TEST(LloydVoronoiSphereOptimizerTest, ReducesDeviation) {
-    auto voronoi = RandomVoronoiSphereBuilder().build(10);
+TEST(LloydOptimizerTest, ReducesDeviation) {
+    auto sphere = RandomBuilder().build(10);
 
     double initial_deviation = 0.0;
     size_t index = 0;
-    for (const auto &cell : voronoi->cells()) {
-        VectorS2 site = to_vector_s2(voronoi->site(index));
+    for (const auto &cell : sphere->cells()) {
+        VectorS2 site = to_vector_s2(sphere->site(index));
         VectorS2 centroid = cell.centroid();
         double deviation = distance(site, centroid);
         initial_deviation += deviation * deviation;
         index++;
     }
-    initial_deviation = std::sqrt(initial_deviation / voronoi->size());
+    initial_deviation = std::sqrt(initial_deviation / sphere->size());
 
-    LloydVoronoiSphereOptimizer optimizer(std::move(voronoi), 5);
+    LloydOptimizer optimizer(std::move(sphere), 5);
     auto optimized = optimizer.optimize();
 
     double final_deviation = 0.0;
@@ -35,11 +36,11 @@ TEST(LloydVoronoiSphereOptimizerTest, ReducesDeviation) {
     EXPECT_LT(final_deviation, initial_deviation);
 }
 
-TEST(LloydVoronoiSphereOptimizerTest, PreservesPointCount) {
-    auto voronoi = RandomVoronoiSphereBuilder().build(15);
-    size_t original_size = voronoi->size();
+TEST(LloydOptimizerTest, PreservesPointCount) {
+    auto sphere = RandomBuilder().build(15);
+    size_t original_size = sphere->size();
 
-    LloydVoronoiSphereOptimizer optimizer(std::move(voronoi), 3);
+    LloydOptimizer optimizer(std::move(sphere), 3);
     auto optimized = optimizer.optimize();
 
     EXPECT_EQ(optimized->size(), original_size);

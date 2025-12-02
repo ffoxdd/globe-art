@@ -1,12 +1,13 @@
 #include <gtest/gtest.h>
 #include "voronoi_sphere_builder.hpp"
-#include "../../../voronoi/core/voronoi_sphere.hpp"
+#include "../../../voronoi/spherical/core/sphere.hpp"
 
 using namespace globe;
+using voronoi::spherical::Sphere;
 using namespace globe::io::ply::mesh;
 
-VoronoiSphere create_simple_voronoi_sphere() {
-    VoronoiSphere sphere;
+Sphere create_simple_voronoi_sphere() {
+    Sphere sphere;
 
     sphere.insert(cgal::Point3(1, 0, 0));
     sphere.insert(cgal::Point3(0, 1, 0));
@@ -16,8 +17,8 @@ VoronoiSphere create_simple_voronoi_sphere() {
     return sphere;
 }
 
-TEST(VoronoiSphereBuilderTest, CreatesMeshFromVoronoiSphere) {
-    VoronoiSphere sphere = create_simple_voronoi_sphere();
+TEST(VoronoiSphereBuilderTest, CreatesMeshFromSphere) {
+    Sphere sphere = create_simple_voronoi_sphere();
     VoronoiSphereBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
@@ -27,7 +28,7 @@ TEST(VoronoiSphereBuilderTest, CreatesMeshFromVoronoiSphere) {
 }
 
 TEST(VoronoiSphereBuilderTest, MeshIsValid) {
-    VoronoiSphere sphere = create_simple_voronoi_sphere();
+    Sphere sphere = create_simple_voronoi_sphere();
     VoronoiSphereBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
@@ -37,7 +38,7 @@ TEST(VoronoiSphereBuilderTest, MeshIsValid) {
 }
 
 TEST(VoronoiSphereBuilderTest, MeshHasVerticesForAllArcs) {
-    VoronoiSphere sphere = create_simple_voronoi_sphere();
+    Sphere sphere = create_simple_voronoi_sphere();
     VoronoiSphereBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
@@ -52,7 +53,7 @@ TEST(VoronoiSphereBuilderTest, MeshHasVerticesForAllArcs) {
 }
 
 TEST(VoronoiSphereBuilderTest, HigherSamplesProduceMoreVertices) {
-    VoronoiSphere sphere = create_simple_voronoi_sphere();
+    Sphere sphere = create_simple_voronoi_sphere();
     VoronoiSphereBuilder builder_low(5, 0.001);
     VoronoiSphereBuilder builder_high(50, 0.001);
 
@@ -63,8 +64,8 @@ TEST(VoronoiSphereBuilderTest, HigherSamplesProduceMoreVertices) {
     EXPECT_GT(mesh_high.number_of_faces(), mesh_low.number_of_faces());
 }
 
-TEST(VoronoiSphereBuilderTest, EmptyVoronoiSphereProducesEmptyMesh) {
-    VoronoiSphere sphere;
+TEST(VoronoiSphereBuilderTest, EmptySphereProducesEmptyMesh) {
+    Sphere sphere;
     VoronoiSphereBuilder builder;
 
     SurfaceMesh mesh = builder.build(sphere);
@@ -75,7 +76,7 @@ TEST(VoronoiSphereBuilderTest, EmptyVoronoiSphereProducesEmptyMesh) {
 }
 
 TEST(VoronoiSphereBuilderTest, SinglePointProducesNoMesh) {
-    VoronoiSphere sphere;
+    Sphere sphere;
     sphere.insert(cgal::Point3(1, 0, 0));
     VoronoiSphereBuilder builder;
 
@@ -86,9 +87,9 @@ TEST(VoronoiSphereBuilderTest, SinglePointProducesNoMesh) {
 }
 
 TEST(VoronoiSphereBuilderTest, MorePointsProduceMoreDualArcs) {
-    VoronoiSphere small_sphere = create_simple_voronoi_sphere();
+    Sphere small_sphere = create_simple_voronoi_sphere();
 
-    VoronoiSphere large_sphere = create_simple_voronoi_sphere();
+    Sphere large_sphere = create_simple_voronoi_sphere();
     large_sphere.insert(cgal::Point3(0, -1, 0));
     large_sphere.insert(cgal::Point3(0, 0, -1));
 
