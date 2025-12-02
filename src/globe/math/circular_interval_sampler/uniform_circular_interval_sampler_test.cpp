@@ -2,8 +2,9 @@
 #include "uniform_circular_interval_sampler.hpp"
 #include "../circular_interval.hpp"
 #include "../../geometry/spherical/helpers.hpp"
-#include "../../testing/geometric_assertions.hpp"
-#include "../../testing/statistical_assertions.hpp"
+#include "../../testing/assertions/geometric.hpp"
+#include "../../testing/assertions/statistical.hpp"
+#include "../../testing/macros.hpp"
 
 using namespace globe;
 using globe::testing::compute_statistics;

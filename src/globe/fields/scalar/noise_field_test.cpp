@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include "noise_field.hpp"
-#include "../../testing/geometric_assertions.hpp"
-#include "../../testing/statistical_assertions.hpp"
+#include "../../testing/assertions/geometric.hpp"
+#include "../../testing/assertions/statistical.hpp"
+#include "../../testing/macros.hpp"
 #include "../../math/interval.hpp"
 #include "../../generators/spherical/random_point_generator.hpp"
 

@@ -2,8 +2,9 @@
 #include "random_point_generator.hpp"
 #include "../../geometry/cartesian/bounding_box.hpp"
 #include "../../math/interval.hpp"
-#include "../../testing/geometric_assertions.hpp"
-#include "../../testing/statistical_assertions.hpp"
+#include "../../testing/assertions/geometric.hpp"
+#include "../../testing/assertions/statistical.hpp"
+#include "../../testing/macros.hpp"
 
 using namespace globe::generators::cartesian;
 using globe::BoundingBox;

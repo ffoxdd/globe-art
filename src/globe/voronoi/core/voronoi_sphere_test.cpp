@@ -2,7 +2,7 @@
 #include "voronoi_sphere.hpp"
 #include "../../types.hpp"
 #include "../../geometry/spherical/helpers.hpp"
-#include "../../testing/geometric_assertions.hpp"
+#include "../../testing/assertions/geometric.hpp"
 
 using namespace globe;
 using globe::testing::points_approximately_equal;

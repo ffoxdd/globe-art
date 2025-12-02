@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "rejection_sampling_point_generator.hpp"
 #include "../../fields/scalar/constant_field.hpp"
-#include "../../testing/geometric_assertions.hpp"
+#include "../../testing/assertions/geometric.hpp"
 
 using namespace globe::generators::spherical;
 using globe::fields::scalar::ConstantField;

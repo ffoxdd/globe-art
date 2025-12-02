@@ -1,22 +1,13 @@
-#ifndef GLOBEART_SRC_GLOBE_TESTING_GEOMETRIC_ASSERTIONS_HPP_
-#define GLOBEART_SRC_GLOBE_TESTING_GEOMETRIC_ASSERTIONS_HPP_
+#ifndef GLOBEART_SRC_GLOBE_TESTING_ASSERTIONS_GEOMETRIC_HPP_
+#define GLOBEART_SRC_GLOBE_TESTING_ASSERTIONS_GEOMETRIC_HPP_
 
-#include "../cgal_types.hpp"
-#include "../geometry/cartesian/bounding_box.hpp"
-#include "../math/interval.hpp"
+#include "../../cgal_types.hpp"
+#include "../../geometry/cartesian/bounding_box.hpp"
+#include "../../math/interval.hpp"
 #include <cmath>
-#include <cstdlib>
 #include <gtest/gtest.h>
 
-#define REQUIRE_EXPENSIVE() \
-    do { \
-        const char* env_var = std::getenv("EXPENSIVE"); \
-        if (!env_var || env_var[0] == '\0') { \
-            GTEST_SKIP() << "Skipping expensive test (set EXPENSIVE=1 to run)"; \
-        } \
-    } while (0)
-
-namespace globe::testing {
+namespace globe::testing::assertions {
 
 constexpr double DEFAULT_TOLERANCE = 1e-9;
 
@@ -92,6 +83,15 @@ inline void expect_intervals_equal(
         << "Expected interval high " << expected.high() << " but got " << actual.high();
 }
 
+} // namespace globe::testing::assertions
+
+namespace globe::testing {
+using assertions::DEFAULT_TOLERANCE;
+using assertions::is_on_unit_sphere;
+using assertions::points_approximately_equal;
+using assertions::expect_points_equal;
+using assertions::expect_point_in_box;
+using assertions::expect_intervals_equal;
 }
 
-#endif //GLOBEART_SRC_GLOBE_TESTING_GEOMETRIC_ASSERTIONS_HPP_
+#endif //GLOBEART_SRC_GLOBE_TESTING_ASSERTIONS_GEOMETRIC_HPP_

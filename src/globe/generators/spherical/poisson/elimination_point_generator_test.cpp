@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 #include "elimination_point_generator.hpp"
 #include "../../../geometry/spherical/helpers.hpp"
-#include "../../../testing/geometric_assertions.hpp"
-#include "../../../testing/test_fixtures.hpp"
+#include "../../../testing/assertions/geometric.hpp"
+#include "../../../testing/macros.hpp"
 
 using namespace globe::generators::spherical::poisson;
 using globe::generators::spherical::RandomPointGenerator;

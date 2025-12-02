@@ -1,8 +1,9 @@
 #include <gtest/gtest.h>
 #include "random_point_generator.hpp"
 #include "../../geometry/spherical/bounding_box.hpp"
-#include "../../testing/geometric_assertions.hpp"
-#include "../../testing/statistical_assertions.hpp"
+#include "../../testing/assertions/geometric.hpp"
+#include "../../testing/assertions/statistical.hpp"
+#include "../../testing/macros.hpp"
 #include "../../math/interval.hpp"
 
 using namespace globe::generators::spherical;

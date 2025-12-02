@@ -3,7 +3,8 @@
 #include "../../fields/spherical/linear_field.hpp"
 #include "../../geometry/spherical/arc.hpp"
 #include "../../geometry/spherical/helpers.hpp"
-#include "../../testing/geometric_assertions.hpp"
+#include "../../testing/assertions/geometric.hpp"
+#include "../../testing/macros.hpp"
 #include <gtest/gtest.h>
 #include <cmath>
 

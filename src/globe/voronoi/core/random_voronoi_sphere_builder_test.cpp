@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include "random_voronoi_sphere_builder.hpp"
-#include "../../testing/test_fixtures.hpp"
+#include "../../testing/mocks/point_generator.hpp"
 
 using namespace globe;
-using globe::testing::SequencePointGenerator;
+using globe::testing::mocks::SequencePointGenerator;
 
 TEST(RandomVoronoiSphereBuilderTest, CreatesSphereWithCorrectSize) {
     RandomVoronoiSphereBuilder builder;

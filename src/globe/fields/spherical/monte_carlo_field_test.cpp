@@ -3,7 +3,8 @@
 #include "../scalar/constant_field.hpp"
 #include "../../geometry/spherical/polygon/polygon.hpp"
 #include "../../geometry/spherical/arc.hpp"
-#include "../../testing/geometric_assertions.hpp"
+#include "../../testing/assertions/geometric.hpp"
+#include "../../testing/macros.hpp"
 
 using namespace globe::fields::spherical;
 using globe::fields::scalar::ConstantField;

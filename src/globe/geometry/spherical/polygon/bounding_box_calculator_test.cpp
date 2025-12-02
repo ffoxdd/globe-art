@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "bounding_box_calculator.hpp"
 #include "../arc.hpp"
-#include "../../../testing/geometric_assertions.hpp"
+#include "../../../testing/assertions/geometric.hpp"
 #include <cmath>
 
 using namespace globe;

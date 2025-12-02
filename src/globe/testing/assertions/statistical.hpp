@@ -1,13 +1,13 @@
-#ifndef GLOBEART_SRC_GLOBE_TESTING_STATISTICAL_ASSERTIONS_HPP_
-#define GLOBEART_SRC_GLOBE_TESTING_STATISTICAL_ASSERTIONS_HPP_
+#ifndef GLOBEART_SRC_GLOBE_TESTING_ASSERTIONS_STATISTICAL_HPP_
+#define GLOBEART_SRC_GLOBE_TESTING_ASSERTIONS_STATISTICAL_HPP_
 
 #include <limits>
 #include <vector>
 #include <gtest/gtest.h>
-#include "../cgal_types.hpp"
-#include "../math/interval.hpp"
+#include "../../cgal_types.hpp"
+#include "../../math/interval.hpp"
 
-namespace globe::testing {
+namespace globe::testing::assertions {
 
 struct DistributionMetrics {
     double mean;
@@ -195,6 +195,18 @@ inline void expect_range_coverage(
     }
 }
 
+} // namespace globe::testing::assertions
+
+namespace globe::testing {
+using assertions::DistributionMetrics;
+using assertions::CoordinateMetrics;
+using assertions::compute_statistics;
+using assertions::compute_coordinate_statistics;
+using assertions::expect_mean;
+using assertions::expect_variance;
+using assertions::uniform_distribution_variance;
+using assertions::uniform_distribution_mean;
+using assertions::expect_range_coverage;
 }
 
-#endif //GLOBEART_SRC_GLOBE_TESTING_STATISTICAL_ASSERTIONS_HPP_
+#endif //GLOBEART_SRC_GLOBE_TESTING_ASSERTIONS_STATISTICAL_HPP_

@@ -3,9 +3,10 @@
 #include "uniform_bounding_box_sampler.hpp"
 #include "../bounding_box.hpp"
 #include "../../../math/interval.hpp"
-#include "../../../testing/geometric_assertions.hpp"
-#include "../../../testing/statistical_assertions.hpp"
-#include "../../../testing/test_fixtures.hpp"
+#include "../../../testing/assertions/geometric.hpp"
+#include "../../../testing/assertions/statistical.hpp"
+#include "../../../testing/macros.hpp"
+#include "../../../testing/mocks/interval_sampler.hpp"
 
 using namespace globe;
 using globe::testing::compute_statistics;
@@ -14,7 +15,7 @@ using globe::testing::expect_variance;
 using globe::testing::expect_range_coverage;
 using globe::testing::uniform_distribution_mean;
 using globe::testing::uniform_distribution_variance;
-using globe::testing::SequenceIntervalSampler;
+using globe::testing::mocks::SequenceIntervalSampler;
 
 TEST(UniformBoundingBoxSamplerTest, UsesXFromIntervalSampler) {
     SequenceIntervalSampler sampler({0.25, 0.0, 0.0});

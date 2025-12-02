@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "voronoi_sphere_factory.hpp"
-#include "../../testing/geometric_assertions.hpp"
+#include "../../testing/assertions/geometric.hpp"
+#include "../../testing/macros.hpp"
 
 using namespace globe;
 
