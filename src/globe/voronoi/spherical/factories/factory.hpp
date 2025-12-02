@@ -10,10 +10,12 @@
 #include "../../../fields/scalar/noise_field.hpp"
 #include "../../../fields/spherical/constant_field.hpp"
 #include "../../../fields/spherical/linear_field.hpp"
+#include "../../../fields/spherical/harmonic_field.hpp"
 #include "../../../fields/spherical/sampled_field.hpp"
 #include "../../../generators/spherical/random_point_generator.hpp"
 #include <string>
 #include <memory>
+#include <variant>
 #include <algorithm>
 #include <iostream>
 
@@ -22,8 +24,12 @@ namespace globe::voronoi::spherical {
 using fields::scalar::NoiseField;
 using fields::spherical::ConstantField;
 using fields::spherical::LinearField;
+using fields::spherical::HarmonicField;
 using fields::spherical::SampledField;
 using geometry::spherical::UNIT_SPHERE_AREA;
+
+using AnalyticField = std::variant<ConstantField, LinearField, HarmonicField>;
+using SampledNoiseField = SampledField<NoiseField>;
 
 class Factory {
  public:
@@ -54,14 +60,15 @@ class Factory {
     std::unique_ptr<Sphere> build_initial();
     std::unique_ptr<Sphere> optimize_density(std::unique_ptr<Sphere> sphere);
 
-    std::unique_ptr<Sphere> optimize_ccvd(std::unique_ptr<Sphere> sphere);
-    std::unique_ptr<Sphere> optimize_gradient(std::unique_ptr<Sphere> sphere);
+    AnalyticField create_analytic_field() const;
 
-    std::unique_ptr<Sphere> optimize_constant_ccvd(std::unique_ptr<Sphere> sphere);
-    std::unique_ptr<Sphere> optimize_linear_ccvd(std::unique_ptr<Sphere> sphere);
+    template<fields::spherical::Field FieldType>
+    std::unique_ptr<Sphere> optimize_ccvd(std::unique_ptr<Sphere> sphere, FieldType& field);
+
+    template<fields::spherical::Field FieldType>
+    std::unique_ptr<Sphere> optimize_gradient(std::unique_ptr<Sphere> sphere, FieldType& field);
+
     std::unique_ptr<Sphere> optimize_noise_ccvd(std::unique_ptr<Sphere> sphere);
-    std::unique_ptr<Sphere> optimize_constant_gradient(std::unique_ptr<Sphere> sphere);
-    std::unique_ptr<Sphere> optimize_linear_gradient(std::unique_ptr<Sphere> sphere);
 
     static double nyquist_density(double max_frequency);
     static size_t sample_count(double max_frequency);
@@ -83,7 +90,7 @@ inline Factory::Factory(
     _lloyd_passes(static_cast<size_t>(lloyd_passes)),
     _max_perturbations(static_cast<size_t>(max_perturbations)),
     _progress_callback(std::move(progress_callback)) {
-} // namespace globe::voronoi::spherical
+}
 
 inline std::unique_ptr<Sphere> Factory::build() {
     std::cout << "Generating " << _points_count << " random points..." << std::flush;
@@ -103,63 +110,56 @@ inline std::unique_ptr<Sphere> Factory::build() {
     }
 
     return sphere;
-} // namespace globe::voronoi::spherical
+}
+
+inline AnalyticField Factory::create_analytic_field() const {
+    if (_density_function == "constant") {
+        return ConstantField(1.0);
+    } else if (_density_function == "linear") {
+        return LinearField(2.0, 2.0);
+    } else {
+        return HarmonicField();
+    }
+}
 
 inline std::unique_ptr<Sphere> Factory::optimize_density(
     std::unique_ptr<Sphere> sphere
 ) {
-    if (_optimization_strategy == "gradient") {
-        return optimize_gradient(std::move(sphere));
-    } else {
-        return optimize_ccvd(std::move(sphere));
-    }
-} // namespace globe::voronoi::spherical
-
-inline std::unique_ptr<Sphere> Factory::optimize_ccvd(
-    std::unique_ptr<Sphere> sphere
-) {
-    if (_density_function == "constant") {
-        return optimize_constant_ccvd(std::move(sphere));
-    } else if (_density_function == "linear") {
-        return optimize_linear_ccvd(std::move(sphere));
-    } else {
+    if (_density_function == "noise") {
         return optimize_noise_ccvd(std::move(sphere));
     }
-} // namespace globe::voronoi::spherical
 
-inline std::unique_ptr<Sphere> Factory::optimize_gradient(
-    std::unique_ptr<Sphere> sphere
-) {
-    if (_density_function == "constant") {
-        return optimize_constant_gradient(std::move(sphere));
-    } else if (_density_function == "linear") {
-        return optimize_linear_gradient(std::move(sphere));
-    } else {
-        std::cerr << "Gradient optimization not yet implemented for noise field" << std::endl;
-        return sphere;
-    }
-} // namespace globe::voronoi::spherical
+    auto field = create_analytic_field();
+
+    return std::visit([this, &sphere](auto& f) mutable {
+        if (_optimization_strategy == "gradient") {
+            return optimize_gradient(std::move(sphere), f);
+        } else {
+            return optimize_ccvd(std::move(sphere), f);
+        }
+    }, field);
+}
 
 inline std::unique_ptr<Sphere> Factory::build_initial() {
     RandomBuilder<> builder;
     return builder.build(_points_count);
-} // namespace globe::voronoi::spherical
+}
 
 inline double Factory::nyquist_density(double max_frequency) {
     return 4.0 * max_frequency * max_frequency;
-} // namespace globe::voronoi::spherical
+}
 
 inline size_t Factory::sample_count(double max_frequency) {
     double density = nyquist_density(max_frequency);
     auto count = static_cast<size_t>(UNIT_SPHERE_AREA * density * NYQUIST_SAFETY_FACTOR);
     return std::max(count, MIN_SAMPLES);
-} // namespace globe::voronoi::spherical
+}
 
-inline std::unique_ptr<Sphere> Factory::optimize_constant_ccvd(
-    std::unique_ptr<Sphere> sphere
+template<fields::spherical::Field FieldType>
+std::unique_ptr<Sphere> Factory::optimize_ccvd(
+    std::unique_ptr<Sphere> sphere,
+    FieldType& field
 ) {
-    ConstantField field(1.0);
-
     FieldDensityOptimizer optimizer(
         std::move(sphere),
         field,
@@ -167,21 +167,24 @@ inline std::unique_ptr<Sphere> Factory::optimize_constant_ccvd(
     );
 
     return optimizer.optimize();
-} // namespace globe::voronoi::spherical
+}
 
-inline std::unique_ptr<Sphere> Factory::optimize_linear_ccvd(
-    std::unique_ptr<Sphere> sphere
+template<fields::spherical::Field FieldType>
+std::unique_ptr<Sphere> Factory::optimize_gradient(
+    std::unique_ptr<Sphere> sphere,
+    FieldType& field
 ) {
-    LinearField field(2.0, 2.0);
-
-    FieldDensityOptimizer optimizer(
+    GradientDensityOptimizer<FieldType> optimizer(
         std::move(sphere),
         field,
-        _optimization_passes
+        _optimization_passes,
+        _max_perturbations,
+        generators::spherical::RandomPointGenerator<>(),
+        _progress_callback
     );
 
     return optimizer.optimize();
-} // namespace globe::voronoi::spherical
+}
 
 inline std::unique_ptr<Sphere> Factory::optimize_noise_ccvd(
     std::unique_ptr<Sphere> sphere
@@ -190,7 +193,7 @@ inline std::unique_ptr<Sphere> Factory::optimize_noise_ccvd(
     size_t samples = sample_count(noise_field.max_frequency());
     std::cout << "Sample count: " << samples << std::endl;
 
-    SampledField field(noise_field, generators::spherical::RandomPointGenerator<>(), samples);
+    SampledNoiseField field(noise_field, generators::spherical::RandomPointGenerator<>(), samples);
 
     FieldDensityOptimizer optimizer(
         std::move(sphere),
@@ -199,43 +202,8 @@ inline std::unique_ptr<Sphere> Factory::optimize_noise_ccvd(
     );
 
     return optimizer.optimize();
-} // namespace globe::voronoi::spherical
-
-inline std::unique_ptr<Sphere> Factory::optimize_constant_gradient(
-    std::unique_ptr<Sphere> sphere
-) {
-    ConstantField field(1.0);
-
-    GradientDensityOptimizer optimizer(
-        std::move(sphere),
-        field,
-        _optimization_passes,
-        _max_perturbations,
-        generators::spherical::RandomPointGenerator<>(),
-        _progress_callback
-    );
-
-    return optimizer.optimize();
-} // namespace globe::voronoi::spherical
-
-inline std::unique_ptr<Sphere> Factory::optimize_linear_gradient(
-    std::unique_ptr<Sphere> sphere
-) {
-    LinearField field(2.0, 2.0);
-
-    GradientDensityOptimizer<LinearField> optimizer(
-        std::move(sphere),
-        field,
-        _optimization_passes,
-        _max_perturbations,
-        generators::spherical::RandomPointGenerator<>(),
-        _progress_callback
-    );
-
-    return optimizer.optimize();
-} // namespace globe::voronoi::spherical
+}
 
 } // namespace globe::voronoi::spherical
 
 #endif //GLOBEART_SRC_GLOBE_VORONOI_SPHERICAL_FACTORIES_FACTORY_HPP_
-
