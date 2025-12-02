@@ -11,6 +11,7 @@ class Application {
 public:
     Application(int argc, char *argv[]);
     int run();
+    void process_events();
 
 private:
     std::unique_ptr<QApplication> _app;
@@ -23,6 +24,10 @@ inline Application::Application(int argc, char *argv[]) {
 
 inline int Application::run() {
     return _app->exec();
+}
+
+inline void Application::process_events() {
+    _app->processEvents();
 }
 
 } // namespace globe::io::qt

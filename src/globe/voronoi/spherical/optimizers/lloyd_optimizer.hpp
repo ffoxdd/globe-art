@@ -4,6 +4,7 @@
 #include "../../../types.hpp"
 #include "../../../geometry/spherical/helpers.hpp"
 #include "../core/sphere.hpp"
+#include "../core/progress_callback.hpp"
 #include "../../../geometry/spherical/polygon/polygon.hpp"
 #include <memory>
 #include <cstddef>
@@ -23,7 +24,8 @@ class LloydOptimizer {
 
     LloydOptimizer(
         std::unique_ptr<Sphere> sphere,
-        size_t max_passes = DEFAULT_PASSES
+        size_t max_passes = DEFAULT_PASSES,
+        ProgressCallback progress_callback = no_progress_callback()
     );
 
     std::unique_ptr<Sphere> optimize();
@@ -31,6 +33,7 @@ class LloydOptimizer {
  private:
     std::unique_ptr<Sphere> _sphere;
     size_t _max_passes;
+    ProgressCallback _progress_callback;
 
     double run_single_pass();
     double compute_total_deviation() const;
@@ -38,10 +41,12 @@ class LloydOptimizer {
 
 inline LloydOptimizer::LloydOptimizer(
     std::unique_ptr<Sphere> sphere,
-    size_t max_passes
+    size_t max_passes,
+    ProgressCallback progress_callback
 ) :
     _sphere(std::move(sphere)),
-    _max_passes(max_passes) {
+    _max_passes(max_passes),
+    _progress_callback(std::move(progress_callback)) {
 }
 
 inline std::unique_ptr<Sphere> LloydOptimizer::optimize() {
@@ -69,6 +74,8 @@ inline std::unique_ptr<Sphere> LloydOptimizer::optimize() {
             ": deviation = " << std::setw(10) << final_deviation <<
             ", max_movement = " << std::setw(10) << max_movement <<
             std::defaultfloat << std::endl;
+
+        _progress_callback(*_sphere);
 
         if (max_movement < CONVERGENCE_THRESHOLD) {
             std::cout << "Converged." << std::endl;

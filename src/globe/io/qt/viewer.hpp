@@ -4,6 +4,7 @@
 #include <CGAL/Basic_viewer.h>
 #include <CGAL/Graphics_scene.h>
 #include <CGAL/IO/Color.h>
+#include <CGAL/Qt/qglviewer.h>
 #include <QtWidgets/QWidget>
 #include <QtGui/QKeyEvent>
 #include <functional>
@@ -19,7 +20,7 @@ const Color BLACK(0, 0, 0);
 const Color BLUE(0, 0, 255);
 const Color RED(255, 0, 0);
 
-constexpr int ARC_SEGMENTS = 50;
+constexpr int ARC_SEGMENTS = 20;
 
 class Viewer final : public ::CGAL::Qt::Basic_viewer {
 public:
@@ -42,6 +43,7 @@ public:
     void clear();
     void show();
     void redraw() override;
+    void center_on_unit_sphere();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -60,6 +62,8 @@ inline Viewer::Viewer(
     _key_press_callback(key_press_callback) {
     draw_vertices(true);
     size_vertices(5.0f);
+    setAxisIsDrawn(false);
+    setGridIsDrawn(false);
 }
 
 inline void Viewer::add_point(const VectorS2 &point, const Color &color) {
@@ -93,6 +97,12 @@ inline void Viewer::show() {
 
 inline void Viewer::redraw() {
     ::CGAL::Qt::Basic_viewer::redraw();
+}
+
+inline void Viewer::center_on_unit_sphere() {
+    this->camera()->setSceneRadius(1.05);
+    this->camera()->setSceneCenter(CGAL::qglviewer::Vec(0, 0, 0));
+    this->showEntireScene();
 }
 
 inline void Viewer::keyPressEvent(QKeyEvent *event) {

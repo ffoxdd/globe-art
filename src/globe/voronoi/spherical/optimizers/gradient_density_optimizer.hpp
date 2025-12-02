@@ -10,6 +10,7 @@
 #include "../../../generators/spherical/point_generator.hpp"
 #include "../../../generators/spherical/random_point_generator.hpp"
 #include "../core/sphere.hpp"
+#include "../core/progress_callback.hpp"
 #include <Eigen/Core>
 #include <LBFGS.h>
 #include <memory>
@@ -41,7 +42,8 @@ class GradientDensityOptimizer {
         FieldType field,
         size_t max_iterations = DEFAULT_ITERATIONS,
         size_t max_perturbations = DEFAULT_MAX_PERTURBATIONS,
-        GeneratorType point_generator = GeneratorType()
+        GeneratorType point_generator = GeneratorType(),
+        ProgressCallback progress_callback = no_progress_callback()
     );
 
     std::unique_ptr<Sphere> optimize();
@@ -51,14 +53,17 @@ class GradientDensityOptimizer {
 
     class ObjectiveFunctor {
      public:
-        ObjectiveFunctor(GradientDensityOptimizer& optimizer);
+        ObjectiveFunctor(GradientDensityOptimizer& optimizer, size_t start_iteration);
         double operator()(const Eigen::VectorXd& x, Eigen::VectorXd& grad);
 
         size_t iteration_count() const { return _iteration_count; }
         double last_rms_error() const { return _last_rms_error; }
 
      private:
+        static constexpr size_t LOG_INTERVAL = 10;
+
         GradientDensityOptimizer& _optimizer;
+        size_t _start_iteration;
         size_t _iteration_count = 0;
         double _last_rms_error = 0.0;
     };
@@ -69,6 +74,7 @@ class GradientDensityOptimizer {
     size_t _max_perturbations;
     double _target_mass;
     GeneratorType _point_generator;
+    ProgressCallback _progress_callback;
 
     Eigen::VectorXd sites_to_vector() const;
     void vector_to_sites_normalized(const Eigen::VectorXd& x);
@@ -81,7 +87,7 @@ class GradientDensityOptimizer {
     double compute_total_error(const std::vector<double>& mass_errors) const;
     double compute_error() const;
 
-    int run_lbfgs_phase(size_t max_iterations);
+    int run_lbfgs_phase(size_t max_iterations, size_t start_iteration);
 
     Checkpoint save_checkpoint() const;
     void restore_checkpoint(const Checkpoint& checkpoint);
@@ -95,20 +101,23 @@ GradientDensityOptimizer<FieldType, GeneratorType>::GradientDensityOptimizer(
     FieldType field,
     size_t max_iterations,
     size_t max_perturbations,
-    GeneratorType point_generator
+    GeneratorType point_generator,
+    ProgressCallback progress_callback
 ) :
     _sphere(std::move(voronoi_sphere)),
     _field(std::move(field)),
     _max_iterations(max_iterations),
     _max_perturbations(max_perturbations),
     _target_mass(0.0),
-    _point_generator(std::move(point_generator)) {
+    _point_generator(std::move(point_generator)),
+    _progress_callback(std::move(progress_callback)) {
 } // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::ObjectiveFunctor(
-    GradientDensityOptimizer& optimizer
-) : _optimizer(optimizer) {}
+    GradientDensityOptimizer& optimizer,
+    size_t start_iteration
+) : _optimizer(optimizer), _start_iteration(start_iteration) {}
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 double GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::operator()(
@@ -123,11 +132,21 @@ double GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::ope
     _last_rms_error = std::sqrt(2.0 * error / _optimizer._sphere->size());
     ++_iteration_count;
 
+    if (_iteration_count % LOG_INTERVAL == 0) {
+        size_t global_iteration = _start_iteration + _iteration_count;
+        std::cout << "      [" << std::setw(4) << global_iteration <<
+            "] RMS " << std::fixed << std::setprecision(8) << _last_rms_error <<
+            std::defaultfloat << std::endl;
+    }
+
     return error;
 } // namespace globe::voronoi::spherical
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
-int GradientDensityOptimizer<FieldType, GeneratorType>::run_lbfgs_phase(size_t max_iterations) {
+int GradientDensityOptimizer<FieldType, GeneratorType>::run_lbfgs_phase(
+    size_t max_iterations,
+    size_t start_iteration
+) {
     LBFGSpp::LBFGSParam<double> param;
     param.m = LBFGS_HISTORY_SIZE;
     param.epsilon = CONVERGENCE_THRESHOLD;
@@ -136,7 +155,7 @@ int GradientDensityOptimizer<FieldType, GeneratorType>::run_lbfgs_phase(size_t m
     param.delta = 1e-8;
 
     LBFGSpp::LBFGSSolver<double> solver(param);
-    ObjectiveFunctor functor(*this);
+    ObjectiveFunctor functor(*this, start_iteration);
 
     Eigen::VectorXd x = sites_to_vector();
     double fx;
@@ -171,8 +190,10 @@ std::unique_ptr<Sphere> GradientDensityOptimizer<FieldType, GeneratorType>::opti
         size_t phase_iterations = std::min(remaining, static_cast<size_t>(100));
         size_t start_iteration = total_iterations;
 
-        int result = run_lbfgs_phase(phase_iterations);
+        int result = run_lbfgs_phase(phase_iterations, start_iteration);
         total_iterations += (result > 0) ? static_cast<size_t>(result) : phase_iterations;
+
+        _progress_callback(*_sphere);
 
         double error = compute_error();
         double rms_error = std::sqrt(2.0 * error / _sphere->size());
@@ -195,7 +216,6 @@ std::unique_ptr<Sphere> GradientDensityOptimizer<FieldType, GeneratorType>::opti
             perturbations_since_best = 0;
             restores_to_current_best = 0;
             stalled_phases = 0;
-            std::cout << " [new best]" << std::endl;
         } else {
             ++stalled_phases;
         }
@@ -229,11 +249,21 @@ std::unique_ptr<Sphere> GradientDensityOptimizer<FieldType, GeneratorType>::opti
             auto undersized = find_most_undersized_index();
             if (undersized.has_value() && perturb_site_randomly(undersized.value())) {
                 ++perturbation_attempts;
-                std::cout << " [perturb #" << perturbation_attempts << "]" << std::endl;
+                if (is_new_best) {
+                    std::cout << " [new best, perturb #" << perturbation_attempts << "]" << std::endl;
+                } else {
+                    std::cout << " [perturb #" << perturbation_attempts << "]" << std::endl;
+                }
             } else {
-                std::cout << std::endl;
+                if (is_new_best) {
+                    std::cout << " [new best]" << std::endl;
+                } else {
+                    std::cout << std::endl;
+                }
             }
-        } else if (!is_new_best) {
+        } else if (is_new_best) {
+            std::cout << " [new best]" << std::endl;
+        } else {
             std::cout << std::endl;
         }
     }

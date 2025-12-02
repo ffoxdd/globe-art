@@ -3,6 +3,7 @@
 
 #include "../core/sphere.hpp"
 #include "../core/random_builder.hpp"
+#include "../core/progress_callback.hpp"
 #include "../optimizers/field_density_optimizer.hpp"
 #include "../optimizers/gradient_density_optimizer.hpp"
 #include "../optimizers/lloyd_optimizer.hpp"
@@ -10,6 +11,7 @@
 #include "../../../fields/spherical/constant_field.hpp"
 #include "../../../fields/spherical/linear_field.hpp"
 #include "../../../fields/spherical/sampled_field.hpp"
+#include "../../../generators/spherical/random_point_generator.hpp"
 #include <string>
 #include <memory>
 #include <algorithm>
@@ -31,7 +33,8 @@ class Factory {
         std::string optimization_strategy,
         int optimization_passes,
         int lloyd_passes,
-        int max_perturbations = 50
+        int max_perturbations = 50,
+        ProgressCallback progress_callback = no_progress_callback()
     );
 
     std::unique_ptr<Sphere> build();
@@ -46,6 +49,7 @@ class Factory {
     size_t _optimization_passes;
     size_t _lloyd_passes;
     size_t _max_perturbations;
+    ProgressCallback _progress_callback;
 
     std::unique_ptr<Sphere> build_initial();
     std::unique_ptr<Sphere> optimize_density(std::unique_ptr<Sphere> sphere);
@@ -69,14 +73,16 @@ inline Factory::Factory(
     std::string optimization_strategy,
     int optimization_passes,
     int lloyd_passes,
-    int max_perturbations
+    int max_perturbations,
+    ProgressCallback progress_callback
 ) :
     _points_count(points_count),
     _density_function(std::move(density_function)),
     _optimization_strategy(std::move(optimization_strategy)),
     _optimization_passes(static_cast<size_t>(optimization_passes)),
     _lloyd_passes(static_cast<size_t>(lloyd_passes)),
-    _max_perturbations(static_cast<size_t>(max_perturbations)) {
+    _max_perturbations(static_cast<size_t>(max_perturbations)),
+    _progress_callback(std::move(progress_callback)) {
 } // namespace globe::voronoi::spherical
 
 inline std::unique_ptr<Sphere> Factory::build() {
@@ -89,7 +95,7 @@ inline std::unique_ptr<Sphere> Factory::build() {
 
     for (size_t i = 0; i < _lloyd_passes; i++) {
         std::cout << "Lloyd pass " << (i + 1) << "/" << _lloyd_passes << "..." << std::endl;
-        LloydOptimizer lloyd_optimizer(std::move(sphere), 1);
+        LloydOptimizer lloyd_optimizer(std::move(sphere), 1, _progress_callback);
         sphere = lloyd_optimizer.optimize();
 
         std::cout << "Density optimization " << (i + 1) << "/" << _lloyd_passes << "..." << std::endl;
@@ -204,7 +210,9 @@ inline std::unique_ptr<Sphere> Factory::optimize_constant_gradient(
         std::move(sphere),
         field,
         _optimization_passes,
-        _max_perturbations
+        _max_perturbations,
+        generators::spherical::RandomPointGenerator<>(),
+        _progress_callback
     );
 
     return optimizer.optimize();
@@ -219,7 +227,9 @@ inline std::unique_ptr<Sphere> Factory::optimize_linear_gradient(
         std::move(sphere),
         field,
         _optimization_passes,
-        _max_perturbations
+        _max_perturbations,
+        generators::spherical::RandomPointGenerator<>(),
+        _progress_callback
     );
 
     return optimizer.optimize();

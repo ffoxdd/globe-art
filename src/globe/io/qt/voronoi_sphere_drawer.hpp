@@ -5,6 +5,7 @@
 #include "../../voronoi/spherical/core/sphere.hpp"
 #include <memory>
 #include <string>
+#include <chrono>
 
 namespace globe::io::qt {
 
@@ -13,21 +14,38 @@ using voronoi::spherical::Sphere;
 class SphereDrawer {
 public:
     SphereDrawer(const std::string &window_title = "Sphere");
+    void show();
     void show(const Sphere &sphere);
+    void update(const Sphere &sphere);
 
 private:
     std::string _window_title;
     std::unique_ptr<Viewer> _viewer;
+    bool _has_centered = false;
 
+    void ensure_viewer();
     void draw(const Sphere &sphere);
+    void center_if_needed();
 };
 
 inline SphereDrawer::SphereDrawer(const std::string &window_title) :
     _window_title(window_title) {
 }
 
+inline void SphereDrawer::ensure_viewer() {
+    if (!_viewer) {
+        _viewer = std::make_unique<Viewer>(nullptr, _window_title);
+    }
+}
+
+inline void SphereDrawer::show() {
+    ensure_viewer();
+    _viewer->show();
+}
+
 inline void SphereDrawer::show(const Sphere &sphere) {
-    _viewer = std::make_unique<Viewer>(nullptr, _window_title);
+    ensure_viewer();
+    _viewer->clear();
     draw(sphere);
     _viewer->show();
 }
@@ -36,6 +54,21 @@ inline void SphereDrawer::draw(const Sphere &sphere) {
     for (const auto &arc : sphere.arcs()) {
         _viewer->add_arc(arc, Color(140, 140, 140));
     }
+}
+
+inline void SphereDrawer::center_if_needed() {
+    if (!_has_centered) {
+        _viewer->center_on_unit_sphere();
+        _has_centered = true;
+    }
+}
+
+inline void SphereDrawer::update(const Sphere &sphere) {
+    ensure_viewer();
+    _viewer->clear();
+    draw(sphere);
+    center_if_needed();
+    _viewer->redraw();
 }
 
 } // namespace globe::io::qt

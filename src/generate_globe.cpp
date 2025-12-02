@@ -1,15 +1,19 @@
 #include "globe/voronoi/spherical/factories/factory.hpp"
+#include "globe/voronoi/spherical/core/progress_callback.hpp"
 #include "globe/io/qt/application.hpp"
 #include "globe/io/qt/voronoi_sphere_drawer.hpp"
 #include <CLI/CLI.hpp>
 #include <iostream>
 #include <string>
+#include <memory>
 
 using namespace globe;
 using io::qt::Application;
 using io::qt::SphereDrawer;
 using voronoi::spherical::Factory;
 using voronoi::spherical::Sphere;
+using voronoi::spherical::ProgressCallback;
+using voronoi::spherical::no_progress_callback;
 
 struct Config {
     int points_count;
@@ -22,7 +26,6 @@ struct Config {
 };
 
 Config parse_arguments(int argc, char *argv[]);
-int render(const Sphere &sphere, bool perform_render, int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
     Config config = parse_arguments(argc, argv);
@@ -38,22 +41,40 @@ int main(int argc, char *argv[]) {
         "  Max perturbations: " << config.max_perturbations << std::endl <<
         std::endl;
 
+    std::unique_ptr<Application> application;
+    std::unique_ptr<SphereDrawer> drawer;
+    ProgressCallback progress_callback = no_progress_callback();
+
+    if (config.perform_render) {
+        application = std::make_unique<Application>(argc, argv);
+        drawer = std::make_unique<SphereDrawer>("Globe");
+        drawer->show();
+        application->process_events();
+
+        progress_callback = [&application, &drawer](const Sphere &sphere) {
+            drawer->update(sphere);
+            application->process_events();
+        };
+    }
+
     Factory factory(
         config.points_count,
         config.density_field,
         config.optimization_strategy,
         config.optimization_passes,
         config.lloyd_passes,
-        config.max_perturbations
+        config.max_perturbations,
+        progress_callback
     );
 
     auto sphere = factory.build();
 
-    return render(
-        *sphere,
-        config.perform_render,
-        argc, argv
-    );
+    if (config.perform_render) {
+        drawer->show(*sphere);
+        return application->run();
+    }
+
+    return 0;
 }
 
 Config parse_arguments(int argc, char *argv[]) {
@@ -101,20 +122,4 @@ Config parse_arguments(int argc, char *argv[]) {
     }
 
     return config;
-}
-
-int render(
-    const Sphere &sphere,
-    bool perform_render,
-    int argc,
-    char *argv[]
-) {
-    if (!perform_render) {
-        return 0;
-    }
-
-    Application application(argc, argv);
-    SphereDrawer drawer("Globe");
-    drawer.show(sphere);
-    return application.run();
 }
