@@ -5,7 +5,6 @@
 #include "../../../cgal/types.hpp"
 #include "../../../types.hpp"
 #include "../../../geometry/spherical/arc.hpp"
-#include <Eigen/Geometry>
 #include <map>
 
 namespace globe::io::ply::mesh {

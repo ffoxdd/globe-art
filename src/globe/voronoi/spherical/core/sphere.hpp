@@ -16,7 +16,7 @@
 namespace globe::voronoi::spherical {
 
 using geometry::spherical::Arc;
-using geometry::spherical::polygon::Polygon;
+using geometry::spherical::Polygon;
 
 struct CellEdgeInfo {
     size_t neighbor_index;

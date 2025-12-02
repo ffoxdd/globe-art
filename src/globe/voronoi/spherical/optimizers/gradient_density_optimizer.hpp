@@ -28,11 +28,11 @@ template<
 class GradientDensityOptimizer {
  public:
     static constexpr size_t DEFAULT_ITERATIONS = 100;
+    static constexpr size_t DEFAULT_MAX_PERTURBATIONS = 50;
     static constexpr double CONVERGENCE_THRESHOLD = 1e-8;
     static constexpr size_t LBFGS_HISTORY_SIZE = 6;
 
     static constexpr double PERTURBATION_ANGLE = 0.05;
-    static constexpr size_t MAX_PERTURBATION_ATTEMPTS = 50;
     static constexpr size_t MAX_PERTURBATIONS_BEFORE_RESTORE = 5;
     static constexpr size_t MAX_RESTORES_PER_CHECKPOINT = 3;
 
@@ -40,6 +40,7 @@ class GradientDensityOptimizer {
         std::unique_ptr<Sphere> voronoi_sphere,
         FieldType field,
         size_t max_iterations = DEFAULT_ITERATIONS,
+        size_t max_perturbations = DEFAULT_MAX_PERTURBATIONS,
         GeneratorType point_generator = GeneratorType()
     );
 
@@ -65,6 +66,7 @@ class GradientDensityOptimizer {
     std::unique_ptr<Sphere> _sphere;
     FieldType _field;
     size_t _max_iterations;
+    size_t _max_perturbations;
     double _target_mass;
     GeneratorType _point_generator;
 
@@ -92,11 +94,13 @@ GradientDensityOptimizer<FieldType, GeneratorType>::GradientDensityOptimizer(
     std::unique_ptr<Sphere> voronoi_sphere,
     FieldType field,
     size_t max_iterations,
+    size_t max_perturbations,
     GeneratorType point_generator
 ) :
     _sphere(std::move(voronoi_sphere)),
     _field(std::move(field)),
     _max_iterations(max_iterations),
+    _max_perturbations(max_perturbations),
     _target_mass(0.0),
     _point_generator(std::move(point_generator)) {
 } // namespace globe::voronoi::spherical
@@ -216,7 +220,7 @@ std::unique_ptr<Sphere> GradientDensityOptimizer<FieldType, GeneratorType>::opti
                 continue;
             }
 
-            if (perturbation_attempts >= MAX_PERTURBATION_ATTEMPTS) {
+            if (perturbation_attempts >= _max_perturbations) {
                 std::cout << " [max perturb]" << std::endl;
                 break;
             }

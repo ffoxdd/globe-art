@@ -18,6 +18,7 @@ struct Config {
     bool perform_render;
     int optimization_passes;
     int lloyd_passes;
+    int max_perturbations;
 };
 
 Config parse_arguments(int argc, char *argv[]);
@@ -34,6 +35,7 @@ int main(int argc, char *argv[]) {
         "  Render: " << (config.perform_render ? "yes" : "no") << std::endl <<
         "  Optimization passes: " << config.optimization_passes << std::endl <<
         "  Lloyd passes: " << config.lloyd_passes << std::endl <<
+        "  Max perturbations: " << config.max_perturbations << std::endl <<
         std::endl;
 
     Factory factory(
@@ -41,7 +43,8 @@ int main(int argc, char *argv[]) {
         config.density_field,
         config.optimization_strategy,
         config.optimization_passes,
-        config.lloyd_passes
+        config.lloyd_passes,
+        config.max_perturbations
     );
 
     auto sphere = factory.build();
@@ -78,12 +81,17 @@ Config parse_arguments(int argc, char *argv[]) {
 
     app.add_option("--optimization-passes", config.optimization_passes)
         ->description("Number of optimization passes")
-        ->default_val(10)
+        ->default_val(100)
         ->check(CLI::PositiveNumber);
 
     app.add_option("--lloyd-passes", config.lloyd_passes)
         ->description("Number of Lloyd relaxation passes")
         ->default_val(4)
+        ->check(CLI::NonNegativeNumber);
+
+    app.add_option("--max-perturbations", config.max_perturbations)
+        ->description("Maximum perturbation attempts for gradient optimizer")
+        ->default_val(50)
         ->check(CLI::NonNegativeNumber);
 
     try {

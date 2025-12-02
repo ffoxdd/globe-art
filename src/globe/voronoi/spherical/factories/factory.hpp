@@ -30,7 +30,8 @@ class Factory {
         std::string density_function,
         std::string optimization_strategy,
         int optimization_passes,
-        int lloyd_passes
+        int lloyd_passes,
+        int max_perturbations = 50
     );
 
     std::unique_ptr<Sphere> build();
@@ -44,6 +45,7 @@ class Factory {
     std::string _optimization_strategy;
     size_t _optimization_passes;
     size_t _lloyd_passes;
+    size_t _max_perturbations;
 
     std::unique_ptr<Sphere> build_initial();
     std::unique_ptr<Sphere> optimize_density(std::unique_ptr<Sphere> sphere);
@@ -66,13 +68,15 @@ inline Factory::Factory(
     std::string density_function,
     std::string optimization_strategy,
     int optimization_passes,
-    int lloyd_passes
+    int lloyd_passes,
+    int max_perturbations
 ) :
     _points_count(points_count),
     _density_function(std::move(density_function)),
     _optimization_strategy(std::move(optimization_strategy)),
     _optimization_passes(static_cast<size_t>(optimization_passes)),
-    _lloyd_passes(static_cast<size_t>(lloyd_passes)) {
+    _lloyd_passes(static_cast<size_t>(lloyd_passes)),
+    _max_perturbations(static_cast<size_t>(max_perturbations)) {
 } // namespace globe::voronoi::spherical
 
 inline std::unique_ptr<Sphere> Factory::build() {
@@ -194,7 +198,8 @@ inline std::unique_ptr<Sphere> Factory::optimize_constant_gradient(
     GradientDensityOptimizer optimizer(
         std::move(sphere),
         field,
-        _optimization_passes
+        _optimization_passes,
+        _max_perturbations
     );
 
     return optimizer.optimize();
@@ -205,10 +210,11 @@ inline std::unique_ptr<Sphere> Factory::optimize_linear_gradient(
 ) {
     LinearField field(2.0, 2.0);
 
-    GradientDensityOptimizer optimizer(
+    GradientDensityOptimizer<LinearField> optimizer(
         std::move(sphere),
         field,
-        _optimization_passes
+        _optimization_passes,
+        _max_perturbations
     );
 
     return optimizer.optimize();
