@@ -155,6 +155,7 @@ template<fields::spherical::Field FieldType, generators::spherical::PointGenerat
 std::unique_ptr<Sphere> GradientDensityOptimizer<FieldType, GeneratorType>::optimize() {
     _target_mass = _field.total_mass() / _sphere->size();
     std::cout << "Target mass per cell: " << _target_mass << std::endl;
+    std::cout << "Running L-BFGS optimization..." << std::endl;
 
     double best_error = std::numeric_limits<double>::max();
     Checkpoint best_checkpoint = save_checkpoint();
