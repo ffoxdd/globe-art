@@ -9,9 +9,7 @@
 #include <algorithm>
 #include <numeric>
 
-namespace globe {
-
-class Interval;
+namespace globe::math {
 
 class Interval {
  public:
@@ -115,6 +113,11 @@ Interval Interval::hull(const IntervalRange &intervals) {
     );
 }
 
-} // namespace globe
+} // namespace globe::math
+
+namespace globe {
+using Interval = math::Interval;
+inline const Interval UNIT_INTERVAL = math::UNIT_INTERVAL;
+}
 
 #endif //GLOBEART_SRC_GLOBE_NOISE_GENERATOR_RANGE_H_

@@ -5,6 +5,7 @@
 #include "../bounding_box.hpp"
 #include "../helpers.hpp"
 #include "../../../math/interval_sampler/interval_sampler.hpp"
+#include "../../../math/interval_sampler/uniform_interval_sampler.hpp"
 #include "../../../math/circular_interval_sampler/uniform_circular_interval_sampler.hpp"
 #include <cmath>
 

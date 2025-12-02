@@ -8,7 +8,7 @@
 #include <numeric>
 #include <ranges>
 
-namespace globe {
+namespace globe::math {
 
 template<double PERIOD>
 class CircularInterval {
@@ -188,6 +188,11 @@ double CircularInterval<PERIOD>::measure_to_cover(
     return std::min(dist_to_other_end, PERIOD);
 }
 
-} // namespace globe
+} // namespace globe::math
+
+namespace globe {
+template<double PERIOD>
+using CircularInterval = math::CircularInterval<PERIOD>;
+}
 
 #endif //GLOBEART_SRC_GLOBE_MATH_CIRCULAR_INTERVAL_HPP_

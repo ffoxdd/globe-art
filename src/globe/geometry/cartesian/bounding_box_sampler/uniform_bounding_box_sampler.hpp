@@ -4,6 +4,7 @@
 #include "../../../cgal_types.hpp"
 #include "../bounding_box.hpp"
 #include "../../../math/interval_sampler/interval_sampler.hpp"
+#include "../../../math/interval_sampler/uniform_interval_sampler.hpp"
 
 namespace globe::geometry::cartesian {
 

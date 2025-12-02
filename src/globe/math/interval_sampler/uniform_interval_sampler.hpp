@@ -4,7 +4,7 @@
 #include "../interval.hpp"
 #include <random>
 
-namespace globe {
+namespace globe::math {
 
 class UniformIntervalSampler {
  public:
@@ -24,6 +24,10 @@ class UniformIntervalSampler {
     }
 };
 
+} // namespace globe::math
+
+namespace globe {
+using UniformIntervalSampler = math::UniformIntervalSampler;
 }
 
 #endif //GLOBEART_SRC_GLOBE_MATH_INTERVAL_SAMPLER_UNIFORM_INTERVAL_SAMPLER_HPP_

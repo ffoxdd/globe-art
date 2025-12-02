@@ -2,9 +2,9 @@
 - Make GradientDensityOptimizer mention that it's for VoronoiSpheres
 - Make scalar fields act on Euclidean vectors
 - See if we can use Arc#interpolate instead of the free helper
-- Consider moving geometry/spherical/bounding_box_sampler.hpp
 - Consider making CircularInterval::hull non-commutative
 - Consider not providing concrete default template arguments
+- Make our own precondition macro
 
 
 ## Future Refactoring

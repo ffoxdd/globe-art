@@ -4,7 +4,7 @@
 #include "../circular_interval.hpp"
 #include <random>
 
-namespace globe {
+namespace globe::math {
 
 class UniformCircularIntervalSampler {
  public:
@@ -23,6 +23,10 @@ class UniformCircularIntervalSampler {
     std::uniform_real_distribution<double> _distribution{0.0, 1.0};
 };
 
+} // namespace globe::math
+
+namespace globe {
+using UniformCircularIntervalSampler = math::UniformCircularIntervalSampler;
 }
 
 #endif //GLOBEART_SRC_GLOBE_MATH_CIRCULAR_INTERVAL_SAMPLER_UNIFORM_CIRCULAR_INTERVAL_SAMPLER_HPP_
