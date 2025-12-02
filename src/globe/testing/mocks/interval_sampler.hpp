@@ -7,9 +7,9 @@
 
 namespace globe::testing::mocks {
 
-class SequenceIntervalSampler {
+class MockIntervalSampler {
  public:
-    explicit SequenceIntervalSampler(std::vector<double> sequence)
+    explicit MockIntervalSampler(std::vector<double> sequence)
         : _sequence(std::move(sequence)), _index(0) {}
 
     [[nodiscard]] double sample(const Interval& interval) {

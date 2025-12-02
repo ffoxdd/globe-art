@@ -15,10 +15,10 @@ using globe::testing::expect_variance;
 using globe::testing::expect_range_coverage;
 using globe::testing::uniform_distribution_mean;
 using globe::testing::uniform_distribution_variance;
-using globe::testing::mocks::SequenceIntervalSampler;
+using globe::testing::mocks::MockIntervalSampler;
 
 TEST(UniformBoundingBoxSamplerTest, UsesXFromIntervalSampler) {
-    SequenceIntervalSampler sampler({0.25, 0.0, 0.0});
+    MockIntervalSampler sampler({0.25, 0.0, 0.0});
     UniformBoundingBoxSampler bounding_box_sampler(sampler);
     BoundingBox box(Interval(0.0, 4.0), Interval(0.0, 1.0), Interval(0.0, 1.0));
 
@@ -28,7 +28,7 @@ TEST(UniformBoundingBoxSamplerTest, UsesXFromIntervalSampler) {
 }
 
 TEST(UniformBoundingBoxSamplerTest, UsesYFromIntervalSampler) {
-    SequenceIntervalSampler sampler({0.0, 0.5, 0.0});
+    MockIntervalSampler sampler({0.0, 0.5, 0.0});
     UniformBoundingBoxSampler bounding_box_sampler(sampler);
     BoundingBox box(Interval(0.0, 1.0), Interval(2.0, 6.0), Interval(0.0, 1.0));
 
@@ -38,7 +38,7 @@ TEST(UniformBoundingBoxSamplerTest, UsesYFromIntervalSampler) {
 }
 
 TEST(UniformBoundingBoxSamplerTest, UsesZFromIntervalSampler) {
-    SequenceIntervalSampler sampler({0.0, 0.0, 0.75});
+    MockIntervalSampler sampler({0.0, 0.0, 0.75});
     UniformBoundingBoxSampler bounding_box_sampler(sampler);
     BoundingBox box(Interval(0.0, 1.0), Interval(0.0, 1.0), Interval(-2.0, 2.0));
 

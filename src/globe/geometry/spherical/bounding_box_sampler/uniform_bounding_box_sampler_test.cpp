@@ -17,12 +17,12 @@ using globe::testing::expect_variance;
 using globe::testing::expect_range_coverage;
 using globe::testing::uniform_distribution_mean;
 using globe::testing::uniform_distribution_variance;
-using globe::testing::mocks::SequenceIntervalSampler;
-using globe::testing::mocks::SequenceCircularIntervalSampler;
+using globe::testing::mocks::MockIntervalSampler;
+using globe::testing::mocks::MockCircularIntervalSampler;
 
 TEST(UniformSphericalBoundingBoxSamplerTest, ProducesPointOnUnitSphere) {
-    SequenceIntervalSampler z_sampler({0.5});
-    SequenceCircularIntervalSampler theta_sampler({0.25});
+    MockIntervalSampler z_sampler({0.5});
+    MockCircularIntervalSampler theta_sampler({0.25});
     UniformSphericalBoundingBoxSampler sampler(z_sampler, theta_sampler);
     SphericalBoundingBox box{ThetaInterval::full(), Interval(-1.0, 1.0)};
 
@@ -32,8 +32,8 @@ TEST(UniformSphericalBoundingBoxSamplerTest, ProducesPointOnUnitSphere) {
 }
 
 TEST(UniformSphericalBoundingBoxSamplerTest, UsesZFromIntervalSampler) {
-    SequenceIntervalSampler z_sampler({0.75});
-    SequenceCircularIntervalSampler theta_sampler({0.0});
+    MockIntervalSampler z_sampler({0.75});
+    MockCircularIntervalSampler theta_sampler({0.0});
     UniformSphericalBoundingBoxSampler sampler(z_sampler, theta_sampler);
     SphericalBoundingBox box{ThetaInterval::full(), Interval(0.0, 1.0)};
 
@@ -43,8 +43,8 @@ TEST(UniformSphericalBoundingBoxSamplerTest, UsesZFromIntervalSampler) {
 }
 
 TEST(UniformSphericalBoundingBoxSamplerTest, UsesThetaFromCircularIntervalSampler) {
-    SequenceIntervalSampler z_sampler({0.5});
-    SequenceCircularIntervalSampler theta_sampler({0.5});
+    MockIntervalSampler z_sampler({0.5});
+    MockCircularIntervalSampler theta_sampler({0.5});
     UniformSphericalBoundingBoxSampler sampler(z_sampler, theta_sampler);
     SphericalBoundingBox box{ThetaInterval(0.0, M_PI), Interval(-1.0, 1.0)};
 
@@ -55,8 +55,8 @@ TEST(UniformSphericalBoundingBoxSamplerTest, UsesThetaFromCircularIntervalSample
 }
 
 TEST(UniformSphericalBoundingBoxSamplerTest, HandlesWrappedThetaInterval) {
-    SequenceIntervalSampler z_sampler({0.5});
-    SequenceCircularIntervalSampler theta_sampler({0.0});
+    MockIntervalSampler z_sampler({0.5});
+    MockCircularIntervalSampler theta_sampler({0.0});
     UniformSphericalBoundingBoxSampler sampler(z_sampler, theta_sampler);
     SphericalBoundingBox box{ThetaInterval(5.5, 1.5), Interval(-1.0, 1.0)};
 

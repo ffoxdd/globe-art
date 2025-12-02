@@ -7,9 +7,9 @@
 
 namespace globe::testing::mocks {
 
-class SequenceCircularIntervalSampler {
+class MockCircularIntervalSampler {
  public:
-    explicit SequenceCircularIntervalSampler(std::vector<double> sequence)
+    explicit MockCircularIntervalSampler(std::vector<double> sequence)
         : _sequence(std::move(sequence)), _index(0) {}
 
     template<double PERIOD>

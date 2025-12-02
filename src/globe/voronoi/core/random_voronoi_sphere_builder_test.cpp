@@ -3,7 +3,7 @@
 #include "../../testing/mocks/point_generator.hpp"
 
 using namespace globe;
-using globe::testing::mocks::SequencePointGenerator;
+using globe::testing::mocks::MockPointGenerator;
 
 TEST(RandomVoronoiSphereBuilderTest, CreatesSphereWithCorrectSize) {
     RandomVoronoiSphereBuilder builder;
@@ -14,8 +14,8 @@ TEST(RandomVoronoiSphereBuilderTest, CreatesSphereWithCorrectSize) {
 
 TEST(RandomVoronoiSphereBuilderTest, UsesProvidedGenerator) {
     VectorS2 fixed_point(1, 0, 0);
-    SequencePointGenerator generator({fixed_point});
-    RandomVoronoiSphereBuilder<SequencePointGenerator> builder(generator);
+    MockPointGenerator generator({fixed_point});
+    RandomVoronoiSphereBuilder<MockPointGenerator> builder(generator);
 
     auto sphere = builder.build(1);
 

@@ -8,9 +8,9 @@
 
 namespace globe::testing::mocks {
 
-class SequencePointGenerator {
+class MockPointGenerator {
  public:
-    explicit SequencePointGenerator(std::vector<VectorS2> sequence)
+    explicit MockPointGenerator(std::vector<VectorS2> sequence)
         : _sequence(std::move(sequence)), _index(0), _last_attempt_count(0) {}
 
     std::vector<VectorS2> generate(size_t count) {
