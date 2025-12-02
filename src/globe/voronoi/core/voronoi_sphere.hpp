@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_VORONOI_CORE_VORONOI_SPHERE_HPP_
 #define GLOBEART_SRC_GLOBE_VORONOI_CORE_VORONOI_SPHERE_HPP_
 
-#include "../../cgal_types.hpp"
+#include "../../cgal/types.hpp"
 #include "../../geometry/spherical/arc.hpp"
 #include <CGAL/Exact_spherical_kernel_3.h>
 #include <CGAL/Delaunay_triangulation_on_sphere_traits_2.h>

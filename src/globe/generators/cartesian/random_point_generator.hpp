@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GENERATORS_CARTESIAN_RANDOM_POINT_GENERATOR_HPP_
 #define GLOBEART_SRC_GLOBE_GENERATORS_CARTESIAN_RANDOM_POINT_GENERATOR_HPP_
 
-#include "../../cgal_types.hpp"
+#include "../../cgal/types.hpp"
 #include "../../geometry/cartesian/bounding_box.hpp"
 #include "../../geometry/cartesian/bounding_box_sampler/bounding_box_sampler.hpp"
 #include "../../geometry/cartesian/bounding_box_sampler/uniform_bounding_box_sampler.hpp"

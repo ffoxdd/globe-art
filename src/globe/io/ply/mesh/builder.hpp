@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_IO_PLY_MESH_BUILDER_HPP_
 
 #include "types.hpp"
-#include "../../../cgal_types.hpp"
+#include "../../../cgal/types.hpp"
 #include "../../../types.hpp"
 #include "../../../geometry/spherical/arc.hpp"
 #include <Eigen/Geometry>

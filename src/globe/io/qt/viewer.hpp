@@ -7,7 +7,7 @@
 #include <QtWidgets/QWidget>
 #include <QtGui/QKeyEvent>
 #include <functional>
-#include "../../cgal_types.hpp"
+#include "../../cgal/types.hpp"
 #include "../../types.hpp"
 #include "../../geometry/spherical/arc.hpp"
 

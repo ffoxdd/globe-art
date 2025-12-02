@@ -2,7 +2,7 @@
 #define GLOBEART_SRC_GLOBE_FIELDS_SPHERICAL_MONTE_CARLO_FIELD_HPP_
 
 #include "field.hpp"
-#include "../../cgal_types.hpp"
+#include "../../cgal/types.hpp"
 #include "../../geometry/spherical/arc.hpp"
 #include "../../geometry/spherical/polygon/polygon.hpp"
 #include "../../geometry/spherical/bounding_box.hpp"

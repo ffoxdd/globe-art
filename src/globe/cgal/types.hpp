@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_CGAL_TYPES_HPP_
 #define GLOBEART_SRC_GLOBE_CGAL_TYPES_HPP_
 
-#include "types.hpp"
+#include "../types.hpp"
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Search_traits_3.h>
 #include <CGAL/Kd_tree.h>

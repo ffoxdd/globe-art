@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_TESTING_ASSERTIONS_GEOMETRIC_HPP_
 #define GLOBEART_SRC_GLOBE_TESTING_ASSERTIONS_GEOMETRIC_HPP_
 
-#include "../../cgal_types.hpp"
+#include "../../cgal/types.hpp"
 #include "../../geometry/cartesian/bounding_box.hpp"
 #include "../../math/interval.hpp"
 #include <cmath>

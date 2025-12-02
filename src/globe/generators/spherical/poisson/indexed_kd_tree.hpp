@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GENERATORS_SPHERICAL_POISSON_INDEXED_KD_TREE_HPP_
 #define GLOBEART_SRC_GLOBE_GENERATORS_SPHERICAL_POISSON_INDEXED_KD_TREE_HPP_
 
-#include "../../../cgal_types.hpp"
+#include "../../../cgal/types.hpp"
 #include <CGAL/Search_traits_adapter.h>
 #include <boost/property_map/property_map.hpp>
 #include <vector>

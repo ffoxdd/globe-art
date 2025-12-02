@@ -4,7 +4,7 @@
 #include <limits>
 #include <vector>
 #include <gtest/gtest.h>
-#include "../../cgal_types.hpp"
+#include "../../cgal/types.hpp"
 #include "../../math/interval.hpp"
 
 namespace globe::testing::assertions {
