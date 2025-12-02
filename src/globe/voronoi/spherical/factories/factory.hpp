@@ -80,14 +80,19 @@ inline Factory::Factory(
 } // namespace globe::voronoi::spherical
 
 inline std::unique_ptr<Sphere> Factory::build() {
+    std::cout << "Generating " << _points_count << " random points..." << std::flush;
     auto sphere = build_initial();
+    std::cout << " done" << std::endl;
 
+    std::cout << "Initial density optimization..." << std::endl;
     sphere = optimize_density(std::move(sphere));
 
     for (size_t i = 0; i < _lloyd_passes; i++) {
+        std::cout << "Lloyd pass " << (i + 1) << "/" << _lloyd_passes << "..." << std::endl;
         LloydOptimizer lloyd_optimizer(std::move(sphere), 1);
         sphere = lloyd_optimizer.optimize();
 
+        std::cout << "Density optimization " << (i + 1) << "/" << _lloyd_passes << "..." << std::endl;
         sphere = optimize_density(std::move(sphere));
     }
 
