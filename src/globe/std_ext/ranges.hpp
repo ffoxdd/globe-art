@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <concepts>
 
-namespace globe {
+namespace globe::std_ext {
 
 template<typename Range, typename ValueType>
 concept RangeOf =
@@ -128,7 +128,11 @@ auto sum(const RangeType &range) {
     return result;
 }
 
-} // namespace globe
+} // namespace globe::std_ext
+
+namespace globe {
+using std_ext::RangeOf;
+}
 
 #endif //GLOBEART_SRC_GLOBE_HELPERS_RANGES_HPP_
 

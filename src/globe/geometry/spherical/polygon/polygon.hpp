@@ -18,8 +18,8 @@
 namespace globe::geometry::spherical::polygon {
 
 using globe::VectorS2;
-using globe::all_circular_adjacent_pairs;
-using globe::circular_adjacent_pairs;
+using globe::std_ext::all_circular_adjacent_pairs;
+using globe::std_ext::circular_adjacent_pairs;
 using globe::geometry::spherical::Arc;
 using globe::geometry::spherical::BoundingBox;
 

@@ -4,7 +4,7 @@
 #include <list>
 #include <array>
 
-using namespace globe;
+using namespace globe::std_ext;
 
 TEST(CircularAdjacentPairsTest, EmptyRange) {
     std::vector<int> empty;
