@@ -139,16 +139,24 @@ inline double Polygon::area() const {
         return 0.0;
     }
 
-    double angle_sum = 0.0;
+    std::vector<double> angles;
+    angles.reserve(_arcs.size());
     auto pairs = circular_adjacent_pairs(_arcs);
 
     for (const auto& pair : pairs) {
         const auto& [prev_arc, curr_arc] = pair;
-        angle_sum += spherical_angle(
+        angles.push_back(spherical_angle(
             prev_arc.source(),
             curr_arc.source(),
             curr_arc.target()
-        );
+        ));
+    }
+
+    std::sort(angles.begin(), angles.end());
+
+    double angle_sum = 0.0;
+    for (double angle : angles) {
+        angle_sum += angle;
     }
 
     return angle_sum - static_cast<double>(_arcs.size() - 2) * M_PI;

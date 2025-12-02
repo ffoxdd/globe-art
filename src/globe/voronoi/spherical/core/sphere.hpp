@@ -123,6 +123,21 @@ inline std::vector<Arc> Sphere::cell_arcs(size_t index) const {
         arcs.push_back(to_spherical_arc(cgal_arc));
     }
 
+    if (arcs.size() < 2) {
+        return arcs;
+    }
+
+    auto min_it = std::min_element(arcs.begin(), arcs.end(),
+        [](const Arc& a, const Arc& b) {
+            const auto& sa = a.source();
+            const auto& sb = b.source();
+            if (sa.x() != sb.x()) return sa.x() < sb.x();
+            if (sa.y() != sb.y()) return sa.y() < sb.y();
+            return sa.z() < sb.z();
+        });
+
+    std::rotate(arcs.begin(), min_it, arcs.end());
+
     return arcs;
 }
 
