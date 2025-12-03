@@ -6,30 +6,52 @@
 #include <memory>
 #include <string>
 #include <chrono>
+#include <numeric>
 
 namespace globe::io::qt {
 
 using voronoi::spherical::Sphere;
 
+enum class RenderMode {
+    Wireframe,
+    Solid
+};
+
 class SphereDrawer {
 public:
-    SphereDrawer(const std::string &window_title = "Sphere");
+    SphereDrawer(
+        const std::string &window_title = "Sphere",
+        RenderMode render_mode = RenderMode::Wireframe
+    );
+
     void show();
     void show(const Sphere &sphere);
     void update(const Sphere &sphere);
+    void set_render_mode(RenderMode mode);
 
 private:
     std::string _window_title;
+    RenderMode _render_mode;
     std::unique_ptr<Viewer> _viewer;
     bool _has_centered = false;
 
     void ensure_viewer();
     void draw(const Sphere &sphere);
+    void draw_wireframe(const Sphere &sphere);
+    void draw_solid(const Sphere &sphere);
     void center_if_needed();
 };
 
-inline SphereDrawer::SphereDrawer(const std::string &window_title) :
-    _window_title(window_title) {
+inline SphereDrawer::SphereDrawer(
+    const std::string &window_title,
+    RenderMode render_mode
+) :
+    _window_title(window_title),
+    _render_mode(render_mode) {
+}
+
+inline void SphereDrawer::set_render_mode(RenderMode mode) {
+    _render_mode = mode;
 }
 
 inline void SphereDrawer::ensure_viewer() {
@@ -51,21 +73,42 @@ inline void SphereDrawer::show(const Sphere &sphere) {
 }
 
 inline void SphereDrawer::draw(const Sphere &sphere) {
-    Color face_color(200, 200, 200);
+    switch (_render_mode) {
+        case RenderMode::Wireframe:
+            draw_wireframe(sphere);
+            break;
+        case RenderMode::Solid:
+            draw_solid(sphere);
+            break;
+    }
+}
+
+inline void SphereDrawer::draw_wireframe(const Sphere &sphere) {
     Color edge_color(60, 60, 60);
 
+    for (const auto &arc : sphere.arcs()) {
+        _viewer->add_arc(arc, edge_color);
+    }
+}
+
+inline void SphereDrawer::draw_solid(const Sphere &sphere) {
+    Color face_color(200, 200, 200);
+
     for (const auto &cell : sphere.cells()) {
-        VectorS2 centroid = cell.centroid();
         std::vector<VectorS2> points(cell.points().begin(), cell.points().end());
+
+        if (points.size() < 3) {
+            continue;
+        }
+
+        VectorS2 centroid = std::accumulate(
+            points.begin(), points.end(), VectorS2::Zero().eval()
+        ) / static_cast<double>(points.size());
 
         for (size_t i = 0; i < points.size(); ++i) {
             size_t next = (i + 1) % points.size();
             _viewer->add_triangle(centroid, points[i], points[next], face_color);
         }
-    }
-
-    for (const auto &arc : sphere.arcs()) {
-        _viewer->add_arc(arc, edge_color);
     }
 }
 

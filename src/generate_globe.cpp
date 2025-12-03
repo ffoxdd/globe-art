@@ -20,6 +20,7 @@ struct Config {
     std::string density_field;
     std::string optimization_strategy;
     bool perform_render;
+    std::string render_mode;
     int optimization_passes;
     int lloyd_passes;
     int max_perturbations;
@@ -36,6 +37,7 @@ int main(int argc, char *argv[]) {
         "  Density: " << config.density_field << std::endl <<
         "  Optimization strategy: " << config.optimization_strategy << std::endl <<
         "  Render: " << (config.perform_render ? "yes" : "no") << std::endl <<
+        "  Render mode: " << config.render_mode << std::endl <<
         "  Optimization passes: " << config.optimization_passes << std::endl <<
         "  Lloyd passes: " << config.lloyd_passes << std::endl <<
         "  Max perturbations: " << config.max_perturbations << std::endl <<
@@ -47,7 +49,12 @@ int main(int argc, char *argv[]) {
 
     if (config.perform_render) {
         application = std::make_unique<Application>(argc, argv);
-        drawer = std::make_unique<SphereDrawer>("Globe");
+
+        io::qt::RenderMode render_mode = (config.render_mode == "solid")
+            ? io::qt::RenderMode::Solid
+            : io::qt::RenderMode::Wireframe;
+
+        drawer = std::make_unique<SphereDrawer>("Globe", render_mode);
         drawer->show();
         application->process_events();
 
@@ -99,6 +106,11 @@ Config parse_arguments(int argc, char *argv[]) {
     app.add_option("--render", config.perform_render)
         ->description("Enable Qt rendering")
         ->default_val(true);
+
+    app.add_option("--render-mode", config.render_mode)
+        ->description("Render mode: wireframe or solid")
+        ->check(CLI::IsMember({"wireframe", "solid"}))
+        ->default_val("wireframe");
 
     app.add_option("--optimization-passes", config.optimization_passes)
         ->description("Number of optimization passes")
