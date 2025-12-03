@@ -22,7 +22,7 @@ TEST(UniformBoundingBoxSamplerTest, UsesXFromIntervalSampler) {
     UniformBoundingBoxSampler bounding_box_sampler(sampler);
     BoundingBox box(Interval(0.0, 4.0), Interval(0.0, 1.0), Interval(0.0, 1.0));
 
-    cgal::Point3 sample = bounding_box_sampler.sample(box);
+    Vector3 sample = bounding_box_sampler.sample(box);
 
     EXPECT_NEAR(sample.x(), 1.0, 1e-9);
 }
@@ -32,7 +32,7 @@ TEST(UniformBoundingBoxSamplerTest, UsesYFromIntervalSampler) {
     UniformBoundingBoxSampler bounding_box_sampler(sampler);
     BoundingBox box(Interval(0.0, 1.0), Interval(2.0, 6.0), Interval(0.0, 1.0));
 
-    cgal::Point3 sample = bounding_box_sampler.sample(box);
+    Vector3 sample = bounding_box_sampler.sample(box);
 
     EXPECT_NEAR(sample.y(), 4.0, 1e-9);
 }
@@ -42,7 +42,7 @@ TEST(UniformBoundingBoxSamplerTest, UsesZFromIntervalSampler) {
     UniformBoundingBoxSampler bounding_box_sampler(sampler);
     BoundingBox box(Interval(0.0, 1.0), Interval(0.0, 1.0), Interval(-2.0, 2.0));
 
-    cgal::Point3 sample = bounding_box_sampler.sample(box);
+    Vector3 sample = bounding_box_sampler.sample(box);
 
     EXPECT_NEAR(sample.z(), 1.0, 1e-9);
 }
@@ -51,7 +51,7 @@ TEST(UniformBoundingBoxSamplerTest, SampleFallsWithinBoundingBox) {
     UniformBoundingBoxSampler<> sampler;
     BoundingBox box(Interval(1.0, 3.0), Interval(-2.0, 2.0), Interval(0.0, 5.0));
 
-    cgal::Point3 sample = sampler.sample(box);
+    Vector3 sample = sampler.sample(box);
 
     EXPECT_GE(sample.x(), box.x_interval().low());
     EXPECT_LT(sample.x(), box.x_interval().high());
@@ -69,7 +69,7 @@ TEST(UniformBoundingBoxSamplerTest, EXPENSIVE_AllSamplesWithinBounds) {
     constexpr size_t sample_count = 10000;
 
     for (size_t i = 0; i < sample_count; ++i) {
-        cgal::Point3 sample = sampler.sample(box);
+        Vector3 sample = sampler.sample(box);
 
         EXPECT_GE(sample.x(), box.x_interval().low());
         EXPECT_LT(sample.x(), box.x_interval().high());

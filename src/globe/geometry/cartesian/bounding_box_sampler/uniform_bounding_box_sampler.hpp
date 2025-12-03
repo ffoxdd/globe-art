@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_SAMPLER_UNIFORM_BOUNDING_BOX_SAMPLER_HPP_
 #define GLOBEART_SRC_GLOBE_GEOMETRY_CARTESIAN_BOUNDING_BOX_SAMPLER_UNIFORM_BOUNDING_BOX_SAMPLER_HPP_
 
-#include "../../../cgal/types.hpp"
+#include "../../../types.hpp"
 #include "../bounding_box.hpp"
 #include "../../../math/interval_sampler/interval_sampler.hpp"
 #include "../../../math/interval_sampler/uniform_interval_sampler.hpp"
@@ -19,12 +19,12 @@ class UniformBoundingBoxSampler {
     explicit UniformBoundingBoxSampler(IntervalSamplerType interval_sampler)
         : _interval_sampler(std::move(interval_sampler)) {}
 
-    [[nodiscard]] inline cgal::Point3 sample(const BoundingBox& bounding_box) {
+    [[nodiscard]] inline Vector3 sample(const BoundingBox& bounding_box) {
         double x = _interval_sampler.sample(bounding_box.x_interval());
         double y = _interval_sampler.sample(bounding_box.y_interval());
         double z = _interval_sampler.sample(bounding_box.z_interval());
 
-        return cgal::Point3(x, y, z);
+        return Vector3(x, y, z);
     }
 
  private:

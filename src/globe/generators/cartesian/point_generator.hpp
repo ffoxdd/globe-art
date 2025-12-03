@@ -1,7 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GENERATORS_CARTESIAN_POINT_GENERATOR_HPP_
 #define GLOBEART_SRC_GLOBE_GENERATORS_CARTESIAN_POINT_GENERATOR_HPP_
 
-#include "../../cgal/types.hpp"
+#include "../../types.hpp"
 #include "../../geometry/cartesian/bounding_box.hpp"
 #include <vector>
 #include <concepts>
@@ -10,8 +10,8 @@ namespace globe::generators::cartesian {
 
 template<typename T>
 concept PointGenerator = requires(T t, const BoundingBox &bounding_box, size_t count) {
-    { t.generate(count) } -> std::convertible_to<std::vector<cgal::Point3>>;
-    { t.generate(count, bounding_box) } -> std::convertible_to<std::vector<cgal::Point3>>;
+    { t.generate(count) } -> std::convertible_to<std::vector<Vector3>>;
+    { t.generate(count, bounding_box) } -> std::convertible_to<std::vector<Vector3>>;
 };
 
 } // namespace globe::generators::cartesian

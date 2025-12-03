@@ -43,7 +43,7 @@ std::vector<VectorS2> RandomPointGenerator<CartesianGeneratorType, SphericalBoun
     std::vector<VectorS2> sphere_points;
     sphere_points.reserve(count);
     for (const auto& point : cartesian_points) {
-        sphere_points.push_back(to_eigen(point).normalized());
+        sphere_points.push_back(point.normalized());
     }
     _last_attempt_count = count;
     return sphere_points;
