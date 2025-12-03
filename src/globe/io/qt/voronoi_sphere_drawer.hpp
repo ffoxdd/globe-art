@@ -14,7 +14,8 @@ using voronoi::spherical::Sphere;
 
 enum class RenderMode {
     Wireframe,
-    Solid
+    Solid,
+    Minimal
 };
 
 class SphereDrawer {
@@ -39,6 +40,7 @@ private:
     void draw(const Sphere &sphere);
     void draw_wireframe(const Sphere &sphere);
     void draw_solid(const Sphere &sphere);
+    void draw_minimal(const Sphere &sphere);
     void center_if_needed();
 };
 
@@ -80,6 +82,9 @@ inline void SphereDrawer::draw(const Sphere &sphere) {
         case RenderMode::Solid:
             draw_solid(sphere);
             break;
+        case RenderMode::Minimal:
+            draw_minimal(sphere);
+            break;
     }
 }
 
@@ -109,6 +114,15 @@ inline void SphereDrawer::draw_solid(const Sphere &sphere) {
             size_t next = (i + 1) % points.size();
             _viewer->add_triangle(centroid, points[i], points[next], face_color);
         }
+    }
+}
+
+inline void SphereDrawer::draw_minimal(const Sphere &sphere) {
+    _viewer->set_edge_size(1.0f);
+    Color edge_color(60, 60, 60);
+
+    for (const auto &arc : sphere.arcs()) {
+        _viewer->add_segment(arc.source(), arc.target(), edge_color);
     }
 }
 

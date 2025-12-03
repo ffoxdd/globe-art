@@ -50,9 +50,12 @@ int main(int argc, char *argv[]) {
     if (config.perform_render) {
         application = std::make_unique<Application>(argc, argv);
 
-        io::qt::RenderMode render_mode = (config.render_mode == "solid")
-            ? io::qt::RenderMode::Solid
-            : io::qt::RenderMode::Wireframe;
+        io::qt::RenderMode render_mode = io::qt::RenderMode::Wireframe;
+        if (config.render_mode == "solid") {
+            render_mode = io::qt::RenderMode::Solid;
+        } else if (config.render_mode == "minimal") {
+            render_mode = io::qt::RenderMode::Minimal;
+        }
 
         drawer = std::make_unique<SphereDrawer>("Globe", render_mode);
         drawer->show();
@@ -108,8 +111,8 @@ Config parse_arguments(int argc, char *argv[]) {
         ->default_val(true);
 
     app.add_option("--render-mode", config.render_mode)
-        ->description("Render mode: wireframe or solid")
-        ->check(CLI::IsMember({"wireframe", "solid"}))
+        ->description("Render mode: wireframe, solid, or minimal")
+        ->check(CLI::IsMember({"wireframe", "solid", "minimal"}))
         ->default_val("wireframe");
 
     app.add_option("--optimization-passes", config.optimization_passes)

@@ -45,6 +45,7 @@ public:
     void show();
     void redraw() override;
     void center_on_unit_sphere();
+    void set_edge_size(float size);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -120,6 +121,10 @@ inline void Viewer::center_on_unit_sphere() {
     this->camera()->setSceneRadius(1.05);
     this->camera()->setSceneCenter(CGAL::qglviewer::Vec(0, 0, 0));
     this->showEntireScene();
+}
+
+inline void Viewer::set_edge_size(float size) {
+    size_edges(size);
 }
 
 inline void Viewer::keyPressEvent(QKeyEvent *event) {
