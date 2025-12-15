@@ -2,15 +2,21 @@
 #include "globe/voronoi/spherical/core/callback.hpp"
 #include "globe/io/qt/application.hpp"
 #include "globe/io/qt/voronoi_sphere_drawer.hpp"
+#include "globe/io/text/sphere_repository.hpp"
 #include <CLI/CLI.hpp>
 #include <chrono>
+#include <ctime>
+#include <filesystem>
+#include <iomanip>
 #include <iostream>
-#include <string>
 #include <memory>
+#include <sstream>
+#include <string>
 
 using namespace globe;
 using io::qt::Application;
 using io::qt::SphereDrawer;
+using io::text::SphereRepository;
 using voronoi::spherical::Factory;
 using voronoi::spherical::Sphere;
 using voronoi::spherical::Callback;
@@ -25,6 +31,7 @@ struct Config {
     int optimization_passes;
     int lloyd_passes;
     int max_perturbations;
+    std::string output_dir;
 };
 
 Config parse_arguments(int argc, char *argv[]);
@@ -69,6 +76,7 @@ int main(int argc, char *argv[]) {
             application->process_events();
 
             auto now = std::chrono::steady_clock::now();
+
             if (now - last_render >= 100ms) {
                 drawer->update(sphere);
                 last_render = now;
@@ -87,6 +95,19 @@ int main(int argc, char *argv[]) {
     );
 
     auto sphere = factory.build();
+
+    std::filesystem::create_directories(config.output_dir);
+
+    auto time = std::time(nullptr);
+    std::ostringstream filename;
+    filename << config.output_dir << "/sphere_" <<
+        config.points_count << "_" <<
+        config.density_field << "_" <<
+        std::put_time(std::localtime(&time), "%Y%m%d_%H%M%S") <<
+        ".txt";
+
+    SphereRepository::save(*sphere, filename.str());
+    std::cout << "Saved: " << filename.str() << std::endl;
 
     if (config.perform_render) {
         drawer->show(*sphere);
@@ -131,13 +152,17 @@ Config parse_arguments(int argc, char *argv[]) {
 
     app.add_option("--lloyd-passes", config.lloyd_passes)
         ->description("Number of Lloyd relaxation passes")
-        ->default_val(4)
+        ->default_val(1)
         ->check(CLI::NonNegativeNumber);
 
     app.add_option("--max-perturbations", config.max_perturbations)
         ->description("Maximum perturbation attempts for gradient optimizer")
         ->default_val(50)
         ->check(CLI::NonNegativeNumber);
+
+    app.add_option("--output-dir,-o", config.output_dir)
+        ->description("Output directory for saved spheres")
+        ->default_val("./output");
 
     try {
         app.parse(argc, argv);
