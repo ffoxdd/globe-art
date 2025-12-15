@@ -4,7 +4,7 @@
 #include "../../../types.hpp"
 #include "../../../geometry/spherical/helpers.hpp"
 #include "../core/sphere.hpp"
-#include "../core/progress_callback.hpp"
+#include "../core/callback.hpp"
 #include "../../../geometry/spherical/polygon/polygon.hpp"
 #include <memory>
 #include <cstddef>
@@ -25,7 +25,7 @@ class LloydOptimizer {
     LloydOptimizer(
         std::unique_ptr<Sphere> sphere,
         size_t max_passes = DEFAULT_PASSES,
-        ProgressCallback progress_callback = no_progress_callback()
+        Callback callback = noop_callback()
     );
 
     std::unique_ptr<Sphere> optimize();
@@ -34,7 +34,7 @@ class LloydOptimizer {
  private:
     std::unique_ptr<Sphere> _sphere;
     size_t _max_passes;
-    ProgressCallback _progress_callback;
+    Callback _callback;
     double _final_deviation = 0.0;
 
     double run_single_pass();
@@ -44,11 +44,11 @@ class LloydOptimizer {
 inline LloydOptimizer::LloydOptimizer(
     std::unique_ptr<Sphere> sphere,
     size_t max_passes,
-    ProgressCallback progress_callback
+    Callback callback
 ) :
     _sphere(std::move(sphere)),
     _max_passes(max_passes),
-    _progress_callback(std::move(progress_callback)) {
+    _callback(std::move(callback)) {
 }
 
 inline std::unique_ptr<Sphere> LloydOptimizer::optimize() {
@@ -60,7 +60,7 @@ inline std::unique_ptr<Sphere> LloydOptimizer::optimize() {
         double max_movement = run_single_pass();
         _final_deviation = compute_total_deviation();
 
-        _progress_callback(*_sphere);
+        _callback(*_sphere);
 
         if (max_movement < CONVERGENCE_THRESHOLD) {
             break;
@@ -97,6 +97,7 @@ inline double LloydOptimizer::run_single_pass() {
 
         _sphere->update_site(index, cgal::to_point(centroid));
         index++;
+        _callback(*_sphere);
     }
 
     return max_movement;

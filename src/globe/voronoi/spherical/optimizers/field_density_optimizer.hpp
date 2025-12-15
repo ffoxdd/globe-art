@@ -8,6 +8,7 @@
 #include "../../../geometry/spherical/polygon/polygon.hpp"
 #include "../../../types.hpp"
 #include "../core/sphere.hpp"
+#include "../core/callback.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -109,7 +110,8 @@ class FieldDensityOptimizer {
         std::unique_ptr<Sphere> voronoi_sphere,
         FieldType field,
         size_t optimization_passes = DEFAULT_PASSES,
-        GeneratorType point_generator = GeneratorType()
+        GeneratorType point_generator = GeneratorType(),
+        Callback callback = noop_callback()
     );
 
     std::unique_ptr<Sphere> optimize();
@@ -119,6 +121,7 @@ class FieldDensityOptimizer {
     FieldType _field;
     size_t _optimization_passes;
     GeneratorType _point_generator;
+    Callback _callback;
 
     struct PassResult {
         double start_error;
@@ -193,13 +196,15 @@ FieldDensityOptimizer<FieldType, GeneratorType>::FieldDensityOptimizer(
     std::unique_ptr<Sphere> voronoi_sphere,
     FieldType field,
     size_t optimization_passes,
-    GeneratorType point_generator
+    GeneratorType point_generator,
+    Callback callback
 ) :
     _sphere(std::move(voronoi_sphere)),
     _field(std::move(field)),
     _optimization_passes(optimization_passes),
-    _point_generator(std::move(point_generator)) {
-} // namespace globe::voronoi::spherical
+    _point_generator(std::move(point_generator)),
+    _callback(std::move(callback)) {
+}
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 std::unique_ptr<Sphere> FieldDensityOptimizer<FieldType, GeneratorType>::optimize() {
@@ -243,6 +248,7 @@ FieldDensityOptimizer<FieldType, GeneratorType>::run_single_pass(double target_m
 
         current_error = optimize_vertex_position(index, target_mass, current_error);
         vertex_count++;
+        _callback(*_sphere);
     }
 
     return {start_error, current_error, vertex_count};

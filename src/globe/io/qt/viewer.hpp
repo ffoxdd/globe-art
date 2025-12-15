@@ -120,7 +120,9 @@ inline void Viewer::redraw() {
 inline void Viewer::center_on_unit_sphere() {
     this->camera()->setSceneRadius(1.05);
     this->camera()->setSceneCenter(CGAL::qglviewer::Vec(0, 0, 0));
-    this->showEntireScene();
+    this->camera()->setUpVector(CGAL::qglviewer::Vec(0, 0, 1));
+    this->camera()->setPosition(CGAL::qglviewer::Vec(0, -3, 0));
+    this->camera()->lookAt(CGAL::qglviewer::Vec(0, 0, 0));
 }
 
 inline void Viewer::set_edge_size(float size) {

@@ -38,10 +38,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Visualizing HarmonicField with seed=" << seed <<
         ", points=" << point_count << std::endl;
 
-    // Equator-dense, pole-sparse field: f(p) = 1 - 0.8*z²
-    Eigen::Matrix3d quadratic = Eigen::Matrix3d::Zero();
-    quadratic(2, 2) = -0.8;
-    HarmonicField field(1.0, Eigen::Vector3d::Zero(), quadratic);
+    HarmonicField field = create_random_harmonic_field(seed, 0.5);
 
     Application app(argc, argv);
     Viewer viewer(nullptr, "Harmonic Field Visualization");

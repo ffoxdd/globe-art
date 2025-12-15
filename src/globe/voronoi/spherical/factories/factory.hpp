@@ -3,7 +3,7 @@
 
 #include "../core/sphere.hpp"
 #include "../core/random_builder.hpp"
-#include "../core/progress_callback.hpp"
+#include "../core/callback.hpp"
 #include "../optimizers/field_density_optimizer.hpp"
 #include "../optimizers/gradient_density_optimizer.hpp"
 #include "../optimizers/lloyd_optimizer.hpp"
@@ -41,7 +41,7 @@ class Factory {
         int optimization_passes,
         int lloyd_passes,
         int max_perturbations = 50,
-        ProgressCallback progress_callback = no_progress_callback()
+        Callback callback = noop_callback()
     );
 
     std::unique_ptr<Sphere> build();
@@ -56,7 +56,7 @@ class Factory {
     size_t _optimization_passes;
     size_t _lloyd_passes;
     size_t _max_perturbations;
-    ProgressCallback _progress_callback;
+    Callback _callback;
 
     std::unique_ptr<Sphere> build_initial();
     std::unique_ptr<Sphere> optimize_density(std::unique_ptr<Sphere> sphere);
@@ -82,7 +82,7 @@ inline Factory::Factory(
     int optimization_passes,
     int lloyd_passes,
     int max_perturbations,
-    ProgressCallback progress_callback
+    Callback callback
 ) :
     _points_count(points_count),
     _density_function(std::move(density_function)),
@@ -90,7 +90,7 @@ inline Factory::Factory(
     _optimization_passes(static_cast<size_t>(optimization_passes)),
     _lloyd_passes(static_cast<size_t>(lloyd_passes)),
     _max_perturbations(static_cast<size_t>(max_perturbations)),
-    _progress_callback(std::move(progress_callback)) {
+    _callback(std::move(callback)) {
 }
 
 inline std::unique_ptr<Sphere> Factory::build() {
@@ -98,11 +98,13 @@ inline std::unique_ptr<Sphere> Factory::build() {
     auto sphere = build_initial();
     std::cout << " done" << std::endl;
 
+    _callback(*sphere);
+
     std::cout << "Initial density optimization..." << std::endl;
     sphere = optimize_density(std::move(sphere));
 
     for (size_t i = 0; i < _lloyd_passes; i++) {
-        LloydOptimizer lloyd_optimizer(std::move(sphere), 1, _progress_callback);
+        LloydOptimizer lloyd_optimizer(std::move(sphere), 1, _callback);
         sphere = lloyd_optimizer.optimize();
         double deviation = lloyd_optimizer.final_deviation();
 
@@ -124,9 +126,9 @@ inline AnalyticField Factory::create_analytic_field() const {
     } else if (_density_function == "linear") {
         return LinearField(2.0, 2.0);
     } else {
-        // Equator-dense, pole-sparse: f(p) = 1 - 0.8*z²
+        // Equator-dense, pole-sparse: f(p) = 1 - 0.9*z²
         Eigen::Matrix3d quadratic = Eigen::Matrix3d::Zero();
-        quadratic(2, 2) = -0.8;
+        quadratic(2, 2) = -0.9;
         return HarmonicField(1.0, Eigen::Vector3d::Zero(), quadratic);
     }
 }
@@ -172,7 +174,9 @@ std::unique_ptr<Sphere> Factory::optimize_ccvd(
     FieldDensityOptimizer optimizer(
         std::move(sphere),
         field,
-        _optimization_passes
+        _optimization_passes,
+        generators::spherical::RandomPointGenerator<>(),
+        _callback
     );
 
     return optimizer.optimize();
@@ -189,7 +193,7 @@ std::unique_ptr<Sphere> Factory::optimize_gradient(
         _optimization_passes,
         _max_perturbations,
         generators::spherical::RandomPointGenerator<>(),
-        _progress_callback
+        _callback
     );
 
     return optimizer.optimize();
@@ -207,7 +211,9 @@ inline std::unique_ptr<Sphere> Factory::optimize_noise_ccvd(
     FieldDensityOptimizer optimizer(
         std::move(sphere),
         std::move(field),
-        _optimization_passes
+        _optimization_passes,
+        generators::spherical::RandomPointGenerator<>(),
+        _callback
     );
 
     return optimizer.optimize();

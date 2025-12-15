@@ -39,6 +39,7 @@ Same algorithm with slightly different type handling. Could be extracted to a sh
 Approximate arbitrary patterns (e.g., images mapped to the sphere) with integrable polynomial fields:
 - Sample the pattern on a spherical grid
 - Compute spherical harmonic coefficients via numerical integration
+- See if it's possible to create a spherical bump function
 - Use Boost.Math for Legendre polynomials and spherical harmonics
 - Use Boost.Math quadrature for Gauss-Legendre weights
 - Store coefficients in a HarmonicField-like class that can evaluate and integrate exactly

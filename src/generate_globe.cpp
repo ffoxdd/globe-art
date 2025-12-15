@@ -1,8 +1,9 @@
 #include "globe/voronoi/spherical/factories/factory.hpp"
-#include "globe/voronoi/spherical/core/progress_callback.hpp"
+#include "globe/voronoi/spherical/core/callback.hpp"
 #include "globe/io/qt/application.hpp"
 #include "globe/io/qt/voronoi_sphere_drawer.hpp"
 #include <CLI/CLI.hpp>
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <memory>
@@ -12,8 +13,8 @@ using io::qt::Application;
 using io::qt::SphereDrawer;
 using voronoi::spherical::Factory;
 using voronoi::spherical::Sphere;
-using voronoi::spherical::ProgressCallback;
-using voronoi::spherical::no_progress_callback;
+using voronoi::spherical::Callback;
+using voronoi::spherical::noop_callback;
 
 struct Config {
     int points_count;
@@ -45,7 +46,7 @@ int main(int argc, char *argv[]) {
 
     std::unique_ptr<Application> application;
     std::unique_ptr<SphereDrawer> drawer;
-    ProgressCallback progress_callback = no_progress_callback();
+    Callback callback = noop_callback();
 
     if (config.perform_render) {
         application = std::make_unique<Application>(argc, argv);
@@ -61,9 +62,17 @@ int main(int argc, char *argv[]) {
         drawer->show();
         application->process_events();
 
-        progress_callback = [&application, &drawer](const Sphere &sphere) {
-            drawer->update(sphere);
+        using namespace std::chrono_literals;
+        auto last_render = std::chrono::steady_clock::now();
+
+        callback = [&](const Sphere& sphere) {
             application->process_events();
+
+            auto now = std::chrono::steady_clock::now();
+            if (now - last_render >= 100ms) {
+                drawer->update(sphere);
+                last_render = now;
+            }
         };
     }
 
@@ -74,7 +83,7 @@ int main(int argc, char *argv[]) {
         config.optimization_passes,
         config.lloyd_passes,
         config.max_perturbations,
-        progress_callback
+        callback
     );
 
     auto sphere = factory.build();

@@ -10,7 +10,7 @@
 #include "../../../generators/spherical/point_generator.hpp"
 #include "../../../generators/spherical/random_point_generator.hpp"
 #include "../core/sphere.hpp"
-#include "../core/progress_callback.hpp"
+#include "../core/callback.hpp"
 #include <Eigen/Core>
 #include <LBFGS.h>
 #include <memory>
@@ -43,7 +43,7 @@ class GradientDensityOptimizer {
         size_t max_iterations = DEFAULT_ITERATIONS,
         size_t max_perturbations = DEFAULT_MAX_PERTURBATIONS,
         GeneratorType point_generator = GeneratorType(),
-        ProgressCallback progress_callback = no_progress_callback()
+        Callback callback = noop_callback()
     );
 
     std::unique_ptr<Sphere> optimize();
@@ -74,7 +74,7 @@ class GradientDensityOptimizer {
     size_t _max_perturbations;
     double _target_mass;
     GeneratorType _point_generator;
-    ProgressCallback _progress_callback;
+    Callback _callback;
 
     Eigen::VectorXd sites_to_vector() const;
     void vector_to_sites_normalized(const Eigen::VectorXd& x);
@@ -102,7 +102,7 @@ GradientDensityOptimizer<FieldType, GeneratorType>::GradientDensityOptimizer(
     size_t max_iterations,
     size_t max_perturbations,
     GeneratorType point_generator,
-    ProgressCallback progress_callback
+    Callback callback
 ) :
     _sphere(std::move(voronoi_sphere)),
     _field(std::move(field)),
@@ -110,8 +110,8 @@ GradientDensityOptimizer<FieldType, GeneratorType>::GradientDensityOptimizer(
     _max_perturbations(max_perturbations),
     _target_mass(0.0),
     _point_generator(std::move(point_generator)),
-    _progress_callback(std::move(progress_callback)) {
-} // namespace globe::voronoi::spherical
+    _callback(std::move(callback)) {
+}
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::ObjectiveFunctor(
@@ -131,9 +131,10 @@ double GradientDensityOptimizer<FieldType, GeneratorType>::ObjectiveFunctor::ope
 
     _last_rms_error = std::sqrt(2.0 * error / _optimizer._sphere->size());
     ++_iteration_count;
+    _optimizer._callback(*_optimizer._sphere);
 
     return error;
-} // namespace globe::voronoi::spherical
+}
 
 template<fields::spherical::Field FieldType, generators::spherical::PointGenerator GeneratorType>
 int GradientDensityOptimizer<FieldType, GeneratorType>::run_lbfgs_phase(
@@ -184,7 +185,7 @@ std::unique_ptr<Sphere> GradientDensityOptimizer<FieldType, GeneratorType>::opti
         int result = run_lbfgs_phase(phase_iterations, start_iteration);
         total_iterations += (result > 0) ? static_cast<size_t>(result) : phase_iterations;
 
-        _progress_callback(*_sphere);
+        _callback(*_sphere);
 
         double error = compute_error();
         double rms_error = std::sqrt(2.0 * error / _sphere->size());
