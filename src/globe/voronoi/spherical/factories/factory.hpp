@@ -124,11 +124,10 @@ inline AnalyticField Factory::create_analytic_field() const {
     } else if (_density_function == "linear") {
         return LinearField(2.0, 2.0);
     } else {
-        return HarmonicField(
-            1.0,
-            Eigen::Vector3d(0.3, 0.2, 0.4),
-            Eigen::Matrix3d::Zero()
-        );
+        // Equator-dense, pole-sparse: f(p) = 1 - 0.8*z²
+        Eigen::Matrix3d quadratic = Eigen::Matrix3d::Zero();
+        quadratic(2, 2) = -0.8;
+        return HarmonicField(1.0, Eigen::Vector3d::Zero(), quadratic);
     }
 }
 
