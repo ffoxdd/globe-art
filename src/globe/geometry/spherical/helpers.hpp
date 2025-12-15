@@ -1,6 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_HELPERS_H_
 #define GLOBEART_SRC_GLOBE_GEOMETRY_SPHERICAL_HELPERS_H_
 
+#include <cstdint>
 #include <cmath>
 #include <algorithm>
 #include "../../types.hpp"

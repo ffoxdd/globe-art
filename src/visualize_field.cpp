@@ -9,6 +9,7 @@
 #include <cmath>
 #include <iostream>
 #include <map>
+#include <random>
 
 using namespace globe;
 using fields::spherical::HarmonicField;
@@ -21,6 +22,7 @@ using SurfaceMesh = CGAL::Surface_mesh<cgal::Point3>;
 
 void add_sphere_mesh(Viewer& viewer, const HarmonicField& field, size_t point_count);
 Color value_to_color(double value, const Interval& range);
+HarmonicField create_random_harmonic_field(int seed, double contrast);
 
 int main(int argc, char* argv[]) {
     int seed = 42;
@@ -36,7 +38,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Visualizing HarmonicField with seed=" << seed <<
         ", points=" << point_count << std::endl;
 
-    HarmonicField field(seed);
+    HarmonicField field = create_random_harmonic_field(seed, 0.5);
 
     Application app(argc, argv);
     Viewer viewer(nullptr, "Harmonic Field Visualization");
@@ -102,4 +104,27 @@ Color value_to_color(double value, const Interval& range) {
     constexpr Interval INTENSITY_RANGE(0.0, 255.0);
     int intensity = static_cast<int>(Interval::remap(value, range, INTENSITY_RANGE));
     return Color(intensity, intensity, intensity);
+}
+
+HarmonicField create_random_harmonic_field(int seed, double contrast) {
+    std::mt19937 rng(seed);
+    std::normal_distribution<double> dist(0.0, 1.0);
+
+    Eigen::Vector3d linear(dist(rng), dist(rng), dist(rng));
+    linear *= contrast;
+
+    Eigen::Matrix3d quadratic = Eigen::Matrix3d::Zero();
+    quadratic(0, 0) = dist(rng);
+    quadratic(1, 1) = dist(rng);
+    quadratic(2, 2) = -quadratic(0, 0) - quadratic(1, 1);
+
+    double xy = dist(rng);
+    double xz = dist(rng);
+    double yz = dist(rng);
+    quadratic(0, 1) = quadratic(1, 0) = xy;
+    quadratic(0, 2) = quadratic(2, 0) = xz;
+    quadratic(1, 2) = quadratic(2, 1) = yz;
+    quadratic *= contrast;
+
+    return HarmonicField(1.0, linear, quadratic);
 }

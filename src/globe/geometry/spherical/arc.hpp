@@ -3,6 +3,7 @@
 
 #include "helpers.hpp"
 #include "../../types.hpp"
+#include <cstdint>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <cmath>

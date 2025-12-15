@@ -32,3 +32,15 @@ Nearly identical tangent-based perturbation code in both optimizers:
 - `spherical_field_density_optimizer.hpp:584-610`
 
 Same algorithm with slightly different type handling. Could be extracted to a shared utility.
+
+## Future Features
+
+### Spherical Harmonic Decomposition from Sampled Patterns
+Approximate arbitrary patterns (e.g., images mapped to the sphere) with integrable polynomial fields:
+- Sample the pattern on a spherical grid
+- Compute spherical harmonic coefficients via numerical integration
+- Use Boost.Math for Legendre polynomials and spherical harmonics
+- Use Boost.Math quadrature for Gauss-Legendre weights
+- Store coefficients in a HarmonicField-like class that can evaluate and integrate exactly
+- Higher harmonic degree L gives more detail but more terms (L² coefficients)
+

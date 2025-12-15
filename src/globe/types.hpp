@@ -1,6 +1,7 @@
 #ifndef GLOBEART_SRC_GLOBE_TYPES_H_
 #define GLOBEART_SRC_GLOBE_TYPES_H_
 
+#include <cstdint>
 #include <Eigen/Core>
 
 namespace globe {

@@ -234,3 +234,6 @@ std::cout << "Centroid: (" <<
     info.centroid.x() << ", " << info.centroid.y() << ", " << info.centroid.z() <<
     ")" << std::endl;
 ```
+
+### File Endings
+- Always end files with a single trailing newline

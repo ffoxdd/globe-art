@@ -7,6 +7,7 @@
 #include "bounding_box_calculator.hpp"
 #include "../../../types.hpp"
 #include "../../../std_ext/ranges.hpp"
+#include <cstdint>
 #include <Eigen/Core>
 #include <utility>
 #include <vector>

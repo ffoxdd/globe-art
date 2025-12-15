@@ -124,7 +124,11 @@ inline AnalyticField Factory::create_analytic_field() const {
     } else if (_density_function == "linear") {
         return LinearField(2.0, 2.0);
     } else {
-        return HarmonicField();
+        return HarmonicField(
+            1.0,
+            Eigen::Vector3d(0.3, 0.2, 0.4),
+            Eigen::Matrix3d::Zero()
+        );
     }
 }
 
