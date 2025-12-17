@@ -40,8 +40,8 @@ target_include_directories(visualize_field PRIVATE Qt6::Widgets ${CGAL_INCLUDE_D
 target_link_libraries(visualize_field PRIVATE CGAL::CGAL CGAL::CGAL_Qt6 anl TBB::tbb dlib::dlib Eigen3::Eigen)
 target_compile_definitions(visualize_field PRIVATE CGAL_USE_BASIC_VIEWER CGAL_USE_BASIC_VIEWER_QT QT_NO_KEYWORDS)
 
-add_executable(sphere_to_ply src/sphere_to_ply.cpp ${GLOBE_HEADERS})
-target_link_libraries(sphere_to_ply PRIVATE CGAL::CGAL Eigen3::Eigen CLI11::CLI11)
+add_executable(sphere_to_mesh src/sphere_to_mesh.cpp ${GLOBE_HEADERS})
+target_link_libraries(sphere_to_mesh PRIVATE CGAL::CGAL Eigen3::Eigen CLI11::CLI11)
 
 # Tests
 

@@ -1,9 +1,9 @@
 #include "voronoi_sphere_wireframe_builder.hpp"
-#include "../../../voronoi/spherical/core/sphere.hpp"
+#include "../../voronoi/spherical/core/sphere.hpp"
 #include <gtest/gtest.h>
 #include <cmath>
 
-namespace globe::io::ply::mesh {
+namespace globe::io::mesh {
 namespace {
 
 using voronoi::spherical::Sphere;
@@ -89,4 +89,4 @@ TEST(VoronoiSphereWireframeBuilderTest, FaceCountScalesWithArcsAndVertices) {
 }
 
 } // namespace
-} // namespace globe::io::ply::mesh
+} // namespace globe::io::mesh

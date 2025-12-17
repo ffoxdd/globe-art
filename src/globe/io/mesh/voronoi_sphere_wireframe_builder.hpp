@@ -1,17 +1,17 @@
-#ifndef GLOBEART_SRC_GLOBE_IO_PLY_MESH_VORONOI_SPHERE_WIREFRAME_BUILDER_HPP_
-#define GLOBEART_SRC_GLOBE_IO_PLY_MESH_VORONOI_SPHERE_WIREFRAME_BUILDER_HPP_
+#ifndef GLOBEART_SRC_GLOBE_IO_MESH_VORONOI_SPHERE_WIREFRAME_BUILDER_HPP_
+#define GLOBEART_SRC_GLOBE_IO_MESH_VORONOI_SPHERE_WIREFRAME_BUILDER_HPP_
 
 #include "types.hpp"
-#include "../../../cgal/types.hpp"
-#include "../../../types.hpp"
-#include "../../../geometry/spherical/arc.hpp"
-#include "../../../voronoi/spherical/core/sphere.hpp"
+#include "../../cgal/types.hpp"
+#include "../../types.hpp"
+#include "../../geometry/spherical/arc.hpp"
+#include "../../voronoi/spherical/core/sphere.hpp"
 #include <map>
 #include <set>
 #include <vector>
 #include <cmath>
 
-namespace globe::io::ply::mesh {
+namespace globe::io::mesh {
 
 using geometry::spherical::Arc;
 using voronoi::spherical::Sphere;
@@ -390,6 +390,6 @@ inline VertexIndex VoronoiSphereWireframeBuilder::get_or_create_vertex(const Vec
     return idx;
 }
 
-} // namespace globe::io::ply::mesh
+} // namespace globe::io::mesh
 
-#endif //GLOBEART_SRC_GLOBE_IO_PLY_MESH_VORONOI_SPHERE_WIREFRAME_BUILDER_HPP_
+#endif //GLOBEART_SRC_GLOBE_IO_MESH_VORONOI_SPHERE_WIREFRAME_BUILDER_HPP_
