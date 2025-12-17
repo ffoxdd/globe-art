@@ -6,6 +6,7 @@
 - Never include specific code details or implementation specifics
 - Never include historically contingent information (e.g., "X was renamed to Y")
 - When adding or modifying style rules in this file, also update `.cursorrules` to mirror the changes
+- Maximize use of whitelisted commands to avoid requiring user approval for each command
 
 ## Testing and Development
 

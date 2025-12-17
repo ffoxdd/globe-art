@@ -8,9 +8,11 @@
 #include <CGAL/Delaunay_triangulation_on_sphere_2.h>
 #include "../../../geometry/spherical/polygon/polygon.hpp"
 #include "circulator_iterator.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <ranges>
+#include <set>
 #include <unordered_map>
 
 namespace globe::voronoi::spherical {
@@ -21,6 +23,11 @@ using geometry::spherical::Polygon;
 struct CellEdgeInfo {
     size_t neighbor_index;
     Arc arc;
+};
+
+struct VoronoiVertex {
+    VectorS2 position;
+    std::vector<Arc> arcs;  // arcs radiating from this vertex, ordered
 };
 
 class Sphere {
@@ -38,6 +45,8 @@ class Sphere {
     Polygon cell(size_t index) const;
     auto cells() const;
     auto arcs() const;
+    std::vector<VoronoiVertex> vertices() const;
+    std::vector<Arc> unique_arcs() const;
 
     cgal::Point3 site(size_t index) const;
     void update_site(size_t index, cgal::Point3 new_position);
@@ -53,6 +62,7 @@ class Sphere {
     using CGALArc = Triangulation::Arc_on_sphere_2;
 
     using VertexHandle = Triangulation::Vertex_handle;
+    using FaceHandle = Triangulation::Face_handle;
     using EdgeCirculator = Triangulation::Edge_circulator;
     using Edge = Triangulation::Edge;
     using EdgeCirculatorIterator = CirculatorIterator<EdgeCirculator, Edge>;
@@ -160,6 +170,87 @@ inline auto Sphere::arcs() const {
             return cell.arcs();
         }
     ) | std::views::join;
+}
+
+inline std::vector<VoronoiVertex> Sphere::vertices() const {
+    if (_triangulation->dimension() < 2) {
+        return {};
+    }
+
+    std::vector<VoronoiVertex> result;
+
+    // Voronoi vertices are duals of Delaunay faces
+    for (auto fit = _triangulation->solid_faces_begin();
+         fit != _triangulation->solid_faces_end(); ++fit) {
+
+        FaceHandle face = fit;
+
+        // Get the Voronoi vertex position (circumcenter of Delaunay face)
+        auto dual_point = _triangulation->dual_on_sphere(face);
+        VectorS2 position = to_vector_s2(to_point(dual_point));
+
+        // Get the 3 arcs meeting at this vertex (one per edge of the face)
+        std::vector<Arc> vertex_arcs;
+        for (int i = 0; i < 3; ++i) {
+            Edge edge(face, i);
+            CGALArc cgal_arc = _triangulation->dual_on_sphere(edge);
+            Arc arc = to_spherical_arc(cgal_arc);
+
+            // Ensure the arc starts from this vertex
+            if ((arc.target() - position).squaredNorm() <
+                (arc.source() - position).squaredNorm()) {
+                // Reverse the arc so it starts from this vertex
+                arc = Arc(arc.target(), arc.source(), -arc.normal());
+            }
+            vertex_arcs.push_back(arc);
+        }
+
+        // Sort arcs by angle around the vertex (counterclockwise)
+        VectorS2 radial = position.normalized();
+        VectorS2 ref = (std::abs(radial.z()) < 0.9)
+            ? VectorS2(0, 0, 1).cross(radial).normalized()
+            : VectorS2(1, 0, 0).cross(radial).normalized();
+        VectorS2 perp = radial.cross(ref).normalized();
+
+        std::sort(vertex_arcs.begin(), vertex_arcs.end(),
+            [&](const Arc& a, const Arc& b) {
+                VectorS2 dir_a = (a.interpolate(0.01) - position).normalized();
+                VectorS2 dir_b = (b.interpolate(0.01) - position).normalized();
+
+                double angle_a = std::atan2(dir_a.dot(perp), dir_a.dot(ref));
+                double angle_b = std::atan2(dir_b.dot(perp), dir_b.dot(ref));
+                return angle_a < angle_b;
+            });
+
+        result.push_back({position, std::move(vertex_arcs)});
+    }
+
+    return result;
+}
+
+inline std::vector<Arc> Sphere::unique_arcs() const {
+    if (_triangulation->dimension() < 2) {
+        return {};
+    }
+
+    std::vector<Arc> result;
+    std::set<std::pair<size_t, size_t>> seen_edges;
+
+    // Collect unique edges by iterating over cells
+    for (size_t cell_idx = 0; cell_idx < size(); ++cell_idx) {
+        for (const auto& edge_info : cell_edges(cell_idx)) {
+            size_t a = cell_idx;
+            size_t b = edge_info.neighbor_index;
+
+            // Only add each edge once (use ordered pair)
+            auto edge_key = (a < b) ? std::make_pair(a, b) : std::make_pair(b, a);
+            if (seen_edges.insert(edge_key).second) {
+                result.push_back(edge_info.arc);
+            }
+        }
+    }
+
+    return result;
 }
 
 inline size_t Sphere::vertex_index(VertexHandle handle) const {
